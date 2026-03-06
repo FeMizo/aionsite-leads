@@ -1,0 +1,72 @@
+const fs = require("fs");
+const path = require("path");
+
+function generateProspects() {
+  const prospects = [
+    {
+      name: "Restaurante La Ceiba",
+      city: "Mérida",
+      email: "contacto@laceiba.com",
+      phone: "9991234567",
+      type: "Restaurante",
+      website: "",
+      opportunity: "no tienen sitio web y podrían recibir reservas online",
+    },
+    {
+      name: "Inmobiliaria Horizonte",
+      city: "Ciudad de México",
+      email: "ventas@horizonte.com",
+      phone: "5512345678",
+      type: "Inmobiliaria",
+      website: "",
+      opportunity:
+        "su presencia online es muy limitada y podrían mostrar propiedades modernas",
+    },
+    {
+      name: "Café Aroma",
+      city: "Villahermosa",
+      email: "info@cafearoma.com",
+      phone: "9931234567",
+      type: "Café",
+      website: "",
+      opportunity:
+        "solo tienen redes sociales y podrían captar más clientes con un sitio web",
+    },
+    {
+      name: "Clínica Dental Sonrisa",
+      city: "Mérida",
+      email: "contacto@clinicasonrisa.com",
+      phone: "9992223344",
+      type: "Clínica",
+      website: "",
+      opportunity: "no tienen sistema de citas online",
+    },
+    {
+      name: "Gym Power Fit",
+      city: "Ciudad de México",
+      email: "info@powerfit.com",
+      phone: "5519987766",
+      type: "Gimnasio",
+      website: "",
+      opportunity: "no muestran planes ni servicios claramente en internet",
+    },
+    {
+      name: "Hotel Costa Azul",
+      city: "Villahermosa",
+      email: "reservas@costazul.com",
+      phone: "9938881122",
+      type: "Hotel",
+      website: "",
+      opportunity:
+        "su sitio actual es muy antiguo y no permite reservas online",
+    },
+  ];
+
+  const filePath = path.join(__dirname, "../data/prospects.json");
+
+  fs.writeFileSync(filePath, JSON.stringify(prospects, null, 2));
+
+  console.log("✅ 6 prospectos generados correctamente");
+}
+
+generateProspects();
