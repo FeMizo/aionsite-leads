@@ -2,15 +2,14 @@ require("dotenv").config();
 
 const nodemailer = require("nodemailer");
 const { buildEmail } = require("../templates/outreachEmail");
+const { isDuplicateProspect } = require("../utils/dedupe");
 const {
+  buildHistoryEntry,
+  CONTACTED_STATUSES,
   loadCrmState,
-  saveProspects,
-  saveContactedProspects,
-  saveSentLog,
-  syncContactedProspects,
-  upsertContactedProspect,
-  appendSentLogEntry,
-} = require("../utils/storage");
+  saveCrmState,
+  TERMINAL_STATUSES,
+} = require("../utils/crm");
 
 function isValidEmail(email) {
   return typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -44,137 +43,202 @@ function createTransporter() {
   });
 }
 
-async function sendEmails() {
+function findPreviouslyContacted(record, records) {
+  const historicalRecords = records.filter(
+    (item) => item.id !== record.id && TERMINAL_STATUSES.includes(item.status)
+  );
+
+  return isDuplicateProspect(record, historicalRecords, [], []);
+}
+
+async function sendEmails(options = {}) {
   console.log("[sendEmails] Iniciando envio...");
 
+  const targetIds = Array.isArray(options.recordIds) ? options.recordIds : [];
   const state = loadCrmState();
-  const prospects = state.prospects.map((prospect) => ({ ...prospect }));
-  let contactedProspects = syncContactedProspects(
-    state.contactedProspects,
-    prospects
-  );
-  let sentLog = [...state.sentLog];
+  const records = state.records.map((record) => ({ ...record }));
+  const idsSet = new Set(targetIds);
 
-  const pendingProspects = prospects.filter(
-    (prospect) => (prospect.status || "pending") === "pending"
-  );
+  const pendingRecords = records.filter((record) => {
+    if (record.status !== "prospect") {
+      return false;
+    }
 
-  console.log(`Prospectos cargados: ${prospects.length}`);
-  console.log(`Pendientes por enviar: ${pendingProspects.length}`);
+    if (!idsSet.size) {
+      return true;
+    }
 
-  if (!pendingProspects.length) {
-    saveContactedProspects(contactedProspects);
-    console.log("[sendEmails] No hay prospectos pendientes.");
+    return idsSet.has(record.id);
+  });
+
+  console.log(`Registros CRM cargados: ${records.length}`);
+  console.log(`Prospectos por enviar: ${pendingRecords.length}`);
+
+  if (!pendingRecords.length) {
     return {
-      total: prospects.length,
+      total: records.length,
       pending: 0,
       sent: 0,
       failed: 0,
+      skippedPreviouslySent: 0,
     };
   }
 
   const transporter = createTransporter();
+  const history = [...state.history];
   let sentCount = 0;
   let failedCount = 0;
+  let skippedPreviouslySentCount = 0;
 
-  for (const prospect of prospects) {
-    if ((prospect.status || "pending") !== "pending") {
+  for (const record of pendingRecords) {
+    const previousContact = findPreviouslyContacted(record, records);
+
+    if (previousContact || CONTACTED_STATUSES.includes(record.status)) {
+      const skippedAt = new Date().toISOString();
+      skippedPreviouslySentCount += 1;
+      record.status = "closed";
+      record.updatedAt = skippedAt;
+      record.lastError = "Skipped because it was already contacted previously";
+
+      history.push(
+        buildHistoryEntry(record, "duplicate_skip", {
+          fromStatus: "prospect",
+          toStatus: "closed",
+          at: skippedAt,
+          note: `Skipped duplicate by ${previousContact ? previousContact.reason : "status"}`,
+          error: record.lastError,
+          meta: {
+            source: record.source,
+            city: record.city,
+            email: record.email,
+            phone: record.phone,
+            category: record.category,
+            createdAt: record.createdAt,
+          },
+        })
+      );
+
+      console.log(
+        `Saltando ${record.businessName}: ya existe contacto previo${previousContact ? ` por ${previousContact.reason}` : ""}`
+      );
       continue;
     }
 
-    if (!isValidEmail(prospect.email)) {
+    if (!isValidEmail(record.email)) {
       const failedAt = new Date().toISOString();
       failedCount += 1;
-      prospect.lastCheckedAt = failedAt;
-      prospect.lastSendError = "Invalid or empty email";
+      record.status = "failed";
+      record.updatedAt = failedAt;
+      record.lastError = "Invalid or empty email";
 
-      sentLog = appendSentLogEntry(sentLog, prospect, {
-        status: "invalid_email",
-        at: failedAt,
-        error: "Invalid or empty email",
-      });
+      history.push(
+        buildHistoryEntry(record, "invalid_email", {
+          fromStatus: "prospect",
+          toStatus: "failed",
+          at: failedAt,
+          error: record.lastError,
+          note: "Skipped because email is invalid or empty",
+          meta: {
+            source: record.source,
+            city: record.city,
+            email: record.email,
+            phone: record.phone,
+            category: record.category,
+            createdAt: record.createdAt,
+          },
+        })
+      );
 
-      contactedProspects = upsertContactedProspect(contactedProspects, prospect, {
-        status: prospect.status || "pending",
-        at: failedAt,
-        note: "Skipped because email is invalid or empty",
-      }).list;
-
-      console.log(`Saltando ${prospect.name}: email invalido o vacio`);
+      console.log(`Saltando ${record.businessName}: email invalido o vacio`);
       continue;
     }
 
-    const email = buildEmail(prospect);
+    const email = buildEmail({
+      ...record,
+      name: record.businessName || record.name,
+      type: record.category || record.type,
+    });
 
     try {
       const info = await transporter.sendMail({
         from: `"${process.env.FROM_NAME || "Aionsite"}" <${
           process.env.FROM_EMAIL || process.env.SMTP_USER
         }>`,
-        to: prospect.email,
+        to: record.email,
         subject: email.subject,
         text: email.text,
       });
 
       const sentAt = new Date().toISOString();
       sentCount += 1;
+      record.status = "contacted";
+      record.sentAt = sentAt;
+      record.updatedAt = sentAt;
+      record.lastError = "";
+      record.lastMessageId = info.messageId;
 
-      prospect.status = "sent";
-      prospect.sentAt = sentAt;
-      prospect.lastCheckedAt = sentAt;
-      prospect.lastSendError = "";
-      prospect.lastMessageId = info.messageId;
+      history.push(
+        buildHistoryEntry(record, "send_success", {
+          fromStatus: "prospect",
+          toStatus: "contacted",
+          at: sentAt,
+          note: "Outbound email sent",
+          meta: {
+            source: record.source,
+            city: record.city,
+            email: record.email,
+            phone: record.phone,
+            category: record.category,
+            createdAt: record.createdAt,
+            messageId: info.messageId,
+          },
+        })
+      );
 
-      sentLog = appendSentLogEntry(sentLog, prospect, {
-        status: "sent",
-        at: sentAt,
-        messageId: info.messageId,
-      });
-
-      contactedProspects = upsertContactedProspect(contactedProspects, prospect, {
-        status: "sent",
-        at: sentAt,
-        note: "Outbound email sent",
-        meta: {
-          messageId: info.messageId,
-        },
-      }).list;
-
-      console.log(`Enviado a ${prospect.name}: ${info.messageId}`);
+      console.log(`Enviado a ${record.businessName}: ${info.messageId}`);
     } catch (error) {
       const failedAt = new Date().toISOString();
       failedCount += 1;
-      prospect.lastCheckedAt = failedAt;
-      prospect.lastSendError = error.message;
+      record.status = "failed";
+      record.updatedAt = failedAt;
+      record.lastError = error.message;
 
-      sentLog = appendSentLogEntry(sentLog, prospect, {
-        status: "send_error",
-        at: failedAt,
-        error: error.message,
-      });
+      history.push(
+        buildHistoryEntry(record, "send_error", {
+          fromStatus: "prospect",
+          toStatus: "failed",
+          at: failedAt,
+          error: error.message,
+          note: "Outbound email failed",
+          meta: {
+            source: record.source,
+            city: record.city,
+            email: record.email,
+            phone: record.phone,
+            category: record.category,
+            createdAt: record.createdAt,
+          },
+        })
+      );
 
-      contactedProspects = upsertContactedProspect(contactedProspects, prospect, {
-        status: prospect.status || "pending",
-        at: failedAt,
-        note: `Send failed: ${error.message}`,
-      }).list;
-
-      console.error(`Error con ${prospect.name}: ${error.message}`);
+      console.error(`Error con ${record.businessName}: ${error.message}`);
     }
   }
 
-  saveProspects(prospects);
-  saveContactedProspects(contactedProspects);
-  saveSentLog(sentLog);
+  saveCrmState(records, history);
 
   console.log(`[sendEmails] Enviados: ${sentCount}`);
   console.log(`[sendEmails] Fallidos: ${failedCount}`);
+  console.log(
+    `[sendEmails] Omitidos por contacto previo: ${skippedPreviouslySentCount}`
+  );
 
   return {
-    total: prospects.length,
-    pending: pendingProspects.length,
+    total: records.length,
+    pending: pendingRecords.length,
     sent: sentCount,
     failed: failedCount,
+    skippedPreviouslySent: skippedPreviouslySentCount,
   };
 }
 

@@ -1,0 +1,434 @@
+[
+  {
+    "id": "c092676c-cd13-495e-8ae6-d35b8284c2da",
+    "recordId": "7f814242-54d7-473f-9629-04b61af7744e",
+    "businessName": "Los Almendros Restaurante",
+    "fromStatus": "",
+    "toStatus": "prospect",
+    "action": "pending",
+    "at": "2026-03-12T17:50:45.640Z",
+    "note": "Prospect created",
+    "error": "",
+    "meta": {}
+  },
+  {
+    "id": "62177419-cec6-4f83-a80e-250a4dd7c082",
+    "recordId": "7f814242-54d7-473f-9629-04b61af7744e",
+    "businessName": "Los Almendros Restaurante",
+    "fromStatus": "",
+    "toStatus": "contacted",
+    "action": "sent",
+    "at": "2026-03-12T17:50:52.336Z",
+    "note": "Outbound email sent",
+    "error": "",
+    "meta": {
+      "messageId": "<f8ffedcc-3a31-a616-baac-1c151a0b1f3a@aionsite.com.mx>"
+    }
+  },
+  {
+    "id": "5213c753-1ad2-48ed-b11b-5957b1e681f7",
+    "recordId": "2e971203-a6d2-45fc-895b-c545960de988",
+    "businessName": "K'u'uk Restaurante",
+    "fromStatus": "",
+    "toStatus": "prospect",
+    "action": "pending",
+    "at": "2026-03-12T17:50:45.642Z",
+    "note": "Prospect created",
+    "error": "",
+    "meta": {}
+  },
+  {
+    "id": "14ff87c8-b7e3-4e89-ab93-bffc3d0698d0",
+    "recordId": "2e971203-a6d2-45fc-895b-c545960de988",
+    "businessName": "K'u'uk Restaurante",
+    "fromStatus": "",
+    "toStatus": "contacted",
+    "action": "sent",
+    "at": "2026-03-12T17:50:57.091Z",
+    "note": "Outbound email sent",
+    "error": "",
+    "meta": {
+      "messageId": "<f6d00af6-8439-b862-6605-8945f6908594@aionsite.com.mx>"
+    }
+  },
+  {
+    "id": "cc1a917e-5d61-4e5f-ad5b-c0e933fde9ba",
+    "recordId": "cbf5330f-f274-4990-8dc9-d203993389be",
+    "businessName": "Los Jaroyucas Restaurante",
+    "fromStatus": "",
+    "toStatus": "prospect",
+    "action": "pending",
+    "at": "2026-03-12T17:50:45.642Z",
+    "note": "Prospect created",
+    "error": "",
+    "meta": {}
+  },
+  {
+    "id": "f6362b67-b63e-4f93-b2be-9c391036043f",
+    "recordId": "cbf5330f-f274-4990-8dc9-d203993389be",
+    "businessName": "Los Jaroyucas Restaurante",
+    "fromStatus": "",
+    "toStatus": "contacted",
+    "action": "sent",
+    "at": "2026-03-12T17:51:01.319Z",
+    "note": "Outbound email sent",
+    "error": "",
+    "meta": {
+      "messageId": "<975d2183-6ed6-a76e-8b31-0f41281fe839@aionsite.com.mx>"
+    }
+  },
+  {
+    "id": "22027e1a-4c1f-4d8f-9503-f14b516a2008",
+    "recordId": "b3b1351a-fce3-4ac6-9c3b-2e677fcb7e41",
+    "businessName": "Yucatan Real Estate Group",
+    "fromStatus": "",
+    "toStatus": "prospect",
+    "action": "pending",
+    "at": "2026-03-12T17:50:45.642Z",
+    "note": "Prospect created",
+    "error": "",
+    "meta": {}
+  },
+  {
+    "id": "ca6b487b-b7cd-4b31-8192-76a4c4018c35",
+    "recordId": "b3b1351a-fce3-4ac6-9c3b-2e677fcb7e41",
+    "businessName": "Yucatan Real Estate Group",
+    "fromStatus": "",
+    "toStatus": "contacted",
+    "action": "sent",
+    "at": "2026-03-12T17:51:03.862Z",
+    "note": "Outbound email sent",
+    "error": "",
+    "meta": {
+      "messageId": "<9514b705-4f43-3afd-5404-0c0a866ab13b@aionsite.com.mx>"
+    }
+  },
+  {
+    "id": "e64b0f9b-ee7f-4168-b88f-51abba89c0d2",
+    "recordId": "66c6b3b9-7f3b-47e5-8dae-06732cd6b53b",
+    "businessName": "Yucatan Properties",
+    "fromStatus": "",
+    "toStatus": "prospect",
+    "action": "pending",
+    "at": "2026-03-12T17:50:45.642Z",
+    "note": "Prospect created",
+    "error": "",
+    "meta": {}
+  },
+  {
+    "id": "3fc4c4d7-b0ab-42a3-83e5-bb8cd518a97e",
+    "recordId": "66c6b3b9-7f3b-47e5-8dae-06732cd6b53b",
+    "businessName": "Yucatan Properties",
+    "fromStatus": "",
+    "toStatus": "contacted",
+    "action": "sent",
+    "at": "2026-03-12T17:51:08.053Z",
+    "note": "Outbound email sent",
+    "error": "",
+    "meta": {
+      "messageId": "<6a02fdab-eb7b-ba7c-045d-7b68b17759c3@aionsite.com.mx>"
+    }
+  },
+  {
+    "id": "e33a476a-76cf-4892-abf5-9b4e420a6dd1",
+    "recordId": "f19d38d8-8ca4-4d7a-96b5-ce2ddbd1835f",
+    "businessName": "Yucatan Property Scouts",
+    "fromStatus": "",
+    "toStatus": "prospect",
+    "action": "pending",
+    "at": "2026-03-12T17:50:45.642Z",
+    "note": "Prospect created",
+    "error": "",
+    "meta": {}
+  },
+  {
+    "id": "d6ffdf7e-51c7-4e42-8822-996efb77ee26",
+    "recordId": "f19d38d8-8ca4-4d7a-96b5-ce2ddbd1835f",
+    "businessName": "Yucatan Property Scouts",
+    "fromStatus": "",
+    "toStatus": "contacted",
+    "action": "sent",
+    "at": "2026-03-12T17:51:12.809Z",
+    "note": "Outbound email sent",
+    "error": "",
+    "meta": {
+      "messageId": "<c7e5e394-977a-5158-075a-2f01138d2d96@aionsite.com.mx>"
+    }
+  },
+  {
+    "id": "db2aa526-88d5-48d4-988b-8c2e5fa9968d",
+    "recordId": "5d061ad4-896b-46b9-ae5e-b0be451e45e2",
+    "businessName": "Grupo ABBA Inmobiliario & Construcciones",
+    "fromStatus": "",
+    "toStatus": "prospect",
+    "action": "pending",
+    "at": "2026-03-12T18:57:09.875Z",
+    "note": "Prospect generated by generateProspects.js",
+    "error": "",
+    "meta": {}
+  },
+  {
+    "id": "1d628782-0e8d-496d-a9e6-ac52b521ada3",
+    "recordId": "2f01a744-6258-47d6-b1df-06973274aacc",
+    "businessName": "Restaurant Las Vigas Mérida",
+    "fromStatus": "",
+    "toStatus": "prospect",
+    "action": "pending",
+    "at": "2026-03-12T18:57:09.874Z",
+    "note": "Prospect generated by generateProspects.js",
+    "error": "",
+    "meta": {}
+  },
+  {
+    "id": "c9d06130-2c03-4863-b5b8-7f126a6d4225",
+    "recordId": "8bcffca7-53d3-46a6-8428-9f57dfdd8a93",
+    "businessName": "GM INMOBILIARIA VILLAHERMOSA BIENES RAICES",
+    "fromStatus": "",
+    "toStatus": "prospect",
+    "action": "pending",
+    "at": "2026-03-12T18:57:09.875Z",
+    "note": "Prospect generated by generateProspects.js",
+    "error": "",
+    "meta": {}
+  },
+  {
+    "id": "912300df-2d16-4174-891e-3b4cc0a1522a",
+    "recordId": "abedc627-758f-4cd1-90a3-c84a85432806",
+    "businessName": "La Terraza Amarilla",
+    "fromStatus": "",
+    "toStatus": "prospect",
+    "action": "pending",
+    "at": "2026-03-12T18:57:09.874Z",
+    "note": "Prospect generated by generateProspects.js",
+    "error": "",
+    "meta": {}
+  },
+  {
+    "id": "069e2fbd-e081-4697-9c0f-f2fa4e91e975",
+    "recordId": "81680948-10ab-4fe0-afe2-e7982960a60b",
+    "businessName": "Restaurante El Edén",
+    "fromStatus": "",
+    "toStatus": "prospect",
+    "action": "pending",
+    "at": "2026-03-12T18:57:09.875Z",
+    "note": "Prospect generated by generateProspects.js",
+    "error": "",
+    "meta": {}
+  },
+  {
+    "id": "bbeba922-f02a-4ed1-9a3e-9c954aa759a7",
+    "recordId": "e30f4ca4-991c-49f7-99c1-58742dfd681d",
+    "businessName": "The 2nd Floor",
+    "fromStatus": "",
+    "toStatus": "prospect",
+    "action": "pending",
+    "at": "2026-03-12T18:57:09.875Z",
+    "note": "Prospect generated by generateProspects.js",
+    "error": "",
+    "meta": {}
+  },
+  {
+    "id": "f12d57f3-921d-40a3-92fc-aed8db743729",
+    "recordId": "7f814242-54d7-473f-9629-04b61af7744e",
+    "businessName": "Los Almendros Restaurante",
+    "fromStatus": "",
+    "toStatus": "contacted",
+    "action": "sent",
+    "at": "2026-03-12T17:50:52.336Z",
+    "note": "",
+    "error": "",
+    "meta": {
+      "messageId": "<f8ffedcc-3a31-a616-baac-1c151a0b1f3a@aionsite.com.mx>"
+    }
+  },
+  {
+    "id": "9afff770-fff1-42e4-8977-9b0c5e5af74d",
+    "recordId": "2e971203-a6d2-45fc-895b-c545960de988",
+    "businessName": "K'u'uk Restaurante",
+    "fromStatus": "",
+    "toStatus": "contacted",
+    "action": "sent",
+    "at": "2026-03-12T17:50:57.091Z",
+    "note": "",
+    "error": "",
+    "meta": {
+      "messageId": "<f6d00af6-8439-b862-6605-8945f6908594@aionsite.com.mx>"
+    }
+  },
+  {
+    "id": "b1b61580-7dae-4c25-83b2-5cbd1b29f15d",
+    "recordId": "cbf5330f-f274-4990-8dc9-d203993389be",
+    "businessName": "Los Jaroyucas Restaurante",
+    "fromStatus": "",
+    "toStatus": "contacted",
+    "action": "sent",
+    "at": "2026-03-12T17:51:01.319Z",
+    "note": "",
+    "error": "",
+    "meta": {
+      "messageId": "<975d2183-6ed6-a76e-8b31-0f41281fe839@aionsite.com.mx>"
+    }
+  },
+  {
+    "id": "8366e3f1-b7d8-4f36-bf74-5d356b6bcec1",
+    "recordId": "b3b1351a-fce3-4ac6-9c3b-2e677fcb7e41",
+    "businessName": "Yucatan Real Estate Group",
+    "fromStatus": "",
+    "toStatus": "contacted",
+    "action": "sent",
+    "at": "2026-03-12T17:51:03.862Z",
+    "note": "",
+    "error": "",
+    "meta": {
+      "messageId": "<9514b705-4f43-3afd-5404-0c0a866ab13b@aionsite.com.mx>"
+    }
+  },
+  {
+    "id": "c7148e96-1c74-4382-852f-003e8dda129f",
+    "recordId": "66c6b3b9-7f3b-47e5-8dae-06732cd6b53b",
+    "businessName": "Yucatan Properties",
+    "fromStatus": "",
+    "toStatus": "contacted",
+    "action": "sent",
+    "at": "2026-03-12T17:51:08.053Z",
+    "note": "",
+    "error": "",
+    "meta": {
+      "messageId": "<6a02fdab-eb7b-ba7c-045d-7b68b17759c3@aionsite.com.mx>"
+    }
+  },
+  {
+    "id": "11a76fcd-7690-4244-9eeb-2c97ad57e497",
+    "recordId": "f19d38d8-8ca4-4d7a-96b5-ce2ddbd1835f",
+    "businessName": "Yucatan Property Scouts",
+    "fromStatus": "",
+    "toStatus": "contacted",
+    "action": "sent",
+    "at": "2026-03-12T17:51:12.809Z",
+    "note": "",
+    "error": "",
+    "meta": {
+      "messageId": "<c7e5e394-977a-5158-075a-2f01138d2d96@aionsite.com.mx>"
+    }
+  },
+  {
+    "id": "c536a975-06bd-4a0e-9349-b1af8c9c3aa4",
+    "recordId": "5d061ad4-896b-46b9-ae5e-b0be451e45e2",
+    "businessName": "Grupo ABBA Inmobiliario & Construcciones",
+    "fromStatus": "generated",
+    "toStatus": "prospect",
+    "action": "moved_to_prospect",
+    "at": "2026-03-12T20:00:42.131Z",
+    "note": "Bulk moved from generated because prospects view was empty",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Villahermosa",
+      "email": "",
+      "phone": "9933618385",
+      "category": "Inmobiliaria",
+      "createdAt": "2026-03-12T18:57:09.875Z",
+      "messageId": ""
+    }
+  },
+  {
+    "id": "f184d015-c797-4d2c-9095-14fa8c7c59df",
+    "recordId": "2f01a744-6258-47d6-b1df-06973274aacc",
+    "businessName": "Restaurant Las Vigas Mérida",
+    "fromStatus": "generated",
+    "toStatus": "prospect",
+    "action": "moved_to_prospect",
+    "at": "2026-03-12T20:00:42.131Z",
+    "note": "Bulk moved from generated because prospects view was empty",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Merida",
+      "email": "",
+      "phone": "9999233814",
+      "category": "Restaurante",
+      "createdAt": "2026-03-12T18:57:09.874Z",
+      "messageId": ""
+    }
+  },
+  {
+    "id": "223bcff4-336b-42d6-9cf3-80bd723e95e2",
+    "recordId": "8bcffca7-53d3-46a6-8428-9f57dfdd8a93",
+    "businessName": "GM INMOBILIARIA VILLAHERMOSA BIENES RAICES",
+    "fromStatus": "generated",
+    "toStatus": "prospect",
+    "action": "moved_to_prospect",
+    "at": "2026-03-12T20:00:42.131Z",
+    "note": "Bulk moved from generated because prospects view was empty",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Villahermosa",
+      "email": "",
+      "phone": "9933007995",
+      "category": "Inmobiliaria",
+      "createdAt": "2026-03-12T18:57:09.875Z",
+      "messageId": ""
+    }
+  },
+  {
+    "id": "287abaef-2881-4da2-87f5-7726384d9aa5",
+    "recordId": "abedc627-758f-4cd1-90a3-c84a85432806",
+    "businessName": "La Terraza Amarilla",
+    "fromStatus": "generated",
+    "toStatus": "prospect",
+    "action": "moved_to_prospect",
+    "at": "2026-03-12T20:00:42.131Z",
+    "note": "Bulk moved from generated because prospects view was empty",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Merida",
+      "email": "",
+      "phone": "9992005904",
+      "category": "Restaurante",
+      "createdAt": "2026-03-12T18:57:09.874Z",
+      "messageId": ""
+    }
+  },
+  {
+    "id": "2d27f8f1-d9f0-49ec-af37-baf297c3907d",
+    "recordId": "81680948-10ab-4fe0-afe2-e7982960a60b",
+    "businessName": "Restaurante El Edén",
+    "fromStatus": "generated",
+    "toStatus": "prospect",
+    "action": "moved_to_prospect",
+    "at": "2026-03-12T20:00:42.131Z",
+    "note": "Bulk moved from generated because prospects view was empty",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Villahermosa",
+      "email": "",
+      "phone": "9931537861",
+      "category": "Restaurante",
+      "createdAt": "2026-03-12T18:57:09.875Z",
+      "messageId": ""
+    }
+  },
+  {
+    "id": "802d0a2c-9aae-4cd0-80fa-d92c1528ef95",
+    "recordId": "e30f4ca4-991c-49f7-99c1-58742dfd681d",
+    "businessName": "The 2nd Floor",
+    "fromStatus": "generated",
+    "toStatus": "prospect",
+    "action": "moved_to_prospect",
+    "at": "2026-03-12T20:00:42.131Z",
+    "note": "Bulk moved from generated because prospects view was empty",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Villahermosa",
+      "email": "",
+      "phone": "9931777827",
+      "category": "Restaurante",
+      "createdAt": "2026-03-12T18:57:09.875Z",
+      "messageId": ""
+    }
+  }
+]

@@ -137,8 +137,37 @@ function filterUniqueProspects(candidates, existingRecords) {
   };
 }
 
+function buildComparisonPool(sources = {}) {
+  const pool = [];
+
+  for (const records of Object.values(sources)) {
+    if (!Array.isArray(records)) {
+      continue;
+    }
+
+    pool.push(...records);
+  }
+
+  return pool;
+}
+
+function isDuplicateProspect(
+  prospect,
+  existingProspects = [],
+  sentLog = [],
+  contactedLog = []
+) {
+  return findDuplicate(prospect, [
+    ...existingProspects,
+    ...sentLog,
+    ...contactedLog,
+  ]);
+}
+
 module.exports = {
   areNamesSimilar,
+  buildComparisonPool,
   filterUniqueProspects,
   findDuplicate,
+  isDuplicateProspect,
 };

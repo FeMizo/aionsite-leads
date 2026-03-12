@@ -2,9 +2,18 @@ const fs = require("fs");
 const path = require("path");
 const { findDuplicate } = require("./dedupe");
 
-const DATA_DIR = process.env.AIONSITE_DATA_DIR
-  ? path.resolve(process.cwd(), process.env.AIONSITE_DATA_DIR)
-  : path.join(__dirname, "..", "data");
+function resolveDataDir() {
+  const configuredDir = process.env.AIONSITE_DATA_DIR || "data";
+
+  if (path.isAbsolute(configuredDir)) {
+    return configuredDir;
+  }
+
+  // Next bundles server code under .next, so __dirname is not stable here.
+  return path.resolve(process.cwd(), configuredDir);
+}
+
+const DATA_DIR = resolveDataDir();
 
 const dataPaths = {
   prospects: path.join(DATA_DIR, "prospects.json"),
@@ -21,10 +30,12 @@ const prospectFields = [
   "type",
   "website",
   "rating",
+  "mapsUrl",
   "opportunity",
   "recommendedSite",
   "pitchAngle",
   "source",
+  "businessStatus",
   "createdAt",
   "lastCheckedAt",
   "status",
@@ -37,26 +48,38 @@ function ensureParentDir(filePath) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
 }
 
-function writeJsonArray(filePath, value) {
+function writeJson(filePath, value) {
   ensureParentDir(filePath);
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
-function ensureJsonArrayFile(filePath) {
+function writeJsonArray(filePath, value) {
+  writeJson(filePath, value);
+}
+
+function ensureFile(filePath, defaultData = []) {
   if (!fs.existsSync(filePath)) {
-    writeJsonArray(filePath, []);
+    writeJson(filePath, defaultData);
   }
 }
 
-function readJsonArray(filePath) {
-  ensureJsonArrayFile(filePath);
+function ensureJsonArrayFile(filePath) {
+  ensureFile(filePath, []);
+}
+
+function readJson(filePath, fallback = []) {
+  ensureFile(filePath, fallback);
   const raw = fs.readFileSync(filePath, "utf8").trim();
 
   if (!raw) {
-    return [];
+    return fallback;
   }
 
-  const parsed = JSON.parse(raw);
+  return JSON.parse(raw);
+}
+
+function readJsonArray(filePath) {
+  const parsed = readJson(filePath, []);
 
   if (!Array.isArray(parsed)) {
     throw new Error(`El archivo ${filePath} debe contener un arreglo JSON.`);
@@ -136,10 +159,12 @@ function buildContactedProspect(prospect, options) {
     type: prospect.type || "",
     website: prospect.website || "",
     rating: prospect.rating || "",
+    mapsUrl: prospect.mapsUrl || "",
     opportunity: prospect.opportunity || "",
     recommendedSite: prospect.recommendedSite || "",
     pitchAngle: prospect.pitchAngle || "",
     source: prospect.source || "",
+    businessStatus: prospect.businessStatus || "",
     createdAt: prospect.createdAt || at,
     lastCheckedAt: prospect.lastCheckedAt || at,
     status,
@@ -255,8 +280,10 @@ function appendSentLogEntry(sentLog, prospect, options = {}) {
       email: prospect.email || "",
       phone: prospect.phone || "",
       type: prospect.type || "",
+      mapsUrl: prospect.mapsUrl || "",
       status: options.status || prospect.status || "pending",
       source: prospect.source || "",
+      businessStatus: prospect.businessStatus || "",
       messageId: options.messageId || "",
       error: options.error || "",
       createdAt: prospect.createdAt || at,
@@ -269,12 +296,15 @@ module.exports = {
   appendSentLogEntry,
   dataPaths,
   ensureDataFiles,
+  ensureFile,
   loadCrmState,
+  readJson,
   readJsonArray,
   saveContactedProspects,
   saveProspects,
   saveSentLog,
   syncContactedProspects,
   upsertContactedProspect,
+  writeJson,
   writeJsonArray,
 };

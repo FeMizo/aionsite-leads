@@ -1,293 +1,89 @@
+require("dotenv").config();
+
 const {
+  addGeneratedRecords,
   loadCrmState,
-  saveProspects,
-  saveContactedProspects,
-  syncContactedProspects,
-  upsertContactedProspect,
-} = require("../utils/storage");
-const { filterUniqueProspects } = require("../utils/dedupe");
+  saveCrmState,
+} = require("../utils/crm");
+const { filterUniqueProspects, isDuplicateProspect } = require("../utils/dedupe");
 const {
   normalizeEmail,
   normalizeName,
   normalizePhone,
 } = require("../utils/normalizers");
+const { scoreProspect, inferWebsiteSignal } = require("../utils/prospectScoring");
+const googlePlacesProvider = require("../providers/googlePlacesProvider");
+const emailFinderProvider = require("../providers/emailFinderProvider");
 const mockProvider = require("../providers/mockProvider");
-const googleMapsProvider = require("../providers/googleMapsProvider");
-const webSearchProvider = require("../providers/webSearchProvider");
 const chatProvider = require("../providers/chatProvider");
 
 const DESIRED_PROSPECT_COUNT = 6;
-const TARGET_CITIES = ["Merida", "Villahermosa", "Ciudad de Mexico"];
 const REQUIRED_TYPES = ["Inmobiliaria", "Restaurante"];
+const REQUIRE_EMAIL_FOR_FINAL_PROSPECTS = true;
+const SEARCHES = [
+  {
+    id: "restaurant-merida",
+    city: "Merida",
+    label: "restaurante en Merida",
+    textQuery: "restaurante en Merida, Yucatan, Mexico",
+    typeLabel: "Restaurante",
+    includedType: "restaurant",
+  },
+  {
+    id: "real-estate-merida",
+    city: "Merida",
+    label: "inmobiliaria en Merida",
+    textQuery: "inmobiliaria en Merida, Yucatan, Mexico",
+    typeLabel: "Inmobiliaria",
+    includedType: "real_estate_agency",
+  },
+  {
+    id: "clinic-merida",
+    city: "Merida",
+    label: "clinica en Merida",
+    textQuery: "clinica en Merida, Yucatan, Mexico",
+    typeLabel: "Clinica",
+    includedType: "doctor",
+  },
+  {
+    id: "restaurant-villahermosa",
+    city: "Villahermosa",
+    label: "restaurante en Villahermosa",
+    textQuery: "restaurante en Villahermosa, Tabasco, Mexico",
+    typeLabel: "Restaurante",
+    includedType: "restaurant",
+  },
+  {
+    id: "real-estate-villahermosa",
+    city: "Villahermosa",
+    label: "inmobiliaria en Villahermosa",
+    textQuery: "inmobiliaria en Villahermosa, Tabasco, Mexico",
+    typeLabel: "Inmobiliaria",
+    includedType: "real_estate_agency",
+  },
+  {
+    id: "restaurant-cdmx",
+    city: "Ciudad de Mexico",
+    label: "restaurante en Ciudad de Mexico",
+    textQuery: "restaurante en Ciudad de Mexico, Mexico",
+    typeLabel: "Restaurante",
+    includedType: "restaurant",
+  },
+  {
+    id: "real-estate-cdmx",
+    city: "Ciudad de Mexico",
+    label: "inmobiliaria en Ciudad de Mexico",
+    textQuery: "inmobiliaria en Ciudad de Mexico, Mexico",
+    typeLabel: "Inmobiliaria",
+    includedType: "real_estate_agency",
+  },
+];
 
 const providers = {
   chat: chatProvider,
+  googlePlaces: googlePlacesProvider,
   mock: mockProvider,
-  googleMaps: googleMapsProvider,
-  webSearch: webSearchProvider,
 };
-
-function getConfiguredProviders() {
-  const cliProviders = getCliArgValue("--provider");
-  const configured = (cliProviders || process.env.LEADS_PROVIDER || "mock")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
-
-  return configured.length ? configured : ["mock"];
-}
-
-function toDisplayCity(city) {
-  const normalized = normalizeName(city);
-
-  if (normalized === "merida") {
-    return "Merida";
-  }
-
-  if (normalized === "villahermosa") {
-    return "Villahermosa";
-  }
-
-  if (normalized === "ciudad de mexico" || normalized === "cdmx") {
-    return "Ciudad de Mexico";
-  }
-
-  return city || "";
-}
-
-function inferWebsiteSignal(candidate) {
-  const explicitSignal = normalizeName(candidate.websiteStatus || "");
-
-  if (explicitSignal) {
-    return explicitSignal;
-  }
-
-  if (!candidate.website) {
-    return "sin-sitio";
-  }
-
-  const website = String(candidate.website).toLowerCase();
-
-  if (
-    website.includes("facebook.com") ||
-    website.includes("instagram.com") ||
-    website.includes("wa.me") ||
-    website.includes("linktr.ee")
-  ) {
-    return "solo-redes";
-  }
-
-  if (
-    website.includes("ueniweb.com") ||
-    website.includes("wixsite.com") ||
-    website.includes("sites.google.com")
-  ) {
-    return "sitio-basico";
-  }
-
-  return "sitio-antiguo";
-}
-
-function buildOpportunity(candidate) {
-  const type = candidate.type || "Negocio local";
-  const websiteSignal = inferWebsiteSignal(candidate);
-
-  if (normalizeName(type) === "inmobiliaria") {
-    return {
-      opportunity:
-        candidate.opportunity ||
-        "su captacion digital depende demasiado de portales externos",
-      recommendedSite:
-        candidate.recommendedSite ||
-        "portal inmobiliario con fichas de propiedades y formularios de leads",
-      pitchAngle:
-        candidate.pitchAngle ||
-        "generar mas consultas calificadas desde Google y Meta Ads",
-    };
-  }
-
-  if (normalizeName(type) === "restaurante") {
-    return {
-      opportunity:
-        candidate.opportunity ||
-        "pueden convertir mas visitas en reservas y pedidos directos",
-      recommendedSite:
-        candidate.recommendedSite ||
-        "sitio con menu, reservas, ubicacion y galeria",
-      pitchAngle:
-        candidate.pitchAngle ||
-        "captar reservas directas sin depender solo de redes sociales",
-    };
-  }
-
-  if (normalizeName(type) === "clinica") {
-    return {
-      opportunity:
-        candidate.opportunity ||
-        "pueden facilitar citas y reforzar confianza con una presencia profesional",
-      recommendedSite:
-        candidate.recommendedSite ||
-        "sitio medico con servicios, testimonios y solicitud de citas",
-      pitchAngle:
-        candidate.pitchAngle ||
-        "cerrar mas citas desde busquedas locales de alta intencion",
-    };
-  }
-
-  if (websiteSignal === "sin-sitio") {
-    return {
-      opportunity:
-        candidate.opportunity ||
-        "no tienen un sitio propio para transmitir confianza y captar contactos",
-      recommendedSite:
-        candidate.recommendedSite ||
-        "sitio de presentacion con servicios, testimonios y contacto rapido",
-      pitchAngle:
-        candidate.pitchAngle ||
-        "verse profesionales y no depender solo de directorios o redes",
-    };
-  }
-
-  if (websiteSignal === "solo-redes") {
-    return {
-      opportunity:
-        candidate.opportunity ||
-        "su presencia digital depende solo de redes y eso limita conversiones",
-      recommendedSite:
-        candidate.recommendedSite ||
-        "sitio ligero conectado a WhatsApp y redes sociales",
-      pitchAngle:
-        candidate.pitchAngle ||
-        "dar una imagen mas seria y captar solicitudes directas",
-    };
-  }
-
-  return {
-    opportunity:
-      candidate.opportunity ||
-      "su sitio actual puede modernizarse para convertir mejor las visitas",
-    recommendedSite:
-      candidate.recommendedSite ||
-      "sitio actualizado con llamadas a la accion y formularios claros",
-    pitchAngle:
-      candidate.pitchAngle ||
-      "mejorar conversion y confianza con una web mas clara",
-  };
-}
-
-function scoreCandidate(candidate) {
-  const city = normalizeName(candidate.city);
-  const type = normalizeName(candidate.type);
-  const websiteSignal = inferWebsiteSignal(candidate);
-  let score = 0;
-
-  if (city === "merida") {
-    score += 36;
-  } else if (city === "villahermosa") {
-    score += 30;
-  } else if (city === "ciudad de mexico" || city === "cdmx") {
-    score += 24;
-  } else {
-    score -= 20;
-  }
-
-  if (type === "inmobiliaria") {
-    score += 34;
-  } else if (type === "restaurante") {
-    score += 30;
-  } else if (type === "clinica") {
-    score += 24;
-  } else {
-    score += 16;
-  }
-
-  if (websiteSignal === "sin-sitio") {
-    score += 30;
-  } else if (websiteSignal === "solo-redes") {
-    score += 26;
-  } else if (websiteSignal === "sitio-antiguo") {
-    score += 20;
-  } else if (websiteSignal === "sitio-basico") {
-    score += 16;
-  }
-
-  if (normalizeEmail(candidate.email)) {
-    score += 8;
-  }
-
-  if (normalizePhone(candidate.phone)) {
-    score += 5;
-  }
-
-  if (candidate.rating) {
-    score += 3;
-  }
-
-  return score;
-}
-
-function enrichCandidate(candidate, providerName) {
-  const timestamp = new Date().toISOString();
-  const derived = buildOpportunity(candidate);
-
-  return {
-    name: String(candidate.name || "").trim(),
-    contactName: String(candidate.contactName || "").trim(),
-    city: toDisplayCity(candidate.city),
-    email: normalizeEmail(candidate.email) || "",
-    phone: normalizePhone(candidate.phone) || "",
-    type: String(candidate.type || "Negocio local").trim(),
-    website: String(candidate.website || "").trim(),
-    rating: candidate.rating ? String(candidate.rating).trim() : "",
-    opportunity: derived.opportunity,
-    recommendedSite: derived.recommendedSite,
-    pitchAngle: derived.pitchAngle,
-    status: "pending",
-    source: String(candidate.source || providerName).trim(),
-    createdAt: timestamp,
-    lastCheckedAt: timestamp,
-  };
-}
-
-function selectRequiredProspects(scoredCandidates) {
-  const selected = [];
-
-  for (const requiredType of REQUIRED_TYPES) {
-    const match = scoredCandidates.find((item) => {
-      if (selected.includes(item)) {
-        return false;
-      }
-
-      return normalizeName(item.prospect.type) === normalizeName(requiredType);
-    });
-
-    if (!match) {
-      throw new Error(
-        `No se encontro un prospecto unico para la categoria requerida: ${requiredType}`
-      );
-    }
-
-    selected.push(match);
-  }
-
-  for (const item of scoredCandidates) {
-    if (selected.length >= DESIRED_PROSPECT_COUNT) {
-      break;
-    }
-
-    if (!selected.includes(item)) {
-      selected.push(item);
-    }
-  }
-
-  if (selected.length < DESIRED_PROSPECT_COUNT) {
-    throw new Error(
-      `Solo se pudieron seleccionar ${selected.length} prospectos unicos.`
-    );
-  }
-
-  return selected.map((item) => item.prospect);
-}
 
 function getCliArgValue(flagName) {
   const prefix = `${flagName}=`;
@@ -295,15 +91,98 @@ function getCliArgValue(flagName) {
   return found ? found.slice(prefix.length) : "";
 }
 
+function getConfiguredProviders() {
+  const cliProviders = getCliArgValue("--provider");
+  const configured = (cliProviders || process.env.LEADS_PROVIDER || "googlePlaces")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  return configured.length ? configured : ["googlePlaces"];
+}
+
+function buildOpportunity(prospect) {
+  const type = normalizeName(prospect.type);
+  const websiteSignal = inferWebsiteSignal(prospect);
+
+  if (type === "inmobiliaria") {
+    return {
+      opportunity:
+        websiteSignal === "missing"
+          ? "no tienen sitio propio para captar compradores y vendedores"
+          : "su sitio actual puede captar mas leads de propiedades",
+      recommendedSite: "portal inmobiliario con catalogo, filtros y formularios",
+      pitchAngle: "generar mas consultas calificadas de propiedades",
+    };
+  }
+
+  if (type === "restaurante") {
+    return {
+      opportunity:
+        websiteSignal === "missing" || websiteSignal === "social-only"
+          ? "dependen de Google y redes para reservas o pedidos"
+          : "su sitio actual puede convertir mejor visitas en reservas",
+      recommendedSite: "sitio con menu, reservas, mapa y CTA a WhatsApp",
+      pitchAngle: "captar reservas directas sin depender solo de redes",
+    };
+  }
+
+  if (type === "clinica") {
+    return {
+      opportunity:
+        websiteSignal === "missing"
+          ? "no tienen un sitio claro para captar citas y transmitir confianza"
+          : "pueden convertir mejor las busquedas locales en citas",
+      recommendedSite: "sitio medico con servicios, doctores y solicitud de citas",
+      pitchAngle: "generar mas citas desde busquedas locales de alta intencion",
+    };
+  }
+
+  return {
+    opportunity:
+      websiteSignal === "missing"
+        ? "no cuentan con un sitio propio para generar confianza y contactos"
+        : "su presencia digital puede modernizarse para convertir mejor",
+    recommendedSite: "sitio de presentacion con servicios, testimonios y contacto",
+    pitchAngle: "verse mas profesionales y captar solicitudes directas",
+  };
+}
+
+function normalizeProspect(rawProspect) {
+  const timestamp = new Date().toISOString();
+  const derived = buildOpportunity(rawProspect);
+
+  return {
+    name: String(rawProspect.name || "").trim(),
+    contactName: String(rawProspect.contactName || "").trim(),
+    city: String(rawProspect.city || "").trim(),
+    email: normalizeEmail(rawProspect.email) || "",
+    phone: normalizePhone(rawProspect.phone) || "",
+    type: String(rawProspect.type || "Negocio local").trim(),
+    website: String(rawProspect.website || "").trim(),
+    rating: rawProspect.rating ? String(rawProspect.rating).trim() : "",
+    mapsUrl: String(rawProspect.mapsUrl || rawProspect.googleMapsUri || "").trim(),
+    opportunity: rawProspect.opportunity || derived.opportunity,
+    recommendedSite: rawProspect.recommendedSite || derived.recommendedSite,
+    pitchAngle: rawProspect.pitchAngle || derived.pitchAngle,
+    status: "pending",
+    source: String(rawProspect.source || "google-places").trim(),
+    createdAt: rawProspect.createdAt || timestamp,
+    lastCheckedAt: rawProspect.lastCheckedAt || timestamp,
+    businessStatus: String(rawProspect.businessStatus || "").trim(),
+  };
+}
+
 function getProviderOptions(existingRecords) {
   const promptPath = getCliArgValue("--prompt");
   const responsePath = getCliArgValue("--response");
 
   return {
-    cities: TARGET_CITIES,
+    searches: SEARCHES,
     desiredCount: DESIRED_PROSPECT_COUNT,
     requiredTypes: REQUIRED_TYPES,
     existingRecords,
+    cities: Array.from(new Set(SEARCHES.map((search) => search.city))),
     promptPath: promptPath || undefined,
     responsePath: responsePath || undefined,
   };
@@ -322,18 +201,149 @@ async function fetchCandidates(providerNames, providerOptions) {
       continue;
     }
 
-    const providerResults = await provider.searchBusinesses(providerOptions);
-
-    console.log(
-      `[generateProspects] ${providerName}: ${providerResults.length} candidatos.`
-    );
-
-    for (const candidate of providerResults) {
-      allCandidates.push(enrichCandidate(candidate, providerName));
-    }
+    const results = await provider.searchBusinesses(providerOptions);
+    console.log(`[generateProspects] ${providerName}: ${results.length} candidatos.`);
+    allCandidates.push(...results.map(normalizeProspect));
   }
 
   return allCandidates;
+}
+
+async function enrichProspectEmail(prospect) {
+  const email = prospect.website
+    ? await emailFinderProvider.findEmailFromWebsite(prospect.website)
+    : "";
+
+  return {
+    ...prospect,
+    email: normalizeEmail(email || prospect.email) || "",
+    lastCheckedAt: new Date().toISOString(),
+  };
+}
+
+function ensureRequiredTypes(prospects) {
+  for (const type of REQUIRED_TYPES) {
+    const exists = prospects.some(
+      (prospect) => normalizeName(prospect.type) === normalizeName(type)
+    );
+
+    if (!exists) {
+      throw new Error(`No se pudo conservar un prospecto final de tipo ${type}.`);
+    }
+  }
+}
+
+function buildSelectedOrder(scoredCandidates) {
+  const ordered = [];
+
+  for (const requiredType of REQUIRED_TYPES) {
+    const match = scoredCandidates.find((item) => {
+      if (ordered.includes(item)) {
+        return false;
+      }
+
+      return normalizeName(item.prospect.type) === normalizeName(requiredType);
+    });
+
+    if (!match) {
+      throw new Error(
+        `No se encontro un prospecto unico para la categoria requerida: ${requiredType}`
+      );
+    }
+
+    ordered.push(match);
+  }
+
+  for (const item of scoredCandidates) {
+    if (!ordered.includes(item)) {
+      ordered.push(item);
+    }
+  }
+
+  return ordered;
+}
+
+function pickProspectByType(candidates, type, selected) {
+  return candidates.find((candidate) => {
+    if (selected.includes(candidate)) {
+      return false;
+    }
+
+    return normalizeName(candidate.type) === normalizeName(type);
+  });
+}
+
+function selectFinalProspects(candidates) {
+  const selected = [];
+
+  for (const requiredType of REQUIRED_TYPES) {
+    const match = pickProspectByType(candidates, requiredType, selected);
+
+    if (!match) {
+      throw new Error(
+        `No se encontro un prospecto final con email para la categoria requerida: ${requiredType}.`
+      );
+    }
+
+    selected.push(match);
+  }
+
+  for (const candidate of candidates) {
+    if (selected.length >= DESIRED_PROSPECT_COUNT) {
+      break;
+    }
+
+    if (!selected.includes(candidate)) {
+      selected.push(candidate);
+    }
+  }
+
+  if (selected.length < DESIRED_PROSPECT_COUNT) {
+    throw new Error(
+      `Despues del enriquecimiento solo quedaron ${selected.length} prospectos unicos con email.`
+    );
+  }
+
+  return selected;
+}
+
+async function buildFinalProspects(scoredCandidates, state) {
+  const eligibleProspects = [];
+  let enrichmentDuplicates = 0;
+  let prospectsWithoutEmail = 0;
+  const ordered = buildSelectedOrder(scoredCandidates);
+
+  for (const item of ordered) {
+    const enriched = await enrichProspectEmail(item.prospect);
+
+    if (REQUIRE_EMAIL_FOR_FINAL_PROSPECTS && !normalizeEmail(enriched.email)) {
+      prospectsWithoutEmail += 1;
+      continue;
+    }
+
+    const duplicate = isDuplicateProspect(
+      enriched,
+      [...state.prospects, ...eligibleProspects],
+      state.sentLog,
+      state.contactedProspects
+    );
+
+    if (duplicate) {
+      enrichmentDuplicates += 1;
+      continue;
+    }
+
+    eligibleProspects.push(enriched);
+  }
+
+  const finalProspects = selectFinalProspects(eligibleProspects);
+  ensureRequiredTypes(finalProspects);
+
+  return {
+    finalProspects,
+    enrichmentDuplicates,
+    prospectsWithoutEmail,
+  };
 }
 
 async function generateProspects() {
@@ -341,36 +351,20 @@ async function generateProspects() {
 
   const providerNames = getConfiguredProviders();
   const state = loadCrmState();
-  let contactedProspects = syncContactedProspects(
-    state.contactedProspects,
-    state.prospects
-  );
+  const providerOptions = getProviderOptions([
+    ...state.records,
+  ]);
 
-  const existingRecords = [
-    ...state.prospects,
-    ...contactedProspects,
-    ...state.sentLog,
-  ];
-
-  const foundCandidates = await fetchCandidates(
-    providerNames,
-    getProviderOptions(existingRecords)
-  );
-  const cityFilteredCandidates = foundCandidates.filter((candidate) =>
-    TARGET_CITIES.some(
-      (city) => normalizeName(city) === normalizeName(candidate.city)
-    )
-  );
-
+  const rawCandidates = await fetchCandidates(providerNames, providerOptions);
   const { uniqueProspects, duplicates } = filterUniqueProspects(
-    cityFilteredCandidates,
-    existingRecords
+    rawCandidates,
+    state.records
   );
 
   const scoredCandidates = uniqueProspects
     .map((prospect) => ({
       prospect,
-      score: scoreCandidate(prospect),
+      score: scoreProspect(prospect),
     }))
     .sort((left, right) => right.score - left.score);
 
@@ -380,31 +374,38 @@ async function generateProspects() {
     );
   }
 
-  const selectedProspects = selectRequiredProspects(scoredCandidates);
-  const nextProspects = [...state.prospects, ...selectedProspects];
-
-  for (const prospect of selectedProspects) {
-    contactedProspects = upsertContactedProspect(contactedProspects, prospect, {
-      status: "pending",
-      at: prospect.createdAt,
-      note: "Prospect generated by generateProspects.js",
-    }).list;
-  }
-
-  saveProspects(nextProspects);
-  saveContactedProspects(contactedProspects);
-
-  console.log(`Prospectos encontrados: ${foundCandidates.length}`);
-  console.log(`Duplicados filtrados: ${duplicates.length}`);
-  console.log(`Prospectos nuevos guardados: ${selectedProspects.length}`);
-  console.log(
-    `[generateProspects] Providers usados: ${providerNames.join(", ")}`
+  const {
+    finalProspects,
+    enrichmentDuplicates,
+    prospectsWithoutEmail,
+  } = await buildFinalProspects(
+    scoredCandidates,
+    {
+      prospects: state.records,
+      sentLog: [],
+      contactedProspects: [],
+    }
   );
 
+  const nextState = addGeneratedRecords(state.records, state.history, finalProspects);
+  saveCrmState(nextState.records, nextState.history);
+
+  console.log(`Busquedas ejecutadas: ${SEARCHES.length}`);
+  console.log(`Resultados totales encontrados: ${rawCandidates.length}`);
+  console.log(`Duplicados filtrados: ${duplicates.length + enrichmentDuplicates}`);
+  console.log(`Prospectos sin email descartados: ${prospectsWithoutEmail}`);
+  console.log(
+    `Prospectos con email: ${finalProspects.filter((prospect) => prospect.email).length}`
+  );
+  console.log(`Prospectos finales guardados: ${finalProspects.length}`);
+
   return {
-    foundCandidates: foundCandidates.length,
-    duplicatesFiltered: duplicates.length,
-    savedProspects: selectedProspects.length,
+    searchesExecuted: SEARCHES.length,
+    totalFound: rawCandidates.length,
+    duplicatesFiltered: duplicates.length + enrichmentDuplicates,
+    withoutEmailDiscarded: prospectsWithoutEmail,
+    withEmail: finalProspects.filter((prospect) => prospect.email).length,
+    savedProspects: finalProspects.length,
   };
 }
 

@@ -1,10 +1,15 @@
 {
   "name": "aionsite-leads",
-  "version": "1.2.0",
+  "version": "1.4.0",
   "description": "leads to get more clients",
+  "private": true,
   "main": "index.js",
   "scripts": {
+    "dev": "next dev -p 2692",
+    "build": "next build",
+    "start": "next start",
     "generate:chat": "node scripts/generateProspects.js --provider=chat",
+    "generate:google": "node scripts/generateProspects.js --provider=googlePlaces",
     "generate:prospects": "node scripts/generateProspects.js",
     "send:emails": "node scripts/sendEmails.js",
     "schedule": "node scripts/scheduler.js",
@@ -14,9 +19,16 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "csv-writer": "^1.6.0",
     "dotenv": "^17.3.1",
+    "next": "^16.1.6",
     "node-cron": "^4.2.1",
-    "nodemailer": "^8.0.1"
+    "nodemailer": "^8.0.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "typescript": "^5.9.3"
   }
 }
