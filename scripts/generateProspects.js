@@ -14,19 +14,22 @@ const {
 const mockProvider = require("../providers/mockProvider");
 const googleMapsProvider = require("../providers/googleMapsProvider");
 const webSearchProvider = require("../providers/webSearchProvider");
+const chatProvider = require("../providers/chatProvider");
 
 const DESIRED_PROSPECT_COUNT = 6;
 const TARGET_CITIES = ["Merida", "Villahermosa", "Ciudad de Mexico"];
 const REQUIRED_TYPES = ["Inmobiliaria", "Restaurante"];
 
 const providers = {
+  chat: chatProvider,
   mock: mockProvider,
   googleMaps: googleMapsProvider,
   webSearch: webSearchProvider,
 };
 
 function getConfiguredProviders() {
-  const configured = (process.env.LEADS_PROVIDER || "mock")
+  const cliProviders = getCliArgValue("--provider");
+  const configured = (cliProviders || process.env.LEADS_PROVIDER || "mock")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
@@ -286,7 +289,27 @@ function selectRequiredProspects(scoredCandidates) {
   return selected.map((item) => item.prospect);
 }
 
-async function fetchCandidates(providerNames) {
+function getCliArgValue(flagName) {
+  const prefix = `${flagName}=`;
+  const found = process.argv.find((item) => item.startsWith(prefix));
+  return found ? found.slice(prefix.length) : "";
+}
+
+function getProviderOptions(existingRecords) {
+  const promptPath = getCliArgValue("--prompt");
+  const responsePath = getCliArgValue("--response");
+
+  return {
+    cities: TARGET_CITIES,
+    desiredCount: DESIRED_PROSPECT_COUNT,
+    requiredTypes: REQUIRED_TYPES,
+    existingRecords,
+    promptPath: promptPath || undefined,
+    responsePath: responsePath || undefined,
+  };
+}
+
+async function fetchCandidates(providerNames, providerOptions) {
   const allCandidates = [];
 
   for (const providerName of providerNames) {
@@ -299,10 +322,7 @@ async function fetchCandidates(providerNames) {
       continue;
     }
 
-    const providerResults = await provider.searchBusinesses({
-      cities: TARGET_CITIES,
-      desiredCount: DESIRED_PROSPECT_COUNT,
-    });
+    const providerResults = await provider.searchBusinesses(providerOptions);
 
     console.log(
       `[generateProspects] ${providerName}: ${providerResults.length} candidatos.`
@@ -332,7 +352,10 @@ async function generateProspects() {
     ...state.sentLog,
   ];
 
-  const foundCandidates = await fetchCandidates(providerNames);
+  const foundCandidates = await fetchCandidates(
+    providerNames,
+    getProviderOptions(existingRecords)
+  );
   const cityFilteredCandidates = foundCandidates.filter((candidate) =>
     TARGET_CITIES.some(
       (city) => normalizeName(city) === normalizeName(candidate.city)
