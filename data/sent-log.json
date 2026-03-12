@@ -1,0 +1,80 @@
+[
+  {
+    "name": "Los Almendros Restaurante",
+    "city": "Mérida",
+    "email": "paracontactarnos@losalmendros.com.mx",
+    "phone": "9999421111",
+    "type": "Restaurante",
+    "status": "sent",
+    "source": "",
+    "messageId": "<f8ffedcc-3a31-a616-baac-1c151a0b1f3a@aionsite.com.mx>",
+    "error": "",
+    "createdAt": "2026-03-12T17:50:52.336Z",
+    "eventAt": "2026-03-12T17:50:52.336Z"
+  },
+  {
+    "name": "K'u'uk Restaurante",
+    "city": "Mérida",
+    "email": "reservas@kuukrestaurant.com",
+    "phone": "9999443377",
+    "type": "Restaurante",
+    "status": "sent",
+    "source": "",
+    "messageId": "<f6d00af6-8439-b862-6605-8945f6908594@aionsite.com.mx>",
+    "error": "",
+    "createdAt": "2026-03-12T17:50:57.091Z",
+    "eventAt": "2026-03-12T17:50:57.091Z"
+  },
+  {
+    "name": "Los Jaroyucas Restaurante",
+    "city": "Mérida",
+    "email": "altepetl@hotmail.com",
+    "phone": "9211343558",
+    "type": "Restaurante",
+    "status": "sent",
+    "source": "",
+    "messageId": "<975d2183-6ed6-a76e-8b31-0f41281fe839@aionsite.com.mx>",
+    "error": "",
+    "createdAt": "2026-03-12T17:51:01.319Z",
+    "eventAt": "2026-03-12T17:51:01.319Z"
+  },
+  {
+    "name": "Yucatan Real Estate Group",
+    "city": "Mérida",
+    "email": "info@yucatanrealestategroup.com",
+    "phone": "9997001820",
+    "type": "Inmobiliaria",
+    "status": "sent",
+    "source": "",
+    "messageId": "<9514b705-4f43-3afd-5404-0c0a866ab13b@aionsite.com.mx>",
+    "error": "",
+    "createdAt": "2026-03-12T17:51:03.862Z",
+    "eventAt": "2026-03-12T17:51:03.862Z"
+  },
+  {
+    "name": "Yucatan Properties",
+    "city": "Mérida",
+    "email": "mj@semerena.com",
+    "phone": "9999484444",
+    "type": "Inmobiliaria",
+    "status": "sent",
+    "source": "",
+    "messageId": "<6a02fdab-eb7b-ba7c-045d-7b68b17759c3@aionsite.com.mx>",
+    "error": "",
+    "createdAt": "2026-03-12T17:51:08.053Z",
+    "eventAt": "2026-03-12T17:51:08.053Z"
+  },
+  {
+    "name": "Yucatan Property Scouts",
+    "city": "Mérida",
+    "email": "info@yps.mx",
+    "phone": "9993816286",
+    "type": "Inmobiliaria",
+    "status": "sent",
+    "source": "",
+    "messageId": "<c7e5e394-977a-5158-075a-2f01138d2d96@aionsite.com.mx>",
+    "error": "",
+    "createdAt": "2026-03-12T17:51:12.809Z",
+    "eventAt": "2026-03-12T17:51:12.809Z"
+  }
+]

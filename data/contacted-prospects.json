@@ -11,10 +11,24 @@
     "opportunity": "su sitio puede optimizarse para reservas directas",
     "recommendedSite": "sitio web con menú y reservas",
     "pitchAngle": "captar más reservas desde Google",
-    "status": "sent",
-    "sentAt": "2026-03-12T17:50:52.336Z",
+    "source": "",
+    "createdAt": "2026-03-12T17:50:45.640Z",
     "lastCheckedAt": "2026-03-12T17:50:52.336Z",
-    "lastSendError": "",
+    "status": "sent",
+    "history": [
+      {
+        "status": "pending",
+        "at": "2026-03-12T17:50:45.640Z",
+        "note": "Prospect created"
+      },
+      {
+        "status": "sent",
+        "at": "2026-03-12T17:50:52.336Z",
+        "note": "Outbound email sent",
+        "messageId": "<f8ffedcc-3a31-a616-baac-1c151a0b1f3a@aionsite.com.mx>"
+      }
+    ],
+    "sentAt": "2026-03-12T17:50:52.336Z",
     "lastMessageId": "<f8ffedcc-3a31-a616-baac-1c151a0b1f3a@aionsite.com.mx>"
   },
   {
@@ -29,10 +43,24 @@
     "opportunity": "su sitio puede mejorar la conversión de reservas",
     "recommendedSite": "sitio con reservas online",
     "pitchAngle": "captar más reservas desde Google",
-    "status": "sent",
-    "sentAt": "2026-03-12T17:50:57.091Z",
+    "source": "",
+    "createdAt": "2026-03-12T17:50:45.642Z",
     "lastCheckedAt": "2026-03-12T17:50:57.091Z",
-    "lastSendError": "",
+    "status": "sent",
+    "history": [
+      {
+        "status": "pending",
+        "at": "2026-03-12T17:50:45.642Z",
+        "note": "Prospect created"
+      },
+      {
+        "status": "sent",
+        "at": "2026-03-12T17:50:57.091Z",
+        "note": "Outbound email sent",
+        "messageId": "<f6d00af6-8439-b862-6605-8945f6908594@aionsite.com.mx>"
+      }
+    ],
+    "sentAt": "2026-03-12T17:50:57.091Z",
     "lastMessageId": "<f6d00af6-8439-b862-6605-8945f6908594@aionsite.com.mx>"
   },
   {
@@ -47,10 +75,24 @@
     "opportunity": "su sitio es muy básico y podría mejorar su imagen",
     "recommendedSite": "sitio moderno con menú y galería",
     "pitchAngle": "mostrar mejor el restaurante",
-    "status": "sent",
-    "sentAt": "2026-03-12T17:51:01.319Z",
+    "source": "",
+    "createdAt": "2026-03-12T17:50:45.642Z",
     "lastCheckedAt": "2026-03-12T17:51:01.319Z",
-    "lastSendError": "",
+    "status": "sent",
+    "history": [
+      {
+        "status": "pending",
+        "at": "2026-03-12T17:50:45.642Z",
+        "note": "Prospect created"
+      },
+      {
+        "status": "sent",
+        "at": "2026-03-12T17:51:01.319Z",
+        "note": "Outbound email sent",
+        "messageId": "<975d2183-6ed6-a76e-8b31-0f41281fe839@aionsite.com.mx>"
+      }
+    ],
+    "sentAt": "2026-03-12T17:51:01.319Z",
     "lastMessageId": "<975d2183-6ed6-a76e-8b31-0f41281fe839@aionsite.com.mx>"
   },
   {
@@ -65,10 +107,24 @@
     "opportunity": "su sitio puede mejorar la captación de leads",
     "recommendedSite": "portal inmobiliario con catálogo",
     "pitchAngle": "generar más clientes para propiedades",
-    "status": "sent",
-    "sentAt": "2026-03-12T17:51:03.862Z",
+    "source": "",
+    "createdAt": "2026-03-12T17:50:45.642Z",
     "lastCheckedAt": "2026-03-12T17:51:03.862Z",
-    "lastSendError": "",
+    "status": "sent",
+    "history": [
+      {
+        "status": "pending",
+        "at": "2026-03-12T17:50:45.642Z",
+        "note": "Prospect created"
+      },
+      {
+        "status": "sent",
+        "at": "2026-03-12T17:51:03.862Z",
+        "note": "Outbound email sent",
+        "messageId": "<9514b705-4f43-3afd-5404-0c0a866ab13b@aionsite.com.mx>"
+      }
+    ],
+    "sentAt": "2026-03-12T17:51:03.862Z",
     "lastMessageId": "<9514b705-4f43-3afd-5404-0c0a866ab13b@aionsite.com.mx>"
   },
   {
@@ -83,10 +139,24 @@
     "opportunity": "pueden mejorar UX para captación de leads",
     "recommendedSite": "portal inmobiliario optimizado",
     "pitchAngle": "generar más consultas de compradores",
-    "status": "sent",
-    "sentAt": "2026-03-12T17:51:08.053Z",
+    "source": "",
+    "createdAt": "2026-03-12T17:50:45.642Z",
     "lastCheckedAt": "2026-03-12T17:51:08.053Z",
-    "lastSendError": "",
+    "status": "sent",
+    "history": [
+      {
+        "status": "pending",
+        "at": "2026-03-12T17:50:45.642Z",
+        "note": "Prospect created"
+      },
+      {
+        "status": "sent",
+        "at": "2026-03-12T17:51:08.053Z",
+        "note": "Outbound email sent",
+        "messageId": "<6a02fdab-eb7b-ba7c-045d-7b68b17759c3@aionsite.com.mx>"
+      }
+    ],
+    "sentAt": "2026-03-12T17:51:08.053Z",
     "lastMessageId": "<6a02fdab-eb7b-ba7c-045d-7b68b17759c3@aionsite.com.mx>"
   },
   {
@@ -101,10 +171,24 @@
     "opportunity": "su sitio puede mejorar SEO y captación de leads",
     "recommendedSite": "portal inmobiliario optimizado",
     "pitchAngle": "generar más leads inmobiliarios",
-    "status": "sent",
-    "sentAt": "2026-03-12T17:51:12.809Z",
+    "source": "",
+    "createdAt": "2026-03-12T17:50:45.642Z",
     "lastCheckedAt": "2026-03-12T17:51:12.809Z",
-    "lastSendError": "",
+    "status": "sent",
+    "history": [
+      {
+        "status": "pending",
+        "at": "2026-03-12T17:50:45.642Z",
+        "note": "Prospect created"
+      },
+      {
+        "status": "sent",
+        "at": "2026-03-12T17:51:12.809Z",
+        "note": "Outbound email sent",
+        "messageId": "<c7e5e394-977a-5158-075a-2f01138d2d96@aionsite.com.mx>"
+      }
+    ],
+    "sentAt": "2026-03-12T17:51:12.809Z",
     "lastMessageId": "<c7e5e394-977a-5158-075a-2f01138d2d96@aionsite.com.mx>"
   }
 ]

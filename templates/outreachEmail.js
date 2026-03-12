@@ -4,40 +4,44 @@ function buildEmail(prospect) {
     : `Hola equipo de ${prospect.name},`;
 
   const websiteLine = prospect.website
-    ? `También vi que su sitio actual podría mejorarse para verse más moderno y convertir mejor.`
-    : `Noté que no cuentan con un sitio web claro para mostrar su negocio y generar más confianza.`;
+    ? "Revise su presencia digital y note que su sitio actual puede verse mas solido y convertir mejor."
+    : "Revise su presencia digital y note que todavia no cuentan con un sitio propio claro para presentar el negocio.";
 
   const ratingLine = prospect.rating
-    ? `Además, vi que tienen una calificación de ${prospect.rating} en Google, lo cual es una muy buena base para aprovechar mejor su presencia online.`
+    ? `Tambien vi que tienen una calificacion de ${prospect.rating}, lo cual es una buena base para aprovechar mejor su visibilidad online.`
     : "";
 
   const typeLine = prospect.type
-    ? `En negocios como ${prospect.type.toLowerCase()}, una web bien hecha ayuda mucho a ${prospect.pitchAngle || "atraer más clientes"}.`
+    ? `En negocios como ${prospect.type.toLowerCase()}, una web bien hecha ayuda mucho a ${
+        prospect.pitchAngle || "atraer mas clientes"
+      }.`
     : "";
 
   const recommendationLine = prospect.recommendedSite
-    ? `Una opción ideal para ustedes sería un ${prospect.recommendedSite}.`
+    ? `Para ustedes tendria sentido un ${prospect.recommendedSite}.`
     : "";
 
-  const subject = `Idea rápida para ${prospect.name}`;
+  const subject = `Idea rapida para ${prospect.name}`;
 
   const text = `${greeting}
 
-Estaba revisando negocios en Google Maps y encontré ${prospect.name} en ${prospect.city || "su zona"}.
+Estaba revisando negocios locales en Google y encontre ${prospect.name} en ${
+    prospect.city || "su zona"
+  }.
 
 ${websiteLine}
 ${ratingLine}
 ${typeLine}
 
-En su caso, veo una oportunidad clara porque ${prospect.opportunity}.
+En su caso veo una oportunidad clara porque ${prospect.opportunity}.
 
 ${recommendationLine}
 
-Yo me dedico a crear sitios web modernos para negocios locales en México, enfocados en verse profesionales, cargar rápido y generar más contactos.
+En Aionsite desarrollamos sitios web modernos para negocios locales en Mexico, enfocados en transmitir confianza, cargar rapido y generar mas contactos.
 
-Si quieren, puedo enviarles una propuesta visual rápida sin costo para mostrarles cómo podría verse su sitio.
+Si quieren, puedo compartirles una propuesta visual rapida sin costo para mostrarles como podria verse su sitio.
 
-¿Les interesaría?
+Les interesaria?
 
 Saludos,
 Felipe

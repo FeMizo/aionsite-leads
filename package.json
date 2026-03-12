@@ -1,9 +1,12 @@
 {
   "name": "aionsite-leads",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "leads to get more clients",
   "main": "index.js",
   "scripts": {
+    "generate:prospects": "node scripts/generateProspects.js",
+    "send:emails": "node scripts/sendEmails.js",
+    "schedule": "node scripts/scheduler.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
