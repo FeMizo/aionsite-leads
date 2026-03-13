@@ -430,5 +430,347 @@
       "createdAt": "2026-03-12T18:57:09.875Z",
       "messageId": ""
     }
+  },
+  {
+    "id": "c580f5c7-a77c-45b9-80b4-123ab0b4d5dd",
+    "recordId": "5d061ad4-896b-46b9-ae5e-b0be451e45e2",
+    "businessName": "Grupo ABBA Inmobiliario & Construcciones",
+    "fromStatus": "prospect",
+    "toStatus": "deleted",
+    "action": "deleted",
+    "at": "2026-03-13T02:42:07.800Z",
+    "note": "Record deleted from active flow",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Villahermosa",
+      "email": "",
+      "phone": "9933618385",
+      "category": "Inmobiliaria",
+      "createdAt": "2026-03-12T18:57:09.875Z"
+    }
+  },
+  {
+    "id": "7e9b4c6e-9fde-4dbe-adaf-293c2c897e75",
+    "recordId": "2f01a744-6258-47d6-b1df-06973274aacc",
+    "businessName": "Restaurant Las Vigas Mérida",
+    "fromStatus": "prospect",
+    "toStatus": "deleted",
+    "action": "deleted",
+    "at": "2026-03-13T02:42:07.800Z",
+    "note": "Record deleted from active flow",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Merida",
+      "email": "",
+      "phone": "9999233814",
+      "category": "Restaurante",
+      "createdAt": "2026-03-12T18:57:09.874Z"
+    }
+  },
+  {
+    "id": "5e78294d-5ca4-4f33-979f-5e2dd0604e76",
+    "recordId": "8bcffca7-53d3-46a6-8428-9f57dfdd8a93",
+    "businessName": "GM INMOBILIARIA VILLAHERMOSA BIENES RAICES",
+    "fromStatus": "prospect",
+    "toStatus": "deleted",
+    "action": "deleted",
+    "at": "2026-03-13T02:42:07.800Z",
+    "note": "Record deleted from active flow",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Villahermosa",
+      "email": "",
+      "phone": "9933007995",
+      "category": "Inmobiliaria",
+      "createdAt": "2026-03-12T18:57:09.875Z"
+    }
+  },
+  {
+    "id": "42d5d46c-f2e5-4ed1-8b9d-5c37f93e552f",
+    "recordId": "abedc627-758f-4cd1-90a3-c84a85432806",
+    "businessName": "La Terraza Amarilla",
+    "fromStatus": "prospect",
+    "toStatus": "deleted",
+    "action": "deleted",
+    "at": "2026-03-13T02:42:07.801Z",
+    "note": "Record deleted from active flow",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Merida",
+      "email": "",
+      "phone": "9992005904",
+      "category": "Restaurante",
+      "createdAt": "2026-03-12T18:57:09.874Z"
+    }
+  },
+  {
+    "id": "56e70f2a-2303-4679-a4b6-f246f7b001a4",
+    "recordId": "81680948-10ab-4fe0-afe2-e7982960a60b",
+    "businessName": "Restaurante El Edén",
+    "fromStatus": "prospect",
+    "toStatus": "deleted",
+    "action": "deleted",
+    "at": "2026-03-13T02:42:07.801Z",
+    "note": "Record deleted from active flow",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Villahermosa",
+      "email": "",
+      "phone": "9931537861",
+      "category": "Restaurante",
+      "createdAt": "2026-03-12T18:57:09.875Z"
+    }
+  },
+  {
+    "id": "d6c4621b-3bf4-4025-b0d3-308783dca988",
+    "recordId": "e30f4ca4-991c-49f7-99c1-58742dfd681d",
+    "businessName": "The 2nd Floor",
+    "fromStatus": "prospect",
+    "toStatus": "deleted",
+    "action": "deleted",
+    "at": "2026-03-13T02:42:07.801Z",
+    "note": "Record deleted from active flow",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Villahermosa",
+      "email": "",
+      "phone": "9931777827",
+      "category": "Restaurante",
+      "createdAt": "2026-03-12T18:57:09.875Z"
+    }
+  },
+  {
+    "id": "1aefb1d5-30b0-4138-b5e1-d6d3d5894e18",
+    "recordId": "9eb73baf-2eb4-4cf2-bd2f-dc53c62a6e15",
+    "businessName": "HABIB REALTORS INTEGRADORES DE SOLUCIONES INMOBILIARIAS",
+    "fromStatus": "",
+    "toStatus": "generated",
+    "action": "generated",
+    "at": "2026-03-13T02:44:33.156Z",
+    "note": "Prospect generated and queued for review",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Villahermosa",
+      "email": "info@habibrealtors.com",
+      "phone": "9935902498",
+      "category": "Inmobiliaria",
+      "createdAt": "2026-03-13T02:42:21.109Z"
+    }
+  },
+  {
+    "id": "d964f9ef-1a4b-4e7d-9e5c-42a1e4260791",
+    "recordId": "0a4db52b-f83a-4104-836f-0ed97a352026",
+    "businessName": "Micaela Mar & Leña",
+    "fromStatus": "",
+    "toStatus": "generated",
+    "action": "generated",
+    "at": "2026-03-13T02:44:33.156Z",
+    "note": "Prospect generated and queued for review",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Merida",
+      "email": "hola@restaurantemicaela.com",
+      "phone": "9995181702",
+      "category": "Restaurante",
+      "createdAt": "2026-03-13T02:42:21.108Z"
+    }
+  },
+  {
+    "id": "b68194ae-4042-4586-872a-bc3ff1137878",
+    "recordId": "4ef96576-2c28-4fa2-8ae9-f3f5b57a48b2",
+    "businessName": "Yucatán Premier",
+    "fromStatus": "",
+    "toStatus": "generated",
+    "action": "generated",
+    "at": "2026-03-13T02:44:33.156Z",
+    "note": "Prospect generated and queued for review",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Merida",
+      "email": "info@yucatanpremier.com",
+      "phone": "9999441214",
+      "category": "Inmobiliaria",
+      "createdAt": "2026-03-13T02:42:21.108Z"
+    }
+  },
+  {
+    "id": "e6eed244-83bb-450b-a23a-281fb6e24e36",
+    "recordId": "2a13e5ab-6ccb-4c26-8e63-a4401f272ae0",
+    "businessName": "Senda Bienes Raíces",
+    "fromStatus": "",
+    "toStatus": "generated",
+    "action": "generated",
+    "at": "2026-03-13T02:44:33.156Z",
+    "note": "Prospect generated and queued for review",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Merida",
+      "email": "contacto@sendabienesraices.com",
+      "phone": "9994866941",
+      "category": "Inmobiliaria",
+      "createdAt": "2026-03-13T02:42:21.108Z"
+    }
+  },
+  {
+    "id": "b90f3f7b-73ab-4306-90d2-ce1fd93572af",
+    "recordId": "8cef66f5-7e8e-4ea2-949c-0ff07786cad3",
+    "businessName": "FACTOR COMERCIAL INMOBILIARIA",
+    "fromStatus": "",
+    "toStatus": "generated",
+    "action": "generated",
+    "at": "2026-03-13T02:44:33.156Z",
+    "note": "Prospect generated and queued for review",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Merida",
+      "email": "meridayucatancasas@gmail.com",
+      "phone": "9991512851",
+      "category": "Inmobiliaria",
+      "createdAt": "2026-03-13T02:42:21.108Z"
+    }
+  },
+  {
+    "id": "d44f3819-e217-43b7-b5d0-54025de260bd",
+    "recordId": "38debcfe-372a-4d5b-8011-07e75dfcc32b",
+    "businessName": "BR Yucatán Bienes Raíces",
+    "fromStatus": "",
+    "toStatus": "generated",
+    "action": "generated",
+    "at": "2026-03-13T02:44:33.156Z",
+    "note": "Prospect generated and queued for review",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Merida",
+      "email": "info@bryucatan.com.mx",
+      "phone": "9991330980",
+      "category": "Inmobiliaria",
+      "createdAt": "2026-03-13T02:42:21.108Z"
+    }
+  },
+  {
+    "id": "8f3e08d8-e900-494c-acb4-2e586c0614e3",
+    "recordId": "9eb73baf-2eb4-4cf2-bd2f-dc53c62a6e15",
+    "businessName": "HABIB REALTORS INTEGRADORES DE SOLUCIONES INMOBILIARIAS",
+    "fromStatus": "generated",
+    "toStatus": "prospect",
+    "action": "moved_to_prospect",
+    "at": "2026-03-13T02:59:43.406Z",
+    "note": "Record moved to active prospects",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Villahermosa",
+      "email": "info@habibrealtors.com",
+      "phone": "9935902498",
+      "category": "Inmobiliaria",
+      "createdAt": "2026-03-13T02:42:21.109Z"
+    }
+  },
+  {
+    "id": "cdaec69c-3f25-4297-a3f2-aa8526a00810",
+    "recordId": "0a4db52b-f83a-4104-836f-0ed97a352026",
+    "businessName": "Micaela Mar & Leña",
+    "fromStatus": "generated",
+    "toStatus": "prospect",
+    "action": "moved_to_prospect",
+    "at": "2026-03-13T02:59:43.406Z",
+    "note": "Record moved to active prospects",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Merida",
+      "email": "hola@restaurantemicaela.com",
+      "phone": "9995181702",
+      "category": "Restaurante",
+      "createdAt": "2026-03-13T02:42:21.108Z"
+    }
+  },
+  {
+    "id": "0a39c8c9-2cdd-40d8-b702-ccd9d11fbf0d",
+    "recordId": "4ef96576-2c28-4fa2-8ae9-f3f5b57a48b2",
+    "businessName": "Yucatán Premier",
+    "fromStatus": "generated",
+    "toStatus": "prospect",
+    "action": "moved_to_prospect",
+    "at": "2026-03-13T02:59:43.406Z",
+    "note": "Record moved to active prospects",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Merida",
+      "email": "info@yucatanpremier.com",
+      "phone": "9999441214",
+      "category": "Inmobiliaria",
+      "createdAt": "2026-03-13T02:42:21.108Z"
+    }
+  },
+  {
+    "id": "2f550a32-62a3-4f06-9369-063daff1ebaf",
+    "recordId": "2a13e5ab-6ccb-4c26-8e63-a4401f272ae0",
+    "businessName": "Senda Bienes Raíces",
+    "fromStatus": "generated",
+    "toStatus": "prospect",
+    "action": "moved_to_prospect",
+    "at": "2026-03-13T02:59:43.406Z",
+    "note": "Record moved to active prospects",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Merida",
+      "email": "contacto@sendabienesraices.com",
+      "phone": "9994866941",
+      "category": "Inmobiliaria",
+      "createdAt": "2026-03-13T02:42:21.108Z"
+    }
+  },
+  {
+    "id": "e4af71ed-d20b-4be6-931a-4c9eec2fb387",
+    "recordId": "8cef66f5-7e8e-4ea2-949c-0ff07786cad3",
+    "businessName": "FACTOR COMERCIAL INMOBILIARIA",
+    "fromStatus": "generated",
+    "toStatus": "prospect",
+    "action": "moved_to_prospect",
+    "at": "2026-03-13T02:59:43.406Z",
+    "note": "Record moved to active prospects",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Merida",
+      "email": "meridayucatancasas@gmail.com",
+      "phone": "9991512851",
+      "category": "Inmobiliaria",
+      "createdAt": "2026-03-13T02:42:21.108Z"
+    }
+  },
+  {
+    "id": "ca918c2c-6b1a-4f98-b37b-d605a9eb1130",
+    "recordId": "38debcfe-372a-4d5b-8011-07e75dfcc32b",
+    "businessName": "BR Yucatán Bienes Raíces",
+    "fromStatus": "generated",
+    "toStatus": "prospect",
+    "action": "moved_to_prospect",
+    "at": "2026-03-13T02:59:43.406Z",
+    "note": "Record moved to active prospects",
+    "error": "",
+    "meta": {
+      "source": "google-places",
+      "city": "Merida",
+      "email": "info@bryucatan.com.mx",
+      "phone": "9991330980",
+      "category": "Inmobiliaria",
+      "createdAt": "2026-03-13T02:42:21.108Z"
+    }
   }
 ]
