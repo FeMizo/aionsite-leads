@@ -5,8 +5,8 @@ import "./globals.css";
 import { Navigation } from "@/components/crm/navigation";
 
 export const metadata: Metadata = {
-  title: "AionSite Leads CRM",
-  description: "Mini CRM interno para AionSite",
+  title: "AionSite Prospecting Dashboard",
+  description: "Prospecting dashboard con Vercel Functions y Postgres",
 };
 
 export default function RootLayout({
@@ -20,12 +20,12 @@ export default function RootLayout({
         <div className="app-shell">
           <aside className="app-sidebar">
             <div className="brand-block">
-              <span className="brand-block__eyebrow">AionSite CRM</span>
-              <Link href="/overview" className="brand-block__title">
+              <span className="brand-block__eyebrow">AionSite Prospecting</span>
+              <Link href="/dashboard" className="brand-block__title">
                 aionsite.com.mx
               </Link>
               <p>
-                Dashboard interno para prospectos, aprobacion comercial y envios.
+                Dashboard operativo para prospecting, corridas programadas y envios SMTP.
               </p>
             </div>
             <Navigation />

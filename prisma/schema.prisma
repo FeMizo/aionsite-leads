@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProspectStatus {
+  generated
+  prospect
+  contacted
+  failed
+  replied
+  closed
+  archived
+  deleted
+}
+
+model Prospect {
+  id               String         @id @default(cuid())
+  name             String
+  normalizedName   String
+  contactName      String         @default("")
+  city             String
+  email            String         @default("")
+  normalizedEmail  String         @default("")
+  phone            String         @default("")
+  normalizedPhone  String         @default("")
+  type             String
+  website          String         @default("")
+  rating           String         @default("")
+  mapsUrl          String         @default("")
+  opportunity      String         @default("")
+  recommendedSite  String         @default("")
+  pitchAngle       String         @default("")
+  status           ProspectStatus @default(generated)
+  source           String         @default("google-places")
+  createdAt        DateTime       @default(now())
+  lastCheckedAt    DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  businessStatus   String         @default("")
+  lastError        String         @default("")
+  lastMessageId    String         @default("")
+  runId            String?
+  run              Run?           @relation(fields: [runId], references: [id], onDelete: SetNull)
+  contactEvents    ContactEvent[]
+
+  @@index([status, createdAt])
+  @@index([runId])
+  @@index([normalizedEmail])
+  @@index([normalizedPhone])
+  @@index([normalizedName])
+}
+
+model ContactEvent {
+  id         String   @id @default(cuid())
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  eventType  String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([prospectId, createdAt])
+}
+
+model Run {
+  id                   String     @id @default(cuid())
+  source               String
+  searchesCount        Int
+  placesFound          Int
+  duplicatesFiltered   Int
+  emailsFound          Int
+  prospectsSaved       Int
+  googlePlacesRequests Int
+  websiteFetches       Int
+  status               String     @default("completed")
+  error                String?
+  createdAt            DateTime   @default(now())
+  prospects            Prospect[]
+
+  @@index([createdAt])
+}

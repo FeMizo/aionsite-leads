@@ -1,0 +1,106 @@
+import { prisma } from "@/lib/db";
+import type { DashboardData, DashboardProspect, DashboardRun } from "@/lib/types";
+
+function serializeProspect(prospect: {
+  id: string;
+  name: string;
+  contactName: string;
+  city: string;
+  email: string;
+  phone: string;
+  type: string;
+  website: string;
+  rating: string;
+  mapsUrl: string;
+  opportunity: string;
+  recommendedSite: string;
+  pitchAngle: string;
+  status: string;
+  source: string;
+  createdAt: Date;
+  lastCheckedAt: Date;
+  businessStatus: string;
+  lastError: string;
+  lastMessageId: string;
+}): DashboardProspect {
+  return {
+    ...prospect,
+    createdAt: prospect.createdAt.toISOString(),
+    lastCheckedAt: prospect.lastCheckedAt.toISOString(),
+  };
+}
+
+function serializeRun(run: {
+  id: string;
+  source: string;
+  searchesCount: number;
+  placesFound: number;
+  duplicatesFiltered: number;
+  emailsFound: number;
+  prospectsSaved: number;
+  googlePlacesRequests: number;
+  websiteFetches: number;
+  status: string;
+  error: string | null;
+  createdAt: Date;
+}): DashboardRun {
+  return {
+    ...run,
+    createdAt: run.createdAt.toISOString(),
+  };
+}
+
+export async function getDashboardData(): Promise<DashboardData> {
+  const [
+    generated,
+    prospects,
+    contacted,
+    runs,
+    generatedCount,
+    prospectsCount,
+    contactedCount,
+    failedCount,
+    runsCount,
+  ] = await Promise.all([
+    prisma.prospect.findMany({
+      where: { status: "generated" },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+    }),
+    prisma.prospect.findMany({
+      where: { status: { in: ["prospect", "failed"] } },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    }),
+    prisma.prospect.findMany({
+      where: { status: { in: ["contacted", "replied", "closed"] } },
+      orderBy: { lastCheckedAt: "desc" },
+      take: 20,
+    }),
+    prisma.run.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    }),
+    prisma.prospect.count({ where: { status: "generated" } }),
+    prisma.prospect.count({ where: { status: "prospect" } }),
+    prisma.prospect.count({
+      where: { status: { in: ["contacted", "replied", "closed"] } },
+    }),
+    prisma.prospect.count({ where: { status: "failed" } }),
+    prisma.run.count(),
+  ]);
+
+  return {
+    metrics: {
+      generated: generatedCount,
+      prospects: prospectsCount,
+      contacted: contactedCount,
+      failed: failedCount,
+      runs: runsCount,
+    },
+    generated: generated.map(serializeProspect),
+    prospects: prospects.map(serializeProspect),
+    contacted: contacted.map(serializeProspect),
+    runs: runs.map(serializeRun),
+  };
+}
