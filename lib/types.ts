@@ -84,6 +84,14 @@ export type DashboardRun = {
   createdAt: string;
 };
 
+export type DashboardActivityItem = {
+  at: string;
+  status?: string;
+  source?: string;
+  prospectName?: string;
+  email?: string;
+};
+
 export type DashboardData = {
   metrics: {
     generated: number;
@@ -94,6 +102,8 @@ export type DashboardData = {
   };
   crawlInProgress: boolean;
   activeRun: DashboardRun | null;
+  lastCrawl: DashboardActivityItem | null;
+  lastSend: DashboardActivityItem | null;
   generated: DashboardProspect[];
   prospects: DashboardProspect[];
   contacted: DashboardProspect[];

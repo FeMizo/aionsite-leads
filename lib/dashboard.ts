@@ -1,5 +1,10 @@
 import { getPrismaClient } from "@/lib/db";
-import type { DashboardData, DashboardProspect, DashboardRun } from "@/lib/types";
+import type {
+  DashboardActivityItem,
+  DashboardData,
+  DashboardProspect,
+  DashboardRun,
+} from "@/lib/types";
 
 function serializeProspect(prospect: {
   id: string;
@@ -50,6 +55,24 @@ function serializeRun(run: {
   };
 }
 
+function serializeActivityItem(item: {
+  createdAt: Date;
+  status?: string;
+  source?: string;
+  prospect?: {
+    name: string;
+    email: string;
+  };
+}): DashboardActivityItem {
+  return {
+    at: item.createdAt.toISOString(),
+    status: item.status,
+    source: item.source,
+    prospectName: item.prospect?.name || "",
+    email: item.prospect?.email || "",
+  };
+}
+
 export async function getDashboardData(): Promise<DashboardData> {
   const prisma = getPrismaClient();
   const [
@@ -63,6 +86,8 @@ export async function getDashboardData(): Promise<DashboardData> {
     failedCount,
     runsCount,
     activeRun,
+    lastRun,
+    lastSend,
   ] = await Promise.all([
     prisma.prospect.findMany({
       where: { status: "generated" },
@@ -94,6 +119,21 @@ export async function getDashboardData(): Promise<DashboardData> {
       where: { status: "running" },
       orderBy: { createdAt: "desc" },
     }),
+    prisma.run.findFirst({
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.contactEvent.findFirst({
+      where: { eventType: "send_success" },
+      orderBy: { createdAt: "desc" },
+      include: {
+        prospect: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+    }),
   ]);
 
   return {
@@ -106,6 +146,8 @@ export async function getDashboardData(): Promise<DashboardData> {
     },
     crawlInProgress: Boolean(activeRun),
     activeRun: activeRun ? serializeRun(activeRun) : null,
+    lastCrawl: lastRun ? serializeActivityItem(lastRun) : null,
+    lastSend: lastSend ? serializeActivityItem(lastSend) : null,
     generated: generated.map(serializeProspect),
     prospects: prospects.map(serializeProspect),
     contacted: contacted.map(serializeProspect),

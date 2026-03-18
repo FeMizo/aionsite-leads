@@ -465,6 +465,17 @@ code {
   border: 1px solid var(--border);
 }
 
+.activity-card {
+  background: linear-gradient(180deg, #f8fbfd 0%, #eef4f8 100%) !important;
+}
+
+.activity-card__value {
+  display: block;
+  margin: 0.35rem 0 0.45rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
 .settings-grid h3 {
   margin-top: 0;
 }

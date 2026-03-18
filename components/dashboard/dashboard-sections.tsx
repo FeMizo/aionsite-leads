@@ -172,6 +172,58 @@ export function DashboardMetricCards({ data }: { data: DashboardData }) {
   );
 }
 
+function formatActivityDate(value: string | undefined) {
+  if (!value) {
+    return "Sin registro";
+  }
+
+  return new Date(value).toLocaleString();
+}
+
+export function DashboardActivitySummary({ data }: { data: DashboardData }) {
+  const crawlLabel = data.crawlInProgress
+    ? "Crawl en progreso"
+    : data.lastCrawl?.status === "failed"
+      ? "Ultimo crawl con error"
+      : "Ultimo crawl";
+
+  return (
+    <section className="settings-grid">
+      <article className="activity-card">
+        <h3>{crawlLabel}</h3>
+        <p className="activity-card__value">{formatActivityDate(data.activeRun?.createdAt || data.lastCrawl?.at)}</p>
+        <p>
+          {data.activeRun
+            ? "La corrida actual sigue ejecutandose."
+            : data.lastCrawl
+              ? `${data.lastCrawl.source || "Pipeline"} · ${data.lastCrawl.status || "completed"}`
+              : "Todavia no hay corridas registradas."}
+        </p>
+      </article>
+      <article className="activity-card">
+        <h3>Ultimo envio</h3>
+        <p className="activity-card__value">{formatActivityDate(data.lastSend?.at)}</p>
+        <p>
+          {data.lastSend
+            ? `${data.lastSend.prospectName || "Prospecto"}${data.lastSend.email ? ` · ${data.lastSend.email}` : ""}`
+            : "Todavia no se ha enviado ningun correo."}
+        </p>
+      </article>
+      <article className="activity-card">
+        <h3>Estado operativo</h3>
+        <p className="activity-card__value">
+          {data.crawlInProgress ? "Procesando" : "Disponible"}
+        </p>
+        <p>
+          {data.crawlInProgress
+            ? "El dashboard se refresca automaticamente mientras termina el crawl."
+            : "Puedes lanzar un crawl manual o continuar con envios y seguimiento."}
+        </p>
+      </article>
+    </section>
+  );
+}
+
 export function DashboardSetupPanel({ setup }: { setup: DashboardSetupState }) {
   if (setup.googlePlacesConfigured && setup.smtpConfigured) {
     return null;
@@ -228,6 +280,7 @@ export function DashboardOverview({
       />
 
       <DashboardMetricCards data={data} />
+      <DashboardActivitySummary data={data} />
       <DashboardSetupPanel setup={setup} />
       <DashboardActions
         generatedCount={data.metrics.generated}
