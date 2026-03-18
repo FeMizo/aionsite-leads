@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { Prisma } from "@/generated/prisma";
-import { prisma } from "@/lib/db";
+import { getPrismaClient } from "@/lib/db";
 import { normalizeEmail, normalizeName, normalizePhone } from "@/lib/normalizers";
 
 type LegacyRecord = {
@@ -78,6 +78,7 @@ function toProspectStatus(status: string | undefined) {
 }
 
 export async function importLegacyJsonData(options: { force?: boolean } = {}) {
+  const prisma = getPrismaClient();
   const prospectsInDb = await prisma.prospect.count();
 
   if (prospectsInDb > 0 && !options.force) {

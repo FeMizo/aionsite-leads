@@ -1,6 +1,6 @@
 import type { Prisma, Prospect, ProspectStatus } from "@/generated/prisma";
 import nodemailer from "nodemailer";
-import { prisma } from "@/lib/db";
+import { getPrismaClient } from "@/lib/db";
 import { findDuplicate } from "@/lib/dedupe";
 import { buildEmail } from "@/lib/email-template";
 import { normalizeEmail } from "@/lib/normalizers";
@@ -62,6 +62,7 @@ async function updateProspectWithEvent(params: {
   lastMessageId?: string;
   sentAt?: Date;
 }) {
+  const prisma = getPrismaClient();
   const timestamp = params.sentAt || new Date();
 
   await prisma.$transaction(async (tx) => {
@@ -91,6 +92,7 @@ async function updateProspectWithEvent(params: {
 }
 
 export async function sendProspectEmails(options: { prospectIds?: string[] } = {}) {
+  const prisma = getPrismaClient();
   console.log("[send] Iniciando envio...");
 
   const targetIds = Array.isArray(options.prospectIds) ? options.prospectIds : [];

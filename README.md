@@ -38,6 +38,12 @@ FROM_EMAIL=contacto@aionsite.com.mx
 CRON_SECRET=
 ```
 
+Dependencias por modulo:
+
+- `DATABASE_URL`: obligatorio para leer el dashboard, APIs CRUD, seed y migraciones.
+- `GOOGLE_MAPS_API_KEY`: obligatorio para `/api/cron` y corridas manuales.
+- `SMTP_*`: obligatorio para `/api/send` y envios desde el dashboard.
+
 ## Correr en local
 
 1. Instala dependencias:
@@ -56,6 +62,12 @@ npm run prisma:generate
 
 ```bash
 npm run db:migrate
+```
+
+Si ya tienes una base objetivo creada y solo quieres aplicar lo versionado en el repo:
+
+```bash
+npm run db:deploy
 ```
 
 4. Importa los JSON legacy a Postgres si quieres conservar el historial actual:
@@ -90,26 +102,34 @@ npm run db:seed
 
 ## Despliegue en Vercel
 
-1. Crea una base Postgres y copia `DATABASE_URL`.
-2. En Vercel agrega las variables de entorno del bloque anterior.
-3. Despliega el proyecto.
-4. Ejecuta las migraciones en la base objetivo:
+1. Crea una base Postgres. Puede ser `Vercel Postgres` o cualquier Postgres accesible desde Vercel.
+2. Copia `DATABASE_URL` y agregala en Vercel junto con `GOOGLE_MAPS_API_KEY`, `SMTP_*` y `CRON_SECRET` si vas a usar cron autenticado.
+3. Despliega el proyecto. El build ya no se rompe si falta `DATABASE_URL`, pero el dashboard solo queda operativo cuando la variable existe y la base responde.
+4. Ejecuta las migraciones versionadas en la base objetivo:
 
 ```bash
 npm run db:deploy
 ```
 
-5. Si necesitas llevar los datos legacy existentes a la nueva base:
+5. Si la base esta vacia y quieres cargar los JSON legacy existentes:
+
+```bash
+npm run db:seed
+```
+
+6. Si prefieres migrar los datos manualmente en vez del seed:
 
 ```bash
 npm run migrate:legacy
 ```
 
-6. Verifica que `vercel.json` programe `/api/cron`.
+7. Verifica que `vercel.json` programe `/api/cron`.
 
 ## Notas
 
 - El cron en `vercel.json` usa `0 9 */2 * *` y Vercel lo interpreta en UTC.
+- El repo ya incluye `prisma/migrations`, por lo que `prisma migrate deploy` es reproducible en Vercel.
+- Si faltan variables, el dashboard muestra el estado de configuracion y las APIs responden `503` con el detalle faltante en lugar de fallar durante el build.
 - Cada corrida guarda:
   - `googlePlacesRequests`
   - `websiteFetches`

@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { getPrismaClient } from "@/lib/db";
 import type { DashboardData, DashboardProspect, DashboardRun } from "@/lib/types";
 
 function serializeProspect(prospect: {
@@ -51,6 +51,7 @@ function serializeRun(run: {
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
+  const prisma = getPrismaClient();
   const [
     generated,
     prospects,

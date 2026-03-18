@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Prisma, ProspectStatus } from "@/generated/prisma";
-import { prisma } from "@/lib/db";
+import { getPrismaClient } from "@/lib/db";
 import { getDashboardData } from "@/lib/dashboard";
+import { formatMissingEnvError } from "@/lib/env";
 
 export const runtime = "nodejs";
 
@@ -23,6 +24,7 @@ async function transitionProspects(ids: string[], config: TransitionConfig) {
     throw new Error("Selecciona al menos un registro.");
   }
 
+  const prisma = getPrismaClient();
   const now = new Date();
 
   return prisma.$transaction(async (tx) => {
@@ -73,11 +75,24 @@ async function transitionProspects(ids: string[], config: TransitionConfig) {
 }
 
 export async function GET() {
+  const configError = formatMissingEnvError("la base de datos", ["DATABASE_URL"]);
+
+  if (configError) {
+    return NextResponse.json({ error: configError }, { status: 503 });
+  }
+
   const data = await getDashboardData();
   return NextResponse.json({ ok: true, data });
 }
 
 export async function POST(request: NextRequest) {
+  const configError = formatMissingEnvError("la base de datos", ["DATABASE_URL"]);
+
+  if (configError) {
+    return NextResponse.json({ error: configError }, { status: 503 });
+  }
+
+  const prisma = getPrismaClient();
   const payload = (await request.json().catch(() => ({}))) as ActionPayload;
   const ids = Array.isArray(payload.ids) ? payload.ids : [];
 

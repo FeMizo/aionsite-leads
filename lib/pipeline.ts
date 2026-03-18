@@ -1,5 +1,5 @@
 import type { Prisma, ProspectStatus } from "@/generated/prisma";
-import { prisma } from "@/lib/db";
+import { getPrismaClient } from "@/lib/db";
 import { filterUniqueProspects, findDuplicate } from "@/lib/dedupe";
 import { normalizeEmail, normalizeName, normalizePhone } from "@/lib/normalizers";
 import { buildOpportunity } from "@/lib/opportunity";
@@ -180,6 +180,7 @@ function buildCreateProspectData(prospect: ProspectCandidate, runId: string) {
 }
 
 export async function runProspectSearch(source = "google-places") {
+  const prisma = getPrismaClient();
   const metrics = {
     source,
     searchesCount: SEARCHES.length,

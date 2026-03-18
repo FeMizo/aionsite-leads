@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runProspectSearch } from "@/lib/pipeline";
+import { formatMissingEnvError } from "@/lib/env";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -24,6 +25,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized cron request." }, { status: 401 });
   }
 
+  const configError =
+    formatMissingEnvError("la base de datos", ["DATABASE_URL"]) ||
+    formatMissingEnvError("Google Places", ["GOOGLE_MAPS_API_KEY"]);
+
+  if (configError) {
+    return NextResponse.json({ error: configError }, { status: 503 });
+  }
+
   try {
     return await executeRun();
   } catch (error) {
@@ -40,6 +49,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST() {
+  const configError =
+    formatMissingEnvError("la base de datos", ["DATABASE_URL"]) ||
+    formatMissingEnvError("Google Places", ["GOOGLE_MAPS_API_KEY"]);
+
+  if (configError) {
+    return NextResponse.json({ error: configError }, { status: 503 });
+  }
+
   try {
     return await executeRun();
   } catch (error) {
