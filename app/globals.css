@@ -162,6 +162,22 @@ code {
   padding: 1rem 1.1rem;
 }
 
+.crm-card--link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--text);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.crm-card--link:hover {
+  color: var(--text);
+  transform: translateY(-2px);
+  border-color: #b7e7dd;
+  background: linear-gradient(180deg, #f8fcfb 0%, #eef8f5 100%);
+}
+
 .crm-card__label {
   display: block;
   color: var(--muted);
@@ -171,6 +187,11 @@ code {
 
 .crm-card__value {
   font-size: 2rem;
+}
+
+.crm-card__meta {
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .panel {
@@ -272,6 +293,11 @@ code {
 .crm-error {
   color: var(--danger);
   margin: 0 0 1rem;
+}
+
+.crm-muted {
+  color: var(--muted);
+  margin: 0;
 }
 
 .crm-table-wrap {
@@ -413,6 +439,12 @@ code {
   background: #fee4e2;
   color: #b42318;
   border-color: #fecaca;
+}
+
+.run-status.is-running {
+  background: #fff4cc;
+  color: #9a6700;
+  border-color: #f4d67a;
 }
 
 :focus-visible {

@@ -48,7 +48,13 @@ export function RunsTable({ runs }: RunsTableProps) {
                 <td>{run.websiteFetches}</td>
                 <td>
                   <span
-                    className={`run-status ${run.status === "completed" ? "is-ok" : "is-error"}`}
+                    className={`run-status ${
+                      run.status === "completed"
+                        ? "is-ok"
+                        : run.status === "running"
+                          ? "is-running"
+                          : "is-error"
+                    }`}
                     title={run.error || ""}
                   >
                     {run.status}

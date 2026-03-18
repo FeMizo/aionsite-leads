@@ -92,6 +92,8 @@ export type DashboardData = {
     failed: number;
     runs: number;
   };
+  crawlInProgress: boolean;
+  activeRun: DashboardRun | null;
   generated: DashboardProspect[];
   prospects: DashboardProspect[];
   contacted: DashboardProspect[];

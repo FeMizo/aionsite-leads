@@ -62,6 +62,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     contactedCount,
     failedCount,
     runsCount,
+    activeRun,
   ] = await Promise.all([
     prisma.prospect.findMany({
       where: { status: "generated" },
@@ -89,6 +90,10 @@ export async function getDashboardData(): Promise<DashboardData> {
     }),
     prisma.prospect.count({ where: { status: "failed" } }),
     prisma.run.count(),
+    prisma.run.findFirst({
+      where: { status: "running" },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
 
   return {
@@ -99,6 +104,8 @@ export async function getDashboardData(): Promise<DashboardData> {
       failed: failedCount,
       runs: runsCount,
     },
+    crawlInProgress: Boolean(activeRun),
+    activeRun: activeRun ? serializeRun(activeRun) : null,
     generated: generated.map(serializeProspect),
     prospects: prospects.map(serializeProspect),
     contacted: contacted.map(serializeProspect),

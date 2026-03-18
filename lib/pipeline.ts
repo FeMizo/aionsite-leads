@@ -191,6 +191,12 @@ export async function runProspectSearch(source = "google-places") {
     googlePlacesRequests: 0,
     websiteFetches: 0,
   };
+  const startedRun = await prisma.run.create({
+    data: {
+      ...metrics,
+      status: "running",
+    },
+  });
 
   try {
     const existingProspects = await prisma.prospect.findMany({
@@ -269,16 +275,9 @@ export async function runProspectSearch(source = "google-places") {
     console.log(`[prospect-run] Prospectos finales guardados: ${metrics.prospectsSaved}`);
 
     const run = await prisma.$transaction(async (tx) => {
-      const createdRun = await tx.run.create({
-        data: {
-          ...metrics,
-          status: "completed",
-        },
-      });
-
       for (const prospect of finalProspects) {
         const createdProspect = await tx.prospect.create({
-          data: buildCreateProspectData(prospect, createdRun.id),
+          data: buildCreateProspectData(prospect, startedRun.id),
         });
 
         await tx.contactEvent.create({
@@ -296,7 +295,14 @@ export async function runProspectSearch(source = "google-places") {
         });
       }
 
-      return createdRun;
+      return tx.run.update({
+        where: { id: startedRun.id },
+        data: {
+          ...metrics,
+          status: "completed",
+          error: null,
+        },
+      });
     });
 
     return {
@@ -309,7 +315,8 @@ export async function runProspectSearch(source = "google-places") {
 
     console.error(`[prospect-run] Error: ${message}`);
 
-    await prisma.run.create({
+    await prisma.run.update({
+      where: { id: startedRun.id },
       data: {
         ...metrics,
         status: "failed",
