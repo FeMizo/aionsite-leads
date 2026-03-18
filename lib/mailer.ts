@@ -1,6 +1,15 @@
 import type { Prisma, Prospect, ProspectStatus } from "@/generated/prisma";
 import nodemailer from "nodemailer";
 import { getPrismaClient } from "@/lib/db";
+import {
+  getFromEmail,
+  getFromName,
+  getSmtpHost,
+  getSmtpPass,
+  getSmtpPort,
+  getSmtpSecure,
+  getSmtpUser,
+} from "@/lib/env";
 import { findDuplicate } from "@/lib/dedupe";
 import { buildEmail } from "@/lib/email-template";
 import { normalizeEmail } from "@/lib/normalizers";
@@ -32,12 +41,12 @@ function createTransporter() {
   validateEnv();
 
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: process.env.SMTP_SECURE === "true",
+    host: getSmtpHost(),
+    port: Number(getSmtpPort()),
+    secure: getSmtpSecure(),
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: getSmtpUser(),
+      pass: getSmtpPass(),
     },
     tls: {
       rejectUnauthorized: false,
@@ -180,9 +189,7 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
 
     try {
       const info = await transporter.sendMail({
-        from: `"${process.env.FROM_NAME || "Aionsite"}" <${
-          process.env.FROM_EMAIL || process.env.SMTP_USER
-        }>`,
+        from: `"${getFromName()}" <${getFromEmail() || getSmtpUser()}>`,
         to: record.email,
         subject: email.subject,
         text: email.text,

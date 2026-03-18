@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runProspectSearch } from "@/lib/pipeline";
-import { formatMissingEnvError } from "@/lib/env";
+import {
+  DATABASE_ENV_KEYS,
+  GOOGLE_PLACES_ENV_KEYS,
+  formatMissingEnvError,
+  getCronSecret,
+} from "@/lib/env";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
 function isAuthorizedCronRequest(request: NextRequest) {
-  const secret = process.env.CRON_SECRET;
+  const secret = getCronSecret();
 
   if (!secret) {
     return true;
@@ -26,8 +31,8 @@ export async function GET(request: NextRequest) {
   }
 
   const configError =
-    formatMissingEnvError("la base de datos", ["DATABASE_URL"]) ||
-    formatMissingEnvError("Google Places", ["GOOGLE_MAPS_API_KEY"]);
+    formatMissingEnvError("la base de datos", DATABASE_ENV_KEYS) ||
+    formatMissingEnvError("Google Places", GOOGLE_PLACES_ENV_KEYS);
 
   if (configError) {
     return NextResponse.json({ error: configError }, { status: 503 });
@@ -50,8 +55,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST() {
   const configError =
-    formatMissingEnvError("la base de datos", ["DATABASE_URL"]) ||
-    formatMissingEnvError("Google Places", ["GOOGLE_MAPS_API_KEY"]);
+    formatMissingEnvError("la base de datos", DATABASE_ENV_KEYS) ||
+    formatMissingEnvError("Google Places", GOOGLE_PLACES_ENV_KEYS);
 
   if (configError) {
     return NextResponse.json({ error: configError }, { status: 503 });

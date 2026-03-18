@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Prisma, ProspectStatus } from "@/generated/prisma";
 import { getPrismaClient } from "@/lib/db";
 import { getDashboardData } from "@/lib/dashboard";
-import { formatMissingEnvError } from "@/lib/env";
+import { DATABASE_ENV_KEYS, formatMissingEnvError } from "@/lib/env";
 
 export const runtime = "nodejs";
 
@@ -75,7 +75,7 @@ async function transitionProspects(ids: string[], config: TransitionConfig) {
 }
 
 export async function GET() {
-  const configError = formatMissingEnvError("la base de datos", ["DATABASE_URL"]);
+  const configError = formatMissingEnvError("la base de datos", DATABASE_ENV_KEYS);
 
   if (configError) {
     return NextResponse.json({ error: configError }, { status: 503 });
@@ -86,7 +86,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const configError = formatMissingEnvError("la base de datos", ["DATABASE_URL"]);
+  const configError = formatMissingEnvError("la base de datos", DATABASE_ENV_KEYS);
 
   if (configError) {
     return NextResponse.json({ error: configError }, { status: 503 });

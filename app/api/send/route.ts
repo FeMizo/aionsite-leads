@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendProspectEmails } from "@/lib/mailer";
-import { formatMissingEnvError } from "@/lib/env";
+import { DATABASE_ENV_KEYS, SMTP_ENV_KEYS, formatMissingEnvError } from "@/lib/env";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   const configError =
-    formatMissingEnvError("la base de datos", ["DATABASE_URL"]) ||
-    formatMissingEnvError("SMTP", ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS"]);
+    formatMissingEnvError("la base de datos", DATABASE_ENV_KEYS) ||
+    formatMissingEnvError("SMTP", SMTP_ENV_KEYS);
 
   if (configError) {
     return NextResponse.json({ error: configError }, { status: 503 });

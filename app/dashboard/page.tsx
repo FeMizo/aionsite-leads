@@ -69,7 +69,7 @@ export default async function DashboardPage() {
             <div>
               <h2>Conexion fallida</h2>
               <p>
-                Revisa `DATABASE_URL`, corre `npm run db:deploy` sobre la base objetivo y vuelve a abrir el dashboard.
+                Revisa tu variable de Postgres, corre `npm run db:deploy` sobre la base objetivo y vuelve a abrir el dashboard.
               </p>
             </div>
           </div>

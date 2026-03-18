@@ -1,4 +1,8 @@
 import type { ProspectCandidate, SearchSpec } from "@/lib/types";
+import {
+  getGooglePlacesApiKey,
+  getGooglePlacesEndpoint,
+} from "@/lib/env";
 
 const GOOGLE_PLACES_API_URL =
   "https://places.googleapis.com/v1/places:searchText";
@@ -26,14 +30,6 @@ type GooglePlace = {
   googleMapsUri?: string;
   businessStatus?: string;
 };
-
-function getGooglePlacesApiKey() {
-  return (process.env.GOOGLE_MAPS_API_KEY || "").trim();
-}
-
-function getGooglePlacesEndpoint() {
-  return (process.env.GOOGLE_PLACES_ENDPOINT || GOOGLE_PLACES_API_URL).trim();
-}
 
 function assertGooglePlacesConfig() {
   if (!getGooglePlacesApiKey()) {
@@ -70,6 +66,7 @@ function mapGooglePlaceToProspect(
 }
 
 async function searchPlaces(search: SearchSpec) {
+  const endpoint = getGooglePlacesEndpoint(GOOGLE_PLACES_API_URL);
   const body = {
     textQuery: search.textQuery,
     includedType: search.includedType,
@@ -80,7 +77,7 @@ async function searchPlaces(search: SearchSpec) {
     pageSize: search.pageSize || 15,
   };
 
-  const response = await fetch(getGooglePlacesEndpoint(), {
+  const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
