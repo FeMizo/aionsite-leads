@@ -11,7 +11,11 @@ import {
   getSmtpUser,
 } from "@/lib/env";
 import { findDuplicate } from "@/lib/dedupe";
-import { buildEmail } from "@/lib/email-template";
+import { buildEmail, type ProspectEmailModel } from "@/lib/email-template";
+import {
+  type ManualProspectInput,
+  validateManualProspect,
+} from "@/lib/manual-prospects";
 import { normalizeEmail } from "@/lib/normalizers";
 
 const TERMINAL_STATUSES: ProspectStatus[] = [
@@ -52,6 +56,24 @@ function createTransporter() {
       rejectUnauthorized: false,
     },
   });
+}
+
+async function sendEmailWithTransporter(
+  transporter: nodemailer.Transporter,
+  record: ProspectEmailModel
+) {
+  const email = buildEmail(record);
+  const info = await transporter.sendMail({
+    from: `"${getFromName()}" <${getFromEmail() || getSmtpUser()}>`,
+    to: record.email,
+    subject: email.subject,
+    text: email.text,
+  });
+
+  return {
+    info,
+    email,
+  };
 }
 
 function findPreviouslyContacted(record: Prospect, records: Prospect[]) {
@@ -185,15 +207,8 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
       continue;
     }
 
-    const email = buildEmail(record);
-
     try {
-      const info = await transporter.sendMail({
-        from: `"${getFromName()}" <${getFromEmail() || getSmtpUser()}>`,
-        to: record.email,
-        subject: email.subject,
-        text: email.text,
-      });
+      const { info } = await sendEmailWithTransporter(transporter, record);
 
       sentCount += 1;
 
@@ -242,5 +257,24 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
     sent: sentCount,
     failed: failedCount,
     skippedPreviouslySent: skippedPreviouslySentCount,
+  };
+}
+
+export async function sendTestEmail(input: ManualProspectInput = {}) {
+  const prepared = validateManualProspect(input, {
+    requireEmail: true,
+  });
+
+  if (!isValidEmail(normalizeEmail(prepared.email))) {
+    throw new Error("El correo de prueba no es valido.");
+  }
+
+  const transporter = createTransporter();
+  const { info, email } = await sendEmailWithTransporter(transporter, prepared);
+
+  return {
+    messageId: info.messageId,
+    subject: email.subject,
+    to: prepared.email,
   };
 }

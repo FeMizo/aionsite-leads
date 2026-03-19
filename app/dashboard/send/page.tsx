@@ -1,4 +1,5 @@
 import { ProspectTable } from "@/components/dashboard/prospect-table";
+import { ManualProspectPanel } from "@/components/dashboard/manual-prospect-panel";
 import {
   DashboardMetricCards,
   DashboardPageContext,
@@ -27,6 +28,7 @@ export default async function SendPage() {
 
       <DashboardMetricCards data={context.data} />
       <DashboardSetupPanel setup={context.setup} />
+      <ManualProspectPanel />
 
       <ProspectTable
         title="Enviar seleccionados"

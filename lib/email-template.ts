@@ -1,6 +1,20 @@
 import type { Prospect } from "@/generated/prisma";
 
-export function buildEmail(prospect: Prospect) {
+export type ProspectEmailModel = Pick<
+  Prospect,
+  | "name"
+  | "contactName"
+  | "city"
+  | "email"
+  | "type"
+  | "website"
+  | "rating"
+  | "opportunity"
+  | "recommendedSite"
+  | "pitchAngle"
+>;
+
+export function buildEmail(prospect: ProspectEmailModel) {
   const greeting = prospect.contactName
     ? `Hola ${prospect.contactName},`
     : `Hola equipo de ${prospect.name},`;

@@ -3,12 +3,17 @@ import type { Prisma, ProspectStatus } from "@/generated/prisma";
 import { getPrismaClient } from "@/lib/db";
 import { getDashboardData } from "@/lib/dashboard";
 import { DATABASE_ENV_KEYS, formatMissingEnvError } from "@/lib/env";
+import {
+  createManualProspect,
+  type ManualProspectInput,
+} from "@/lib/manual-prospects";
 
 export const runtime = "nodejs";
 
 type ActionPayload = {
   action?: string;
   ids?: string[];
+  prospect?: ManualProspectInput;
 };
 
 type TransitionConfig = {
@@ -171,6 +176,18 @@ export async function POST(request: NextRequest) {
           clearError: true,
         });
         return NextResponse.json({ ok: true, result });
+      }
+      case "createManual": {
+        const prospect = await createManualProspect(payload.prospect);
+
+        return NextResponse.json({
+          ok: true,
+          result: {
+            id: prospect.id,
+            name: prospect.name,
+            status: prospect.status,
+          },
+        });
       }
       default:
         return NextResponse.json({ error: "Accion no soportada." }, { status: 400 });
