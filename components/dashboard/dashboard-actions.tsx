@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { formatDashboardDateTime } from "@/lib/date-format";
 
 async function postJson(url: string, payload?: Record<string, unknown>) {
   const response = await fetch(url, {
@@ -75,7 +76,7 @@ export function DashboardActions({
           className={`run-status ${isCrawlActive ? "is-running" : "is-ok"}`}
           title={
             activeRunCreatedAt
-              ? `Crawl iniciado: ${new Date(activeRunCreatedAt).toLocaleString()}`
+              ? `Crawl iniciado: ${formatDashboardDateTime(activeRunCreatedAt)}`
               : ""
           }
         >
@@ -116,7 +117,7 @@ export function DashboardActions({
       </div>
       {crawlInProgress && activeRunCreatedAt ? (
         <p className="crm-muted">
-          Busqueda iniciada el {new Date(activeRunCreatedAt).toLocaleString()}.
+          Busqueda iniciada el {formatDashboardDateTime(activeRunCreatedAt)}.
         </p>
       ) : null}
       {error ? <p className="crm-error">{error}</p> : null}

@@ -1,4 +1,5 @@
 import type { DashboardRun } from "@/lib/types";
+import { formatDashboardDateTime } from "@/lib/date-format";
 
 type RunsTableProps = {
   runs: DashboardRun[];
@@ -37,7 +38,7 @@ export function RunsTable({ runs }: RunsTableProps) {
           <tbody>
             {runs.map((run) => (
               <tr key={run.id}>
-                <td>{new Date(run.createdAt).toLocaleString()}</td>
+                <td>{formatDashboardDateTime(run.createdAt)}</td>
                 <td>{run.source}</td>
                 <td>{run.searchesCount}</td>
                 <td>{run.placesFound}</td>

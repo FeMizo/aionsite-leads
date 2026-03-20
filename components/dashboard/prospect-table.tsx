@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getApiErrorMessage } from "@/lib/api-client";
+import { formatDashboardDateTime } from "@/lib/date-format";
 import type { DashboardProspect } from "@/lib/types";
 import { StatusPill } from "@/components/dashboard/status-pill";
 
@@ -226,7 +227,7 @@ export function ProspectTable({
                   <td>
                     <StatusPill status={record.status} />
                   </td>
-                  <td>{new Date(record.lastCheckedAt).toLocaleString()}</td>
+                  <td>{formatDashboardDateTime(record.lastCheckedAt)}</td>
                 </tr>
               ))}
             </tbody>

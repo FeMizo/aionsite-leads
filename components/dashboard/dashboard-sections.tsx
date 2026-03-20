@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { DashboardActions } from "@/components/dashboard/dashboard-actions";
 import { PageHeader } from "@/components/crm/page-header";
+import { formatDashboardDateTime } from "@/lib/date-format";
 import { getDashboardData } from "@/lib/dashboard";
 import { getAppSetupState } from "@/lib/env";
 import type { DashboardData } from "@/lib/types";
@@ -177,7 +178,7 @@ function formatActivityDate(value: string | undefined) {
     return "Sin registro";
   }
 
-  return new Date(value).toLocaleString();
+  return formatDashboardDateTime(value);
 }
 
 export function DashboardActivitySummary({ data }: { data: DashboardData }) {
