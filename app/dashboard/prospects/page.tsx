@@ -22,7 +22,7 @@ export default async function ProspectsPage() {
       <PageHeader
         eyebrow="Prospects"
         title="Cola activa"
-        description="Administra prospectos approved y ready antes del envio. Solo los ready pasan a la seccion de envios."
+        description="Administra solo prospectos approved antes del envio. Los ready ya viven en la seccion de envios."
       />
 
       <DashboardMetricCards data={context.data} />
@@ -30,14 +30,14 @@ export default async function ProspectsPage() {
 
       <ProspectTable
         title="Prospects"
-        description="Los approved se quedan aqui hasta que generes draft. Cuando el prospecto tenga prioridad alta y subject/message guardados, sube a ready y aparece tambien en envios."
+        description="Aqui trabajas solo approved. Cuando preparas el mensaje, el prospecto pasa a ready y desaparece de esta vista para entrar en envios."
         records={context.data.prospects}
         endpoint="/api/prospects"
         actions={[
-          { action: "generateDrafts", label: "Generar draft", variant: "primary" },
+          { action: "generateDrafts", label: "Preparar mensaje", variant: "primary" },
           { action: "rejectRecords", label: "Rechazar", variant: "danger" },
         ]}
-        emptyLabel="No hay prospectos approved o ready."
+        emptyLabel="No hay prospectos approved pendientes."
       />
     </div>
   );

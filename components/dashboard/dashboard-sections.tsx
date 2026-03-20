@@ -39,7 +39,7 @@ const sectionCards = [
   {
     href: "/dashboard/prospects",
     label: "Prospects",
-    description: "Prospectos aprobados o listos para preparar outreach antes del envio.",
+    description: "Prospectos approved pendientes de preparar mensaje.",
     metricKey: "prospects",
   },
   {
@@ -305,7 +305,7 @@ export function DashboardOverview({
           </article>
           <article>
             <h3>Prospects y Envios</h3>
-            <p>Trabaja approved en Prospects, genera draft y mueve a ready solo los registros que ya pueden entrar a Envios.</p>
+            <p>Trabaja approved en Prospects y deja que los ready vivan solo en Envios para evitar duplicados visuales.</p>
           </article>
           <article>
             <h3>Contactados y Busquedas</h3>

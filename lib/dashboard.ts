@@ -96,6 +96,7 @@ export async function getDashboardData(): Promise<DashboardData> {
   const [
     generated,
     prospects,
+    ready,
     contacted,
     runs,
     generatedCount,
@@ -114,7 +115,12 @@ export async function getDashboardData(): Promise<DashboardData> {
       take: 12,
     }),
     prisma.prospect.findMany({
-      where: { status: { in: ["approved", "ready"] } },
+      where: { status: "approved" },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    }),
+    prisma.prospect.findMany({
+      where: { status: "ready" },
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
@@ -128,7 +134,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       take: 20,
     }),
     prisma.prospect.count({ where: { status: { in: ["generated", "analyzed"] } } }),
-    prisma.prospect.count({ where: { status: { in: ["approved", "ready"] } } }),
+    prisma.prospect.count({ where: { status: "approved" } }),
     prisma.prospect.count({ where: { status: "ready" } }),
     prisma.prospect.count({
       where: { status: { in: ["contacted", "replied", "closed"] } },
@@ -171,6 +177,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     lastSend: lastSend ? serializeActivityItem(lastSend) : null,
     generated: generated.map(serializeProspect),
     prospects: prospects.map(serializeProspect),
+    ready: ready.map(serializeProspect),
     contacted: contacted.map(serializeProspect),
     runs: runs.map(serializeRun),
   };

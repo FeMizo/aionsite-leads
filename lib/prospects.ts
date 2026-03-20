@@ -181,9 +181,7 @@ function shouldBeReady(
     | "message"
   >
 ) {
-  const scoring = getProspectScoreCard(record);
-
-  return scoring.priority === "alto" && hasStoredDraft(record);
+  return hasStoredDraft(record);
 }
 
 function resolveStatusAfterApproval(record: ProspectListRecord): ProspectStatus {

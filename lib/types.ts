@@ -126,6 +126,7 @@ export type DashboardData = {
   lastSend: DashboardActivityItem | null;
   generated: DashboardProspect[];
   prospects: DashboardProspect[];
+  ready: DashboardProspect[];
   contacted: DashboardProspect[];
   runs: DashboardRun[];
 };
