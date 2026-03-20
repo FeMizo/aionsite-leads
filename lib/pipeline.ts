@@ -1,7 +1,12 @@
 import type { Prisma, ProspectStatus } from "@/generated/prisma";
 import { getPrismaClient } from "@/lib/db";
 import { filterUniqueProspects, findDuplicate } from "@/lib/dedupe";
-import { normalizeEmail, normalizeName, normalizePhone } from "@/lib/normalizers";
+import {
+  normalizeEmail,
+  normalizeName,
+  normalizePhone,
+  normalizeProspectType,
+} from "@/lib/normalizers";
 import { buildOpportunity } from "@/lib/opportunity";
 import {
   DESIRED_PROSPECT_COUNT,
@@ -28,7 +33,7 @@ function normalizeProspect(rawProspect: ProspectCandidate): ProspectCandidate {
     city: String(rawProspect.city || "").trim(),
     email: normalizeEmail(rawProspect.email || "") || "",
     phone: normalizePhone(rawProspect.phone || "") || "",
-    type: String(rawProspect.type || "Negocio local").trim(),
+    type: normalizeProspectType(String(rawProspect.type || "Negocio local")),
     website: String(rawProspect.website || "").trim(),
     rating: rawProspect.rating ? String(rawProspect.rating).trim() : "",
     mapsUrl: String(rawProspect.mapsUrl || "").trim(),
@@ -174,6 +179,9 @@ function buildCreateProspectData(prospect: ProspectCandidate, runId: string) {
     pitchAngle: prospect.pitchAngle,
     subject: "",
     message: "",
+    contacted: false,
+    lastContactedAt: null,
+    followupCount: 0,
     status: getProspectAutomationStatus(score) as ProspectStatus,
     source: prospect.source,
     createdAt: new Date(prospect.createdAt),

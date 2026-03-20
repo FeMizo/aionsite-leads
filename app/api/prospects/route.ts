@@ -177,6 +177,10 @@ async function handleLegacyDashboardAction(payload: ProspectActionPayload) {
           eventType: "marked_contacted",
           note: "Record marked as contacted manually from ready state",
           clearError: true,
+          data: {
+            contacted: true,
+            lastContactedAt: new Date(),
+          },
         });
 
         return ok({ result });

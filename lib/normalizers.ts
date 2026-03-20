@@ -32,3 +32,25 @@ export function normalizeWebsite(website: string) {
     .replace(/^www\./, "")
     .replace(/\/+$/, "");
 }
+
+export function normalizeProspectType(type: string) {
+  const normalized = normalizeName(type);
+
+  if (normalized === "restaurante" || normalized === "restaurant") {
+    return "restaurant";
+  }
+
+  if (
+    normalized === "real estate agency" ||
+    normalized === "real_estate_agency" ||
+    normalized === "inmobiliaria"
+  ) {
+    return "inmobiliaria";
+  }
+
+  if (normalized === "clinica" || normalized === "clinic" || normalized === "doctor") {
+    return "clinica";
+  }
+
+  return normalized || "negocio_local";
+}

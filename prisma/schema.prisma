@@ -39,6 +39,9 @@ model Prospect {
   message          String         @default("")
   status           ProspectStatus @default(generated)
   source           String         @default("google-places")
+  contacted        Boolean        @default(false)
+  lastContactedAt  DateTime?
+  followupCount    Int            @default(0)
   createdAt        DateTime       @default(now())
   lastCheckedAt    DateTime       @default(now())
   updatedAt        DateTime       @updatedAt

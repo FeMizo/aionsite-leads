@@ -3,11 +3,12 @@ import { getPrismaClient } from "@/lib/db";
 import { findDuplicate } from "@/lib/dedupe";
 import { createManualProspect } from "@/lib/manual-prospects";
 import { buildOpportunity } from "@/lib/opportunity";
-import { getProspectAutomationStatus, getProspectScoreCard } from "@/lib/prospect-scoring";
+import { getProspectScoreCard } from "@/lib/prospect-scoring";
 import {
   normalizeEmail,
   normalizeName,
   normalizePhone,
+  normalizeProspectType,
   normalizeWhitespace,
 } from "@/lib/normalizers";
 
@@ -38,6 +39,9 @@ const prospectListSelect = {
   pitchAngle: true,
   subject: true,
   message: true,
+  contacted: true,
+  lastContactedAt: true,
+  followupCount: true,
   status: true,
   source: true,
   createdAt: true,
@@ -108,6 +112,9 @@ export type ProspectUpdateInput = {
   pitchAngle?: string;
   subject?: string;
   message?: string;
+  contacted?: boolean;
+  lastContactedAt?: string | null;
+  followupCount?: number;
   businessStatus?: string;
   source?: string;
 };
@@ -118,6 +125,7 @@ export type TransitionConfig = {
   eventType: string;
   note: string;
   clearError?: boolean;
+  data?: Prisma.ProspectUpdateInput;
 };
 
 function serializeProspect(record: ProspectListRecord) {
@@ -125,6 +133,7 @@ function serializeProspect(record: ProspectListRecord) {
 
   return {
     ...record,
+    lastContactedAt: record.lastContactedAt ? record.lastContactedAt.toISOString() : null,
     createdAt: record.createdAt.toISOString(),
     lastCheckedAt: record.lastCheckedAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
@@ -169,12 +178,6 @@ function shouldBeReady(
 }
 
 function resolveStatusAfterApproval(record: ProspectListRecord): ProspectStatus {
-  const scoring = getProspectScoreCard(record);
-
-  if (getProspectAutomationStatus(scoring.score) === "rejected") {
-    return "rejected";
-  }
-
   return shouldBeReady(record) ? "ready" : "approved";
 }
 
@@ -347,6 +350,7 @@ export async function transitionProspects(ids: string[], config: TransitionConfi
       await tx.prospect.update({
         where: { id: record.id },
         data: {
+          ...(config.data || {}),
           status: config.nextStatus,
           lastCheckedAt: now,
           lastError: config.clearError ? "" : record.lastError,
@@ -435,7 +439,7 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
   }
 
   if ("type" in input) {
-    const value = normalizeWhitespace(input.type || "");
+    const value = normalizeProspectType(input.type || "");
 
     if (!value) {
       throw new Error("El tipo no puede quedar vacio.");
@@ -474,6 +478,24 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
 
   if ("message" in input) {
     data.message = normalizeWhitespace(input.message || "");
+  }
+
+  if ("contacted" in input && typeof input.contacted === "boolean") {
+    data.contacted = input.contacted;
+  }
+
+  if ("lastContactedAt" in input) {
+    data.lastContactedAt = input.lastContactedAt ? new Date(input.lastContactedAt) : null;
+  }
+
+  if ("followupCount" in input) {
+    const value = Number(input.followupCount);
+
+    if (!Number.isInteger(value) || value < 0) {
+      throw new Error("followupCount debe ser un entero mayor o igual a 0.");
+    }
+
+    data.followupCount = value;
   }
 
   if ("businessStatus" in input) {
@@ -590,7 +612,7 @@ export async function approveProspect(id: string) {
     throw new Error("Prospecto no encontrado.");
   }
 
-  if (!["generated", "analyzed", "approved", "rejected"].includes(current.status)) {
+  if (!["generated", "analyzed", "approved"].includes(current.status)) {
     throw new Error("El prospecto no se puede aprobar desde su estado actual.");
   }
 

@@ -23,6 +23,9 @@ export type ProspectCandidate = {
   pitchAngle: string;
   subject?: string;
   message?: string;
+  contacted?: boolean;
+  lastContactedAt?: string | null;
+  followupCount?: number;
   status: string;
   source: string;
   createdAt: string;
@@ -66,6 +69,9 @@ export type DashboardProspect = {
   pitchAngle: string;
   subject: string;
   message: string;
+  contacted: boolean;
+  lastContactedAt: string | null;
+  followupCount: number;
   status: string;
   source: string;
   createdAt: string;

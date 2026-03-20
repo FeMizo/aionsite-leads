@@ -65,6 +65,14 @@ components:
           type: string
         message:
           type: string
+        contacted:
+          type: boolean
+        lastContactedAt:
+          type: string
+          format: date-time
+          nullable: true
+        followupCount:
+          type: integer
         status:
           type: string
           enum: [generated, analyzed, approved, ready, contacted, replied, closed, rejected]
@@ -102,6 +110,8 @@ components:
         - status
         - subject
         - message
+        - contacted
+        - followupCount
         - score
         - priority
         - createdAt

@@ -16,11 +16,11 @@ import {
   type ManualProspectInput,
   validateManualProspect,
 } from "@/lib/manual-prospects";
+import { buildProspectOutreachDraft } from "@/lib/outreach";
 import { getProspectScoreCard } from "@/lib/prospect-scoring";
 import { normalizeEmail } from "@/lib/normalizers";
 
 const TERMINAL_STATUSES: ProspectStatus[] = [
-  "contacted",
   "replied",
   "closed",
   "rejected",
@@ -84,6 +84,15 @@ function renderPlainTextAsHtml(message: string) {
 </html>`;
 }
 
+function daysSince(value: Date | null) {
+  if (!value) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const diffMs = Date.now() - value.getTime();
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+}
+
 async function sendEmailWithTransporter(
   transporter: nodemailer.Transporter,
   record: ProspectEmailModel
@@ -122,7 +131,9 @@ async function sendCustomEmailWithTransporter(params: {
 
 function findPreviouslyContacted(record: Prospect, records: Prospect[]) {
   const historicalRecords = records.filter(
-    (item) => item.id !== record.id && TERMINAL_STATUSES.includes(item.status)
+    (item) =>
+      item.id !== record.id &&
+      (item.contacted || CONTACTED_STATUSES.includes(item.status) || TERMINAL_STATUSES.includes(item.status))
   );
 
   return findDuplicate(record, historicalRecords);
@@ -136,6 +147,7 @@ async function updateProspectWithEvent(params: {
   lastError?: string;
   lastMessageId?: string;
   sentAt?: Date;
+  data?: Prisma.ProspectUpdateInput;
 }) {
   const prisma = getPrismaClient();
   const timestamp = params.sentAt || new Date();
@@ -148,6 +160,7 @@ async function updateProspectWithEvent(params: {
     await tx.prospect.update({
       where: { id: params.prospectId },
       data: {
+        ...(params.data || {}),
         status: params.status,
         lastCheckedAt: timestamp,
         lastError: params.lastError || "",
@@ -164,6 +177,22 @@ async function updateProspectWithEvent(params: {
       },
     });
   });
+}
+
+function isDueForFollowup(record: Prospect) {
+  if (record.status !== "contacted") {
+    return false;
+  }
+
+  if (!record.contacted) {
+    return false;
+  }
+
+  if (record.followupCount >= 2) {
+    return false;
+  }
+
+  return daysSince(record.lastContactedAt) >= 2;
 }
 
 export async function sendProspectEmails(options: { prospectIds?: string[] } = {}) {
@@ -189,16 +218,31 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
 
     return idsSet.has(record.id);
   });
+  const followupRecords = records.filter((record) => {
+    if (!isDueForFollowup(record)) {
+      return false;
+    }
+
+    if (!idsSet.size) {
+      return true;
+    }
+
+    return idsSet.has(record.id);
+  });
 
   console.log(`[send] Registros cargados: ${records.length}`);
   console.log(`[send] Prospectos por enviar: ${pendingRecords.length}`);
+  console.log(`[send] Followups por enviar: ${followupRecords.length}`);
 
-  if (!pendingRecords.length) {
+  if (!pendingRecords.length && !followupRecords.length) {
     return {
       total: records.length,
       pending: 0,
+      dueFollowups: 0,
       sent: 0,
+      followupsSent: 0,
       failed: 0,
+      blocked: 0,
       skippedPreviouslySent: 0,
     };
   }
@@ -208,26 +252,27 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
   let failedCount = 0;
   let skippedPreviouslySentCount = 0;
   let blockedCount = 0;
+  let followupsSentCount = 0;
 
   for (const record of pendingRecords) {
     const previousContact = findPreviouslyContacted(record, records);
     const scoring = getProspectScoreCard(record);
 
-    if (previousContact || CONTACTED_STATUSES.includes(record.status)) {
+    if (record.contacted || previousContact) {
       skippedPreviouslySentCount += 1;
 
       await updateProspectWithEvent({
         prospectId: record.id,
-        status: "closed",
-        eventType: "duplicate_skip",
-        lastError: "Skipped because it was already contacted previously",
+        status: record.status,
+        eventType: "send_skipped",
+        lastError: "Skipped because prospect is already marked as contacted",
         metadata: {
-          fromStatus: "ready",
-          toStatus: "closed",
+          fromStatus: record.status,
+          toStatus: record.status,
           note: `Skipped duplicate by ${
             previousContact ? previousContact.reason : "status"
           }`,
-          error: "Skipped because it was already contacted previously",
+          contacted: record.contacted,
         } as Prisma.InputJsonObject,
       });
 
@@ -239,12 +284,12 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
 
       await updateProspectWithEvent({
         prospectId: record.id,
-        status: "approved",
+        status: record.status,
         eventType: "invalid_email",
         lastError: "Invalid or empty email",
         metadata: {
-          fromStatus: "ready",
-          toStatus: "approved",
+          fromStatus: record.status,
+          toStatus: record.status,
           note: "Skipped because email is invalid or empty",
           error: "Invalid or empty email",
         } as Prisma.InputJsonObject,
@@ -255,7 +300,6 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
 
     if (
       scoring.priority !== "alto" ||
-      !record.subject.trim() ||
       !record.message.trim() ||
       record.status !== "ready"
     ) {
@@ -263,14 +307,15 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
 
       await updateProspectWithEvent({
         prospectId: record.id,
-        status: "approved",
+        status: record.status,
         eventType: "send_blocked",
         lastError: "Blocked because prospect is not ready for outreach",
         metadata: {
           fromStatus: record.status,
-          toStatus: "approved",
-          note: "Blocked because status must be ready, priority alto and subject/message must exist",
+          toStatus: record.status,
+          note: "Blocked because contacted must be false, status must be ready, priority alto and message must exist",
           priority: scoring.priority,
+          contacted: record.contacted,
           hasSubject: Boolean(record.subject.trim()),
           hasMessage: Boolean(record.message.trim()),
         } as Prisma.InputJsonObject,
@@ -280,6 +325,7 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
     }
 
     try {
+      const sentAt = new Date();
       const info = await sendCustomEmailWithTransporter({
         transporter,
         to: record.email,
@@ -294,6 +340,11 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
         status: "contacted",
         eventType: "send_success",
         lastMessageId: info.messageId,
+        sentAt,
+        data: {
+          contacted: true,
+          lastContactedAt: sentAt,
+        },
         metadata: {
           fromStatus: "ready",
           toStatus: "contacted",
@@ -309,12 +360,12 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
 
       await updateProspectWithEvent({
         prospectId: record.id,
-        status: "approved",
+        status: record.status,
         eventType: "send_error",
         lastError: message,
         metadata: {
-          fromStatus: "ready",
-          toStatus: "approved",
+          fromStatus: record.status,
+          toStatus: record.status,
           note: "Outbound email failed",
           error: message,
         } as Prisma.InputJsonObject,
@@ -324,7 +375,103 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
     }
   }
 
+  for (const record of followupRecords) {
+    if (!isValidEmail(normalizeEmail(record.email))) {
+      failedCount += 1;
+
+      await updateProspectWithEvent({
+        prospectId: record.id,
+        status: record.status,
+        eventType: "followup_invalid_email",
+        lastError: "Invalid or empty email for follow-up",
+        metadata: {
+          fromStatus: record.status,
+          toStatus: record.status,
+          note: "Skipped follow-up because email is invalid or empty",
+          error: "Invalid or empty email for follow-up",
+        } as Prisma.InputJsonObject,
+      });
+
+      continue;
+    }
+
+    const scoring = getProspectScoreCard(record);
+
+    if (scoring.priority !== "alto") {
+      blockedCount += 1;
+
+      await updateProspectWithEvent({
+        prospectId: record.id,
+        status: record.status,
+        eventType: "followup_skipped",
+        lastError: "Skipped follow-up because priority is not alto",
+        metadata: {
+          fromStatus: record.status,
+          toStatus: record.status,
+          note: "Skipped follow-up because priority is not alto",
+          priority: scoring.priority,
+          followupCount: record.followupCount,
+        } as Prisma.InputJsonObject,
+      });
+
+      continue;
+    }
+
+    try {
+      const draft = buildProspectOutreachDraft(record, "followup");
+      const sentAt = new Date();
+      const info = await sendCustomEmailWithTransporter({
+        transporter,
+        to: record.email,
+        subject: draft.subject,
+        message: draft.message,
+      });
+
+      followupsSentCount += 1;
+
+      await updateProspectWithEvent({
+        prospectId: record.id,
+        status: "contacted",
+        eventType: "followup_sent",
+        lastMessageId: info.messageId,
+        sentAt,
+        data: {
+          contacted: true,
+          lastContactedAt: sentAt,
+          followupCount: record.followupCount + 1,
+          subject: draft.subject,
+          message: draft.message,
+        },
+        metadata: {
+          fromStatus: record.status,
+          toStatus: "contacted",
+          note: "Automated follow-up email sent",
+          messageId: info.messageId,
+          followupCount: record.followupCount + 1,
+        } as Prisma.InputJsonObject,
+      });
+    } catch (error) {
+      failedCount += 1;
+      const message = error instanceof Error ? error.message : "Unknown follow-up error";
+
+      await updateProspectWithEvent({
+        prospectId: record.id,
+        status: record.status,
+        eventType: "followup_error",
+        lastError: message,
+        metadata: {
+          fromStatus: record.status,
+          toStatus: record.status,
+          note: "Automated follow-up failed",
+          error: message,
+          followupCount: record.followupCount,
+        } as Prisma.InputJsonObject,
+      });
+    }
+  }
+
   console.log(`[send] Enviados: ${sentCount}`);
+  console.log(`[send] Followups enviados: ${followupsSentCount}`);
   console.log(`[send] Fallidos: ${failedCount}`);
   console.log(`[send] Bloqueados: ${blockedCount}`);
   console.log(`[send] Omitidos por contacto previo: ${skippedPreviouslySentCount}`);
@@ -332,7 +479,9 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
   return {
     total: records.length,
     pending: pendingRecords.length,
+    dueFollowups: followupRecords.length,
     sent: sentCount,
+    followupsSent: followupsSentCount,
     failed: failedCount,
     blocked: blockedCount,
     skippedPreviouslySent: skippedPreviouslySentCount,
@@ -372,7 +521,11 @@ export async function sendProspectEmailById(input: {
     throw new Error("Prospecto no encontrado.");
   }
 
-  if (["contacted", "replied", "closed", "rejected"].includes(prospect.status)) {
+  if (prospect.contacted) {
+    throw new Error("El prospecto ya fue contactado y se omite el envio.");
+  }
+
+  if (["replied", "closed", "rejected"].includes(prospect.status)) {
     throw new Error("El prospecto no esta disponible para envio.");
   }
 
@@ -408,6 +561,7 @@ export async function sendProspectEmailById(input: {
   const transporter = createTransporter();
 
   try {
+    const sentAt = new Date();
     const info = await sendCustomEmailWithTransporter({
       transporter,
       to: prospect.email,
@@ -420,6 +574,11 @@ export async function sendProspectEmailById(input: {
       status: "contacted",
       eventType: "send_success",
       lastMessageId: info.messageId,
+      sentAt,
+      data: {
+        contacted: true,
+        lastContactedAt: sentAt,
+      },
       metadata: {
         fromStatus: prospect.status,
         toStatus: "contacted",
@@ -442,12 +601,12 @@ export async function sendProspectEmailById(input: {
 
     await updateProspectWithEvent({
       prospectId: prospect.id,
-      status: "approved",
+      status: prospect.status,
       eventType: "send_error",
       lastError: messageText,
       metadata: {
         fromStatus: prospect.status,
-        toStatus: "approved",
+        toStatus: prospect.status,
         note: "Outbound email failed from prospect endpoint",
         error: messageText,
         subject,

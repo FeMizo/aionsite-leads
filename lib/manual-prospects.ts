@@ -5,6 +5,7 @@ import {
   normalizeEmail,
   normalizeName,
   normalizePhone,
+  normalizeProspectType,
   normalizeWhitespace,
 } from "@/lib/normalizers";
 import { buildOpportunity } from "@/lib/opportunity";
@@ -69,7 +70,7 @@ export function prepareManualProspect(input: ManualProspectInput = {}): Prepared
   const city = normalizeWhitespace(input.city || "");
   const email = normalizeEmail(input.email || "");
   const phone = normalizePhone(input.phone || "");
-  const type = normalizeWhitespace(input.type || "Negocio local");
+  const type = normalizeProspectType(input.type || "Negocio local");
   const website = normalizeWebsiteInput(input.website || "");
   const derived = buildOpportunity({
     type,
@@ -140,6 +141,9 @@ function buildProspectCreateData(prepared: PreparedManualProspect, status: Prosp
     pitchAngle: prepared.pitchAngle,
     subject: "",
     message: "",
+    contacted: false,
+    lastContactedAt: null,
+    followupCount: 0,
     status,
     source: prepared.source,
     createdAt: timestamp,

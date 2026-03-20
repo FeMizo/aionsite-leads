@@ -1,7 +1,7 @@
 import type { SearchSpec } from "@/lib/types";
 
 export const DESIRED_PROSPECT_COUNT = 6;
-export const REQUIRED_TYPES = ["Inmobiliaria", "Restaurante"];
+export const REQUIRED_TYPES = ["inmobiliaria", "restaurant"];
 export const REQUIRE_EMAIL_FOR_FINAL_PROSPECTS = true;
 
 export const SEARCHES: SearchSpec[] = [
@@ -10,7 +10,7 @@ export const SEARCHES: SearchSpec[] = [
     city: "Merida",
     label: "restaurante en Merida",
     textQuery: "restaurante en Merida, Yucatan, Mexico",
-    typeLabel: "Restaurante",
+    typeLabel: "restaurant",
     includedType: "restaurant",
   },
   {
@@ -18,7 +18,7 @@ export const SEARCHES: SearchSpec[] = [
     city: "Merida",
     label: "inmobiliaria en Merida",
     textQuery: "inmobiliaria en Merida, Yucatan, Mexico",
-    typeLabel: "Inmobiliaria",
+    typeLabel: "inmobiliaria",
     includedType: "real_estate_agency",
   },
   {
@@ -26,7 +26,7 @@ export const SEARCHES: SearchSpec[] = [
     city: "Merida",
     label: "clinica en Merida",
     textQuery: "clinica en Merida, Yucatan, Mexico",
-    typeLabel: "Clinica",
+    typeLabel: "clinica",
     includedType: "doctor",
   },
   {
@@ -34,7 +34,7 @@ export const SEARCHES: SearchSpec[] = [
     city: "Villahermosa",
     label: "restaurante en Villahermosa",
     textQuery: "restaurante en Villahermosa, Tabasco, Mexico",
-    typeLabel: "Restaurante",
+    typeLabel: "restaurant",
     includedType: "restaurant",
   },
   {
@@ -42,7 +42,7 @@ export const SEARCHES: SearchSpec[] = [
     city: "Villahermosa",
     label: "inmobiliaria en Villahermosa",
     textQuery: "inmobiliaria en Villahermosa, Tabasco, Mexico",
-    typeLabel: "Inmobiliaria",
+    typeLabel: "inmobiliaria",
     includedType: "real_estate_agency",
   },
   {
@@ -50,7 +50,7 @@ export const SEARCHES: SearchSpec[] = [
     city: "Ciudad de Mexico",
     label: "restaurante en Ciudad de Mexico",
     textQuery: "restaurante en Ciudad de Mexico, Mexico",
-    typeLabel: "Restaurante",
+    typeLabel: "restaurant",
     includedType: "restaurant",
   },
   {
@@ -58,7 +58,7 @@ export const SEARCHES: SearchSpec[] = [
     city: "Ciudad de Mexico",
     label: "inmobiliaria en Ciudad de Mexico",
     textQuery: "inmobiliaria en Ciudad de Mexico, Mexico",
-    typeLabel: "Inmobiliaria",
+    typeLabel: "inmobiliaria",
     includedType: "real_estate_agency",
   },
 ];

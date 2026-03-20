@@ -47,7 +47,7 @@ function mapGooglePlaceToProspect(
     city: search.city,
     email: "",
     phone: place.nationalPhoneNumber || "",
-    type: search.typeLabel,
+    type: search.typeLabel.toLowerCase(),
     website: place.websiteUri || "",
     rating: place.rating ? String(place.rating) : "",
     mapsUrl: place.googleMapsUri || "",

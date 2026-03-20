@@ -23,6 +23,9 @@ function serializeProspect(prospect: {
   pitchAngle: string;
   subject: string;
   message: string;
+  contacted: boolean;
+  lastContactedAt: Date | null;
+  followupCount: number;
   status: string;
   source: string;
   createdAt: Date;
@@ -35,6 +38,9 @@ function serializeProspect(prospect: {
 
   return {
     ...prospect,
+    lastContactedAt: prospect.lastContactedAt
+      ? prospect.lastContactedAt.toISOString()
+      : null,
     createdAt: prospect.createdAt.toISOString(),
     lastCheckedAt: prospect.lastCheckedAt.toISOString(),
     score: scoring.score,
@@ -89,8 +95,8 @@ export async function getDashboardData(): Promise<DashboardData> {
     runs,
     generatedCount,
     prospectsCount,
-    contactedCount,
     readyCount,
+    contactedCount,
     rejectedCount,
     runsCount,
     activeRun,

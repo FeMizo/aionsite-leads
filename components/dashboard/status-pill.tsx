@@ -16,6 +16,8 @@ export function StatusPill({ status }: StatusPillProps) {
       ? "ready"
       : status === "contacted"
       ? "contacted"
+      : status === "replied"
+      ? "replied"
       : status === "rejected"
       ? "rejected"
       : status;

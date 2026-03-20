@@ -71,6 +71,13 @@ export async function PATCH(request: NextRequest, context: ProspectRouteContext)
       pitchAngle: typeof payload.pitchAngle === "string" ? payload.pitchAngle : undefined,
       subject: typeof payload.subject === "string" ? payload.subject : undefined,
       message: typeof payload.message === "string" ? payload.message : undefined,
+      contacted: typeof payload.contacted === "boolean" ? payload.contacted : undefined,
+      lastContactedAt:
+        typeof payload.lastContactedAt === "string" || payload.lastContactedAt === null
+          ? payload.lastContactedAt
+          : undefined,
+      followupCount:
+        typeof payload.followupCount === "number" ? payload.followupCount : undefined,
       businessStatus:
         typeof payload.businessStatus === "string" ? payload.businessStatus : undefined,
       source: typeof payload.source === "string" ? payload.source : undefined,

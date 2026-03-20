@@ -2,7 +2,7 @@ import { normalizeName, normalizeWebsite } from "@/lib/normalizers";
 import type { ProspectCandidate } from "@/lib/types";
 
 export type ProspectPriority = "alto" | "medio" | "bajo";
-export type ProspectAutomationStatus = "approved" | "analyzed" | "rejected";
+export type ProspectAutomationStatus = "approved" | "analyzed";
 type ProspectScoreInput = Pick<
   ProspectCandidate,
   "website" | "type" | "email" | "phone" | "mapsUrl"
@@ -82,10 +82,6 @@ export function getPriority(score: number): ProspectPriority {
 export function getProspectAutomationStatus(score: number): ProspectAutomationStatus {
   if (score >= 70) {
     return "approved";
-  }
-
-  if (score < 40) {
-    return "rejected";
   }
 
   return "analyzed";
