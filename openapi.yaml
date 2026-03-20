@@ -1,0 +1,339 @@
+openapi: 3.1.0
+info:
+  title: AionSite Leads API
+  version: 1.0.0
+  description: API protegida para listar prospectos, aprobar/rechazar leads, generar outreach y ejecutar busquedas.
+servers:
+  - url: https://your-domain.example.com
+    description: Production
+  - url: http://localhost:2692
+    description: Local
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API Key
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          const: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              nullable: true
+          required: [code, message, details]
+      required: [ok, error]
+    Prospect:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        contactName:
+          type: string
+        city:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        type:
+          type: string
+        website:
+          type: string
+        rating:
+          type: string
+        mapsUrl:
+          type: string
+        opportunity:
+          type: string
+        recommendedSite:
+          type: string
+        pitchAngle:
+          type: string
+        status:
+          type: string
+        source:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastCheckedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        businessStatus:
+          type: string
+        lastError:
+          type: string
+        lastMessageId:
+          type: string
+        runId:
+          type: string
+          nullable: true
+      required:
+        - id
+        - name
+        - city
+        - email
+        - type
+        - status
+        - createdAt
+        - lastCheckedAt
+        - updatedAt
+    Run:
+      type: object
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+        searchesCount:
+          type: integer
+        placesFound:
+          type: integer
+        duplicatesFiltered:
+          type: integer
+        emailsFound:
+          type: integer
+        prospectsSaved:
+          type: integer
+        googlePlacesRequests:
+          type: integer
+        websiteFetches:
+          type: integer
+        status:
+          type: string
+        error:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - source
+        - status
+        - createdAt
+    ProspectListResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          const: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Prospect'
+        count:
+          type: integer
+      required: [ok, items, count]
+    ProspectResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          const: true
+        item:
+          $ref: '#/components/schemas/Prospect'
+      required: [ok, item]
+    ActionResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          const: true
+        result:
+          type: object
+      required: [ok, result]
+    MessageResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          const: true
+        subject:
+          type: string
+        message:
+          type: string
+        analysis:
+          type: string
+        opportunity:
+          type: string
+      required: [ok, subject, message, analysis, opportunity]
+    RunsResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          const: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Run'
+        count:
+          type: integer
+      required: [ok, items, count]
+security:
+  - bearerAuth: []
+paths:
+  /api/prospects:
+    get:
+      summary: List prospects
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Prospect list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProspectListResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/prospects/{id}:
+    get:
+      summary: Get prospect by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Prospect detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProspectResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/prospects/{id}/approve:
+    post:
+      summary: Approve prospect
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Prospect approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResponse'
+  /api/prospects/{id}/reject:
+    post:
+      summary: Reject prospect
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Prospect rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResponse'
+  /api/prospects/{id}/message:
+    post:
+      summary: Generate outreach draft
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Outreach draft
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+  /api/prospects/{id}/send:
+    post:
+      summary: Send outreach email to one prospect
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subject:
+                  type: string
+                message:
+                  type: string
+              required: [subject, message]
+      responses:
+        '200':
+          description: Email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResponse'
+  /api/runs:
+    get:
+      summary: List recent runs
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Run list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunsResponse'
+  /api/runs/execute:
+    post:
+      summary: Execute manual run
+      responses:
+        '200':
+          description: Run executed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResponse'

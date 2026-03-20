@@ -14,6 +14,8 @@ export function StatusPill({ status }: StatusPillProps) {
       ? "contacted"
       : status === "failed"
       ? "failed"
+      : status === "rejected"
+      ? "rejected"
       : status;
 
   return <span className={`status-pill status-pill--${status}`}>{label}</span>;

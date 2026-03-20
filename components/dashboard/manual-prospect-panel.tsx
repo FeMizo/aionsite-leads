@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { getApiErrorMessage } from "@/lib/api-client";
 
 const DEFAULT_TEST_PROSPECT = {
   name: "Aion Site",
@@ -26,7 +27,7 @@ async function postJson(url: string, payload: Record<string, unknown>) {
   const body = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(body.error || "No se pudo completar la accion.");
+    throw new Error(getApiErrorMessage(body, "No se pudo completar la accion."));
   }
 
   return body;

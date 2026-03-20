@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { sendProspectEmails, sendTestEmail } from "@/lib/mailer";
+import { ok, fail } from "@/lib/api";
 import {
   DATABASE_ENV_KEYS,
   SMTP_ENV_KEYS,
@@ -22,11 +23,11 @@ export async function POST(request: NextRequest) {
       const smtpError = formatMissingEnvError("SMTP", SMTP_ENV_KEYS);
 
       if (smtpError) {
-        return NextResponse.json({ error: smtpError }, { status: 503 });
+        return fail("SMTP_CONFIG_MISSING", smtpError, 503);
       }
 
       const result = await sendTestEmail(payload.prospect);
-      return NextResponse.json({ ok: true, result });
+      return ok({ result });
     }
 
     const configError =
@@ -34,22 +35,18 @@ export async function POST(request: NextRequest) {
       formatMissingEnvError("SMTP", SMTP_ENV_KEYS);
 
     if (configError) {
-      return NextResponse.json({ error: configError }, { status: 503 });
+      return fail("SEND_CONFIG_MISSING", configError, 503);
     }
 
     const ids = Array.isArray(payload.ids) ? payload.ids : [];
     const result = await sendProspectEmails({ prospectIds: ids });
 
-    return NextResponse.json({ ok: true, result });
+    return ok({ result });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "No se pudo ejecutar el envio.",
-      },
-      { status: 500 }
+    return fail(
+      "SEND_FAILED",
+      error instanceof Error ? error.message : "No se pudo ejecutar el envio.",
+      500
     );
   }
 }

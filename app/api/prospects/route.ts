@@ -1,104 +1,136 @@
-import { NextRequest, NextResponse } from "next/server";
-import type { Prisma, ProspectStatus } from "@/generated/prisma";
+import { NextRequest } from "next/server";
 import { getPrismaClient } from "@/lib/db";
-import { getDashboardData } from "@/lib/dashboard";
+import { ok, fail } from "@/lib/api";
+import { requireBearer } from "@/lib/auth";
 import { DATABASE_ENV_KEYS, formatMissingEnvError } from "@/lib/env";
 import {
-  createManualProspect,
-  type ManualProspectInput,
-} from "@/lib/manual-prospects";
+  createProspect,
+  listProspects,
+  parseLimit,
+  parseProspectStatus,
+  transitionProspects,
+  type ProspectActionPayload,
+} from "@/lib/prospects";
 
 export const runtime = "nodejs";
 
-type ActionPayload = {
-  action?: string;
-  ids?: string[];
-  prospect?: ManualProspectInput;
+type CreateProspectPayload = ProspectActionPayload & {
+  name?: unknown;
+  contactName?: unknown;
+  city?: unknown;
+  email?: unknown;
+  phone?: unknown;
+  type?: unknown;
+  website?: unknown;
 };
 
-type TransitionConfig = {
-  fromStatuses?: ProspectStatus[];
-  nextStatus: ProspectStatus;
-  eventType: string;
-  note: string;
-  clearError?: boolean;
-};
+export async function GET(request: NextRequest) {
+  const authError = requireBearer(request);
 
-async function transitionProspects(ids: string[], config: TransitionConfig) {
-  if (!ids.length) {
-    throw new Error("Selecciona al menos un registro.");
+  if (authError) {
+    return authError;
   }
 
-  const prisma = getPrismaClient();
-  const now = new Date();
-
-  return prisma.$transaction(async (tx) => {
-    const records = await tx.prospect.findMany({
-      where: {
-        id: {
-          in: ids,
-        },
-      },
-    });
-
-    const matchingRecords = records.filter((record) =>
-      config.fromStatuses ? config.fromStatuses.includes(record.status) : true
-    );
-
-    if (!matchingRecords.length) {
-      throw new Error("No hay registros validos para esa accion.");
-    }
-
-    for (const record of matchingRecords) {
-      await tx.prospect.update({
-        where: { id: record.id },
-        data: {
-          status: config.nextStatus,
-          lastCheckedAt: now,
-          lastError: config.clearError ? "" : record.lastError,
-        },
-      });
-
-      await tx.contactEvent.create({
-        data: {
-          prospectId: record.id,
-          eventType: config.eventType,
-          createdAt: now,
-          metadata: {
-            fromStatus: record.status,
-            toStatus: config.nextStatus,
-            note: config.note,
-          } as Prisma.InputJsonObject,
-        },
-      });
-    }
-
-    return {
-      changed: matchingRecords.length,
-    };
-  });
-}
-
-export async function GET() {
   const configError = formatMissingEnvError("la base de datos", DATABASE_ENV_KEYS);
 
   if (configError) {
-    return NextResponse.json({ error: configError }, { status: 503 });
+    return fail("DATABASE_CONFIG_MISSING", configError, 503);
   }
 
-  const data = await getDashboardData();
-  return NextResponse.json({ ok: true, data });
+  const statusValue = request.nextUrl.searchParams.get("status");
+  const limitValue = request.nextUrl.searchParams.get("limit");
+  const limit = parseLimit(limitValue, 20);
+
+  if (limit === null) {
+    return fail("INVALID_LIMIT", "El parametro limit debe ser un entero positivo.", 400);
+  }
+
+  if (statusValue && !parseProspectStatus(statusValue)) {
+    return fail("INVALID_STATUS", "El parametro status no es valido.", 400, {
+      allowed: [
+        "generated",
+        "prospect",
+        "contacted",
+        "failed",
+        "replied",
+        "closed",
+        "archived",
+        "deleted",
+        "rejected",
+      ],
+    });
+  }
+
+  try {
+    const items = await listProspects({
+      status: parseProspectStatus(statusValue),
+      limit,
+    });
+
+    return ok({
+      items,
+      count: items.length,
+      filters: {
+        status: parseProspectStatus(statusValue),
+        limit,
+      },
+    });
+  } catch (error) {
+    return fail(
+      "PROSPECT_LIST_FAILED",
+      error instanceof Error ? error.message : "No se pudieron listar los prospectos.",
+      500
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {
   const configError = formatMissingEnvError("la base de datos", DATABASE_ENV_KEYS);
 
   if (configError) {
-    return NextResponse.json({ error: configError }, { status: 503 });
+    return fail("DATABASE_CONFIG_MISSING", configError, 503);
   }
 
+  const payload = (await request.json().catch(() => ({}))) as CreateProspectPayload;
+
+  if (payload.action) {
+    return handleLegacyDashboardAction(payload);
+  }
+
+  const authError = requireBearer(request);
+
+  if (authError) {
+    return authError;
+  }
+
+  try {
+    const prospect = await createProspect({
+      name: typeof payload.name === "string" ? payload.name : undefined,
+      contactName: typeof payload.contactName === "string" ? payload.contactName : undefined,
+      city: typeof payload.city === "string" ? payload.city : undefined,
+      email: typeof payload.email === "string" ? payload.email : undefined,
+      phone: typeof payload.phone === "string" ? payload.phone : undefined,
+      type: typeof payload.type === "string" ? payload.type : undefined,
+      website: typeof payload.website === "string" ? payload.website : undefined,
+    });
+
+    return ok(
+      {
+        item: prospect,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    return fail(
+      "PROSPECT_CREATE_FAILED",
+      error instanceof Error ? error.message : "No se pudo crear el prospecto.",
+      400
+    );
+  }
+}
+
+async function handleLegacyDashboardAction(payload: ProspectActionPayload) {
   const prisma = getPrismaClient();
-  const payload = (await request.json().catch(() => ({}))) as ActionPayload;
   const ids = Array.isArray(payload.ids) ? payload.ids : [];
 
   try {
@@ -111,14 +143,14 @@ export async function POST(request: NextRequest) {
           note: "Record moved from generated to prospect",
           clearError: true,
         });
-        return NextResponse.json({ ok: true, result });
+
+        return ok({ result });
       }
       case "approveAllGenerated": {
         const generatedIds = await prisma.prospect.findMany({
           where: { status: "generated" },
           select: { id: true },
         });
-
         const result = await transitionProspects(
           generatedIds.map((record) => record.id),
           {
@@ -129,7 +161,8 @@ export async function POST(request: NextRequest) {
             clearError: true,
           }
         );
-        return NextResponse.json({ ok: true, result });
+
+        return ok({ result });
       }
       case "restoreFailed": {
         const result = await transitionProspects(ids, {
@@ -139,7 +172,8 @@ export async function POST(request: NextRequest) {
           note: "Failed prospect restored to active queue",
           clearError: true,
         });
-        return NextResponse.json({ ok: true, result });
+
+        return ok({ result });
       }
       case "archiveRecords": {
         const result = await transitionProspects(ids, {
@@ -147,7 +181,8 @@ export async function POST(request: NextRequest) {
           eventType: "archived",
           note: "Record archived from dashboard",
         });
-        return NextResponse.json({ ok: true, result });
+
+        return ok({ result });
       }
       case "deleteRecords": {
         const result = await transitionProspects(ids, {
@@ -155,17 +190,19 @@ export async function POST(request: NextRequest) {
           eventType: "deleted",
           note: "Record deleted from active flow",
         });
-        return NextResponse.json({ ok: true, result });
+
+        return ok({ result });
       }
       case "markContacted": {
         const result = await transitionProspects(ids, {
-          fromStatuses: ["prospect", "failed"],
+          fromStatuses: ["prospect", "failed", "generated", "rejected"],
           nextStatus: "contacted",
           eventType: "marked_contacted",
           note: "Record marked as contacted manually",
           clearError: true,
         });
-        return NextResponse.json({ ok: true, result });
+
+        return ok({ result });
       }
       case "markAsClient": {
         const result = await transitionProspects(ids, {
@@ -175,13 +212,13 @@ export async function POST(request: NextRequest) {
           note: "Record marked as client",
           clearError: true,
         });
-        return NextResponse.json({ ok: true, result });
+
+        return ok({ result });
       }
       case "createManual": {
-        const prospect = await createManualProspect(payload.prospect);
+        const prospect = await createProspect(payload.prospect || {});
 
-        return NextResponse.json({
-          ok: true,
+        return ok({
           result: {
             id: prospect.id,
             name: prospect.name,
@@ -190,15 +227,13 @@ export async function POST(request: NextRequest) {
         });
       }
       default:
-        return NextResponse.json({ error: "Accion no soportada." }, { status: 400 });
+        return fail("UNSUPPORTED_ACTION", "Accion no soportada.", 400);
     }
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "No se pudo completar la accion.",
-      },
-      { status: 500 }
+    return fail(
+      "LEGACY_ACTION_FAILED",
+      error instanceof Error ? error.message : "No se pudo completar la accion.",
+      500
     );
   }
 }

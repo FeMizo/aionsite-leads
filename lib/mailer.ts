@@ -58,6 +58,32 @@ function createTransporter() {
   });
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function renderPlainTextAsHtml(message: string) {
+  return `<!DOCTYPE html>
+<html lang="es">
+  <body style="margin:0;padding:24px;background:#f8fafc;font-family:Arial,sans-serif;color:#0f172a;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:680px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:18px;">
+      <tr>
+        <td style="padding:28px;">
+          <div style="white-space:pre-wrap;font-size:15px;line-height:1.75;color:#334155;">${escapeHtml(
+            message
+          )}</div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
 async function sendEmailWithTransporter(
   transporter: nodemailer.Transporter,
   record: ProspectEmailModel
@@ -75,6 +101,23 @@ async function sendEmailWithTransporter(
     info,
     email,
   };
+}
+
+async function sendCustomEmailWithTransporter(params: {
+  transporter: nodemailer.Transporter;
+  to: string;
+  subject: string;
+  message: string;
+}) {
+  const info = await params.transporter.sendMail({
+    from: `"${getFromName()}" <${getFromEmail() || getSmtpUser()}>`,
+    to: params.to,
+    subject: params.subject,
+    text: params.message,
+    html: renderPlainTextAsHtml(params.message),
+  });
+
+  return info;
 }
 
 function findPreviouslyContacted(record: Prospect, records: Prospect[]) {
@@ -278,4 +321,90 @@ export async function sendTestEmail(input: ManualProspectInput = {}) {
     subject: email.subject,
     to: prepared.email,
   };
+}
+
+export async function sendProspectEmailById(input: {
+  prospectId: string;
+  subject: string;
+  message: string;
+}) {
+  const prisma = getPrismaClient();
+  const prospect = await prisma.prospect.findUnique({
+    where: { id: input.prospectId },
+  });
+
+  if (!prospect) {
+    throw new Error("Prospecto no encontrado.");
+  }
+
+  if (["deleted", "archived", "closed"].includes(prospect.status)) {
+    throw new Error("El prospecto no esta disponible para envio.");
+  }
+
+  if (!isValidEmail(normalizeEmail(prospect.email))) {
+    throw new Error("El prospecto no tiene un correo valido.");
+  }
+
+  const subject = input.subject.trim();
+  const message = input.message.trim();
+
+  if (!subject) {
+    throw new Error("El asunto es obligatorio.");
+  }
+
+  if (!message) {
+    throw new Error("El mensaje es obligatorio.");
+  }
+
+  const transporter = createTransporter();
+
+  try {
+    const info = await sendCustomEmailWithTransporter({
+      transporter,
+      to: prospect.email,
+      subject,
+      message,
+    });
+
+    await updateProspectWithEvent({
+      prospectId: prospect.id,
+      status: "contacted",
+      eventType: "send_success",
+      lastMessageId: info.messageId,
+      metadata: {
+        fromStatus: prospect.status,
+        toStatus: "contacted",
+        note: "Outbound email sent from prospect endpoint",
+        messageId: info.messageId,
+        subject,
+      } as Prisma.InputJsonObject,
+    });
+
+    return {
+      id: prospect.id,
+      email: prospect.email,
+      subject,
+      messageId: info.messageId,
+      status: "contacted" as const,
+    };
+  } catch (error) {
+    const messageText =
+      error instanceof Error ? error.message : "Unknown email error";
+
+    await updateProspectWithEvent({
+      prospectId: prospect.id,
+      status: "failed",
+      eventType: "send_error",
+      lastError: messageText,
+      metadata: {
+        fromStatus: prospect.status,
+        toStatus: "failed",
+        note: "Outbound email failed from prospect endpoint",
+        error: messageText,
+        subject,
+      } as Prisma.InputJsonObject,
+    });
+
+    throw error;
+  }
 }

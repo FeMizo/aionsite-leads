@@ -16,6 +16,7 @@ enum ProspectStatus {
   closed
   archived
   deleted
+  rejected
 }
 
 model Prospect {

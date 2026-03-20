@@ -419,6 +419,12 @@ code {
   border-color: #fecaca;
 }
 
+.status-pill--rejected {
+  background: #fff1f2;
+  color: #be123c;
+  border-color: #fecdd3;
+}
+
 .status-pill--archived,
 .status-pill--deleted {
   background: #f3f4f6;

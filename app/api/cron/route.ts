@@ -1,9 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { runProspectSearch } from "@/lib/pipeline";
+import { NextRequest } from "next/server";
+import { ok, fail } from "@/lib/api";
+import { executeProspectRun, getRunExecutionConfigError } from "@/lib/runs";
 import {
-  DATABASE_ENV_KEYS,
-  GOOGLE_PLACES_ENV_KEYS,
-  formatMissingEnvError,
   getCronSecret,
 } from "@/lib/env";
 
@@ -21,58 +19,50 @@ function isAuthorizedCronRequest(request: NextRequest) {
 }
 
 async function executeRun() {
-  const result = await runProspectSearch();
-  return NextResponse.json({ ok: true, result });
+  const result = await executeProspectRun();
+  return ok({ result });
 }
 
 export async function GET(request: NextRequest) {
   if (!isAuthorizedCronRequest(request)) {
-    return NextResponse.json({ error: "Unauthorized cron request." }, { status: 401 });
+    return fail("CRON_UNAUTHORIZED", "Unauthorized cron request.", 401);
   }
 
-  const configError =
-    formatMissingEnvError("la base de datos", DATABASE_ENV_KEYS) ||
-    formatMissingEnvError("Google Places", GOOGLE_PLACES_ENV_KEYS);
+  const configError = getRunExecutionConfigError();
 
   if (configError) {
-    return NextResponse.json({ error: configError }, { status: 503 });
+    return fail("RUN_CONFIG_MISSING", configError, 503);
   }
 
   try {
     return await executeRun();
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "No se pudo ejecutar la busqueda programada.",
-      },
-      { status: 500 }
+    return fail(
+      "RUN_EXECUTION_FAILED",
+      error instanceof Error
+        ? error.message
+        : "No se pudo ejecutar la busqueda programada.",
+      500
     );
   }
 }
 
 export async function POST() {
-  const configError =
-    formatMissingEnvError("la base de datos", DATABASE_ENV_KEYS) ||
-    formatMissingEnvError("Google Places", GOOGLE_PLACES_ENV_KEYS);
+  const configError = getRunExecutionConfigError();
 
   if (configError) {
-    return NextResponse.json({ error: configError }, { status: 503 });
+    return fail("RUN_CONFIG_MISSING", configError, 503);
   }
 
   try {
     return await executeRun();
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "No se pudo ejecutar la busqueda manual.",
-      },
-      { status: 500 }
+    return fail(
+      "RUN_EXECUTION_FAILED",
+      error instanceof Error
+        ? error.message
+        : "No se pudo ejecutar la busqueda manual.",
+      500
     );
   }
 }

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { getApiErrorMessage } from "@/lib/api-client";
 import type { DashboardProspect } from "@/lib/types";
 import { StatusPill } from "@/components/dashboard/status-pill";
 
@@ -35,7 +36,7 @@ async function postAction(
 
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
-    throw new Error(payload.error || "No se pudo completar la accion.");
+    throw new Error(getApiErrorMessage(payload, "No se pudo completar la accion."));
   }
 }
 
