@@ -49,6 +49,10 @@ components:
           type: string
         contacted:
           type: boolean
+        scheduledSendAt:
+          type: string
+          format: date-time
+          nullable: true
         lastContactedAt:
           type: string
           format: date-time
@@ -158,6 +162,10 @@ components:
           type: string
         contacted:
           type: boolean
+        scheduledSendAt:
+          type: string
+          format: date-time
+          nullable: true
         lastContactedAt:
           type: string
           format: date-time

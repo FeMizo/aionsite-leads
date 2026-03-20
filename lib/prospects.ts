@@ -40,6 +40,7 @@ const prospectListSelect = {
   subject: true,
   message: true,
   contacted: true,
+  scheduledSendAt: true,
   lastContactedAt: true,
   followupCount: true,
   followupStage: true,
@@ -114,6 +115,7 @@ export type ProspectUpdateInput = {
   subject?: string;
   message?: string;
   contacted?: boolean;
+  scheduledSendAt?: string | null;
   lastContactedAt?: string | null;
   followupCount?: number;
   followupStage?: number;
@@ -135,6 +137,7 @@ function serializeProspect(record: ProspectListRecord) {
 
   return {
     ...record,
+    scheduledSendAt: record.scheduledSendAt ? record.scheduledSendAt.toISOString() : null,
     lastContactedAt: record.lastContactedAt ? record.lastContactedAt.toISOString() : null,
     createdAt: record.createdAt.toISOString(),
     lastCheckedAt: record.lastCheckedAt.toISOString(),
@@ -484,6 +487,10 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
 
   if ("contacted" in input && typeof input.contacted === "boolean") {
     data.contacted = input.contacted;
+  }
+
+  if ("scheduledSendAt" in input) {
+    data.scheduledSendAt = input.scheduledSendAt ? new Date(input.scheduledSendAt) : null;
   }
 
   if ("lastContactedAt" in input) {

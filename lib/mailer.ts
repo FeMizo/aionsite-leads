@@ -19,6 +19,13 @@ import {
 import { buildProspectOutreachDraft, type OutreachMessageType } from "@/lib/outreach";
 import { getProspectScoreCard } from "@/lib/prospect-scoring";
 import { normalizeEmail } from "@/lib/normalizers";
+import {
+  countEmailsSentToday,
+  isGoodTimeToSend,
+  isScheduledSendDue,
+  MAX_PER_DAY,
+  MAX_PER_RUN,
+} from "@/lib/send-scheduler";
 
 const TERMINAL_STATUSES: ProspectStatus[] = ["replied", "closed", "rejected"];
 const CONTACTED_STATUSES: ProspectStatus[] = ["contacted", "replied", "closed"];
@@ -40,6 +47,11 @@ type SendSummary = {
   failed: number;
   blocked: number;
   skippedPreviouslySent: number;
+};
+
+type SendBudget = {
+  remainingRun: number;
+  remainingDay: number;
 };
 
 const FOLLOWUP_SEQUENCE: FollowupPlan[] = [
@@ -155,6 +167,24 @@ function mergeSendSummaries(left: SendSummary, right: SendSummary): SendSummary 
     blocked: left.blocked + right.blocked,
     skippedPreviouslySent: left.skippedPreviouslySent + right.skippedPreviouslySent,
   };
+}
+
+async function createSendBudget() {
+  const sentToday = await countEmailsSentToday();
+
+  return {
+    remainingRun: MAX_PER_RUN,
+    remainingDay: Math.max(MAX_PER_DAY - sentToday, 0),
+  } satisfies SendBudget;
+}
+
+function canSendMore(budget: SendBudget) {
+  return budget.remainingRun > 0 && budget.remainingDay > 0;
+}
+
+function consumeSendBudget(budget: SendBudget) {
+  budget.remainingRun -= 1;
+  budget.remainingDay -= 1;
 }
 
 async function sendEmailWithTransporter(
@@ -313,11 +343,18 @@ export async function listDueFollowups(options: { prospectIds?: string[] } = {})
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
 }
 
-export async function sendInitialProspectEmails(options: { prospectIds?: string[] } = {}) {
+export async function sendInitialProspectEmails(
+  options: { prospectIds?: string[] } = {},
+  budget?: SendBudget
+) {
   const records = await loadRecords();
   const ids = Array.isArray(options.prospectIds) ? options.prospectIds : [];
-  const pendingRecords = filterByIds(records, ids).filter((record) => record.status === "ready");
+  const now = new Date();
+  const pendingRecords = filterByIds(records, ids).filter(
+    (record) => record.status === "ready" && isScheduledSendDue(record, now)
+  );
   const summary = createEmptySendSummary(records.length);
+  const sendBudget = budget || (await createSendBudget());
 
   summary.pending = pendingRecords.length;
 
@@ -331,6 +368,26 @@ export async function sendInitialProspectEmails(options: { prospectIds?: string[
   const transporter = createTransporter();
 
   for (const record of pendingRecords) {
+    if (!canSendMore(sendBudget)) {
+      summary.blocked += 1;
+
+      await updateProspectWithEvent({
+        prospectId: record.id,
+        status: record.status,
+        eventType: "send_rate_limited",
+        lastError: "Blocked because MAX_PER_RUN or MAX_PER_DAY was reached",
+        metadata: {
+          fromStatus: record.status,
+          toStatus: record.status,
+          note: "Blocked because MAX_PER_RUN or MAX_PER_DAY was reached",
+          remainingRun: sendBudget.remainingRun,
+          remainingDay: sendBudget.remainingDay,
+        } as Prisma.InputJsonObject,
+      });
+
+      continue;
+    }
+
     const previousContact = findPreviouslyContacted(record, records);
     const scoring = getProspectScoreCard(record);
 
@@ -397,6 +454,26 @@ export async function sendInitialProspectEmails(options: { prospectIds?: string[
       continue;
     }
 
+    if (!isGoodTimeToSend(record, now)) {
+      summary.blocked += 1;
+
+      await updateProspectWithEvent({
+        prospectId: record.id,
+        status: record.status,
+        eventType: "send_outside_business_hours",
+        lastError: "Blocked because current hour is outside recommended business hours",
+        metadata: {
+          fromStatus: record.status,
+          toStatus: record.status,
+          note: "Blocked because current hour is outside recommended business hours",
+          scheduledSendAt: record.scheduledSendAt?.toISOString() || null,
+          currentHour: now.getHours(),
+        } as Prisma.InputJsonObject,
+      });
+
+      continue;
+    }
+
     try {
       const sentAt = new Date();
       const info = await sendCustomEmailWithTransporter({
@@ -407,6 +484,7 @@ export async function sendInitialProspectEmails(options: { prospectIds?: string[
       });
 
       summary.sent += 1;
+      consumeSendBudget(sendBudget);
 
       await updateProspectWithEvent({
         prospectId: record.id,
@@ -416,6 +494,7 @@ export async function sendInitialProspectEmails(options: { prospectIds?: string[
         sentAt,
         data: {
           contacted: true,
+          scheduledSendAt: null,
           lastContactedAt: sentAt,
           followupStage: record.followupStage + 1,
         },
@@ -449,16 +528,21 @@ export async function sendInitialProspectEmails(options: { prospectIds?: string[
   return summary;
 }
 
-export async function sendDueFollowupEmails(options: { prospectIds?: string[] } = {}) {
+export async function sendDueFollowupEmails(
+  options: { prospectIds?: string[] } = {},
+  budget?: SendBudget
+) {
   const records = await loadRecords();
   const ids = Array.isArray(options.prospectIds) ? options.prospectIds : [];
+  const now = new Date();
   const candidates = filterByIds(records, ids)
     .map((record) => {
       const plan = getDueFollowupPlan(record);
-      return plan ? { record, plan } : null;
+      return plan && isScheduledSendDue(record, now) ? { record, plan } : null;
     })
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
   const summary = createEmptySendSummary(records.length);
+  const sendBudget = budget || (await createSendBudget());
 
   summary.dueFollowups = candidates.length;
 
@@ -472,6 +556,27 @@ export async function sendDueFollowupEmails(options: { prospectIds?: string[] } 
   const transporter = createTransporter();
 
   for (const { record, plan } of candidates) {
+    if (!canSendMore(sendBudget)) {
+      summary.blocked += 1;
+
+      await updateProspectWithEvent({
+        prospectId: record.id,
+        status: record.status,
+        eventType: "followup_rate_limited",
+        lastError: "Blocked because MAX_PER_RUN or MAX_PER_DAY was reached",
+        metadata: {
+          fromStatus: record.status,
+          toStatus: record.status,
+          note: "Blocked because MAX_PER_RUN or MAX_PER_DAY was reached",
+          remainingRun: sendBudget.remainingRun,
+          remainingDay: sendBudget.remainingDay,
+          followupStage: record.followupStage,
+        } as Prisma.InputJsonObject,
+      });
+
+      continue;
+    }
+
     if (!isValidEmail(normalizeEmail(record.email))) {
       summary.failed += 1;
 
@@ -515,6 +620,27 @@ export async function sendDueFollowupEmails(options: { prospectIds?: string[] } 
       continue;
     }
 
+    if (!isGoodTimeToSend(record, now)) {
+      summary.blocked += 1;
+
+      await updateProspectWithEvent({
+        prospectId: record.id,
+        status: record.status,
+        eventType: "followup_outside_business_hours",
+        lastError: "Blocked because current hour is outside recommended business hours",
+        metadata: {
+          fromStatus: record.status,
+          toStatus: record.status,
+          note: "Blocked because current hour is outside recommended business hours",
+          followupStage: record.followupStage,
+          scheduledSendAt: record.scheduledSendAt?.toISOString() || null,
+          currentHour: now.getHours(),
+        } as Prisma.InputJsonObject,
+      });
+
+      continue;
+    }
+
     try {
       const draft = buildProspectOutreachDraft(record, plan.type);
       const sentAt = new Date();
@@ -526,6 +652,7 @@ export async function sendDueFollowupEmails(options: { prospectIds?: string[] } 
       });
 
       summary.followupsSent += 1;
+      consumeSendBudget(sendBudget);
 
       await updateProspectWithEvent({
         prospectId: record.id,
@@ -535,6 +662,7 @@ export async function sendDueFollowupEmails(options: { prospectIds?: string[] } 
         sentAt,
         data: {
           contacted: true,
+          scheduledSendAt: null,
           lastContactedAt: sentAt,
           followupCount: record.followupCount + 1,
           followupStage: record.followupStage + 1,
@@ -581,17 +709,18 @@ export async function sendProspectEmails(options: {
   mode?: "all" | "initial" | "followups";
 } = {}) {
   const mode = options.mode || "all";
+  const budget = await createSendBudget();
 
   if (mode === "initial") {
-    return sendInitialProspectEmails(options);
+    return sendInitialProspectEmails(options, budget);
   }
 
   if (mode === "followups") {
-    return sendDueFollowupEmails(options);
+    return sendDueFollowupEmails(options, budget);
   }
 
-  const initial = await sendInitialProspectEmails(options);
-  const followups = await sendDueFollowupEmails(options);
+  const initial = await sendInitialProspectEmails(options, budget);
+  const followups = await sendDueFollowupEmails(options, budget);
 
   return mergeSendSummaries(initial, followups);
 }
@@ -683,10 +812,11 @@ export async function sendProspectEmailById(input: {
       eventType: "send_success",
       lastMessageId: info.messageId,
       sentAt,
-      data: {
-        contacted: true,
-        lastContactedAt: sentAt,
-        followupStage: prospect.followupStage + 1,
+        data: {
+          contacted: true,
+          scheduledSendAt: null,
+          lastContactedAt: sentAt,
+          followupStage: prospect.followupStage + 1,
       },
       metadata: {
         fromStatus: prospect.status,

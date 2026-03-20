@@ -72,6 +72,10 @@ export async function PATCH(request: NextRequest, context: ProspectRouteContext)
       subject: typeof payload.subject === "string" ? payload.subject : undefined,
       message: typeof payload.message === "string" ? payload.message : undefined,
       contacted: typeof payload.contacted === "boolean" ? payload.contacted : undefined,
+      scheduledSendAt:
+        typeof payload.scheduledSendAt === "string" || payload.scheduledSendAt === null
+          ? payload.scheduledSendAt
+          : undefined,
       lastContactedAt:
         typeof payload.lastContactedAt === "string" || payload.lastContactedAt === null
           ? payload.lastContactedAt

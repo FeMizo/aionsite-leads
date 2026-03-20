@@ -24,6 +24,7 @@ function serializeProspect(prospect: {
   subject: string;
   message: string;
   contacted: boolean;
+  scheduledSendAt: Date | null;
   lastContactedAt: Date | null;
   followupCount: number;
   followupStage: number;
@@ -39,6 +40,9 @@ function serializeProspect(prospect: {
 
   return {
     ...prospect,
+    scheduledSendAt: prospect.scheduledSendAt
+      ? prospect.scheduledSendAt.toISOString()
+      : null,
     lastContactedAt: prospect.lastContactedAt
       ? prospect.lastContactedAt.toISOString()
       : null,

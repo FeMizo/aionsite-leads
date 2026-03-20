@@ -1,0 +1,2 @@
+ALTER TABLE "Prospect"
+ADD COLUMN IF NOT EXISTS "scheduledSendAt" TIMESTAMP(3);
