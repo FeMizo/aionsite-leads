@@ -1,37 +1,19 @@
 openapi: 3.1.0
 info:
   title: AionSite Leads API
+  description: API para gestionar prospectos y outreach de AionSite
   version: 1.0.0
-  description: API protegida para listar prospectos, aprobar/rechazar leads, generar outreach y ejecutar busquedas.
+
 servers:
-  - url: https://your-domain.example.com
-    description: Production
-  - url: http://localhost:2692
-    description: Local
+  - url: https://aionsite-leads.vercel.app
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: API Key
+
   schemas:
-    ApiError:
-      type: object
-      properties:
-        ok:
-          type: boolean
-          const: false
-        error:
-          type: object
-          properties:
-            code:
-              type: string
-            message:
-              type: string
-            details:
-              nullable: true
-          required: [code, message, details]
-      required: [ok, error]
     Prospect:
       type: object
       properties:
@@ -77,12 +59,23 @@ components:
           type: integer
         status:
           type: string
-          enum: [generated, analyzed, approved, ready, contacted, replied, closed, rejected]
+          enum:
+            - generated
+            - analyzed
+            - approved
+            - ready
+            - contacted
+            - replied
+            - closed
+            - rejected
         score:
           type: integer
         priority:
           type: string
-          enum: [alto, medio, bajo]
+          enum:
+            - alto
+            - medio
+            - bajo
         source:
           type: string
         createdAt:
@@ -107,19 +100,165 @@ components:
         - id
         - name
         - city
-        - email
         - type
         - status
+
+    ProspectCreateInput:
+      type: object
+      properties:
+        name:
+          type: string
+        contactName:
+          type: string
+        city:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        type:
+          type: string
+        website:
+          type: string
+      required:
+        - name
+        - city
+        - type
+
+    ProspectUpdateInput:
+      type: object
+      properties:
+        name:
+          type: string
+        contactName:
+          type: string
+        city:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        type:
+          type: string
+        website:
+          type: string
+        rating:
+          type: string
+        mapsUrl:
+          type: string
+        opportunity:
+          type: string
+        recommendedSite:
+          type: string
+        pitchAngle:
+          type: string
+        subject:
+          type: string
+        message:
+          type: string
+        contacted:
+          type: boolean
+        lastContactedAt:
+          type: string
+          format: date-time
+          nullable: true
+        followupCount:
+          type: integer
+        followupStage:
+          type: integer
+        businessStatus:
+          type: string
+        source:
+          type: string
+
+    MessageRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - first_contact
+            - followup
+            - followup_1
+            - followup_2
+            - followup_3
+            - closing
+
+    SendRequest:
+      type: object
+      properties:
+        subject:
+          type: string
+        message:
+          type: string
+      required:
         - subject
         - message
-        - contacted
-        - followupCount
-        - followupStage
-        - score
-        - priority
-        - createdAt
-        - lastCheckedAt
-        - updatedAt
+
+    ProspectListResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Prospect"
+        count:
+          type: integer
+      required:
+        - ok
+        - items
+        - count
+
+    ProspectResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        item:
+          $ref: "#/components/schemas/Prospect"
+      required:
+        - ok
+        - item
+
+    MessageResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        type:
+          type: string
+        subject:
+          type: string
+        message:
+          type: string
+        analysis:
+          type: string
+        opportunity:
+          type: string
+        item:
+          $ref: "#/components/schemas/Prospect"
+      required:
+        - ok
+        - type
+        - subject
+        - message
+        - analysis
+        - opportunity
+
+    ActionResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        result:
+          type: object
+          additionalProperties: true
+      required:
+        - ok
+        - result
+
     Run:
       type: object
       properties:
@@ -149,187 +288,91 @@ components:
         createdAt:
           type: string
           format: date-time
-      required:
-        - id
-        - source
-        - status
-        - createdAt
-    ProspectListResponse:
-      type: object
-      properties:
-        ok:
-          type: boolean
-          const: true
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/Prospect'
-        count:
-          type: integer
-      required: [ok, items, count]
-    ProspectResponse:
-      type: object
-      properties:
-        ok:
-          type: boolean
-          const: true
-        item:
-          $ref: '#/components/schemas/Prospect'
-      required: [ok, item]
-    ActionResponse:
-      type: object
-      properties:
-        ok:
-          type: boolean
-          const: true
-        result:
-          type: object
-      required: [ok, result]
-    MessageResponse:
-      type: object
-      properties:
-        ok:
-          type: boolean
-          const: true
-        type:
-          type: string
-          enum: [first_contact, followup, followup_1, followup_2, followup_3, closing]
-        subject:
-          type: string
-        message:
-          type: string
-        analysis:
-          type: string
-        opportunity:
-          type: string
-      required: [ok, type, subject, message, analysis, opportunity]
+
     RunsResponse:
       type: object
       properties:
         ok:
           type: boolean
-          const: true
         items:
           type: array
           items:
-            $ref: '#/components/schemas/Run'
+            $ref: "#/components/schemas/Run"
         count:
           type: integer
-      required: [ok, items, count]
+      required:
+        - ok
+        - items
+        - count
+
 security:
   - bearerAuth: []
+
 paths:
   /api/prospects:
     get:
-      summary: List prospects
+      operationId: getProspects
+      summary: Obtener lista de prospectos
       parameters:
-        - in: query
-          name: status
+        - name: status
+          in: query
+          required: false
           schema:
             type: string
-        - in: query
-          name: limit
+        - name: limit
+          in: query
+          required: false
           schema:
             type: integer
       responses:
-        '200':
-          description: Prospect list
+        "200":
+          description: Lista de prospectos
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProspectListResponse'
-        '400':
-          description: Invalid input
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
-  /api/prospects/{id}:
-    get:
-      summary: Get prospect by id
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Prospect detail
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProspectResponse'
-        '404':
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
-  /api/prospects/{id}/approve:
+                $ref: "#/components/schemas/ProspectListResponse"
+
     post:
-      summary: Approve prospect
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Prospect approved
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ActionResponse'
-  /api/prospects/{id}/reject:
-    post:
-      summary: Reject prospect
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Prospect rejected
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ActionResponse'
-  /api/prospects/{id}/message:
-    post:
-      summary: Generate outreach draft
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
+      operationId: createProspect
+      summary: Crear prospecto manual
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                  enum: [first_contact, followup, followup_1, followup_2, followup_3, closing]
+              $ref: "#/components/schemas/ProspectCreateInput"
       responses:
-        '200':
-          description: Outreach draft
+        "200":
+          description: Prospecto creado
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MessageResponse'
-  /api/prospects/{id}/send:
-    post:
-      summary: Send outreach email to one prospect
+                $ref: "#/components/schemas/ProspectResponse"
+
+  /api/prospects/{id}:
+    get:
+      operationId: getProspectById
+      summary: Obtener un prospecto
       parameters:
-        - in: path
-          name: id
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Prospecto encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProspectResponse"
+
+    patch:
+      operationId: updateProspect
+      summary: Actualizar prospecto
+      parameters:
+        - name: id
+          in: path
           required: true
           schema:
             type: string
@@ -338,42 +381,136 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                subject:
-                  type: string
-                message:
-                  type: string
-              required: [subject, message]
+              $ref: "#/components/schemas/ProspectUpdateInput"
       responses:
-        '200':
-          description: Email sent
+        "200":
+          description: Prospecto actualizado
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ActionResponse'
+                $ref: "#/components/schemas/ProspectResponse"
+
+    delete:
+      operationId: deleteProspect
+      summary: Eliminar prospecto
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Prospecto eliminado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResponse"
+
+  /api/prospects/{id}/approve:
+    post:
+      operationId: approveProspect
+      summary: Aprobar prospecto
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Prospecto aprobado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResponse"
+
+  /api/prospects/{id}/reject:
+    post:
+      operationId: rejectProspect
+      summary: Rechazar prospecto
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Prospecto rechazado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResponse"
+
+  /api/prospects/{id}/message:
+    post:
+      operationId: generateMessage
+      summary: Generar mensaje de outreach
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageRequest"
+      responses:
+        "200":
+          description: Mensaje generado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /api/prospects/{id}/send:
+    post:
+      operationId: sendEmail
+      summary: Enviar correo a prospecto
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendRequest"
+      responses:
+        "200":
+          description: Correo enviado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResponse"
+
   /api/runs:
     get:
-      summary: List recent runs
-      parameters:
-        - in: query
-          name: limit
-          schema:
-            type: integer
+      operationId: getRuns
+      summary: Obtener ejecuciones de búsqueda
       responses:
-        '200':
-          description: Run list
+        "200":
+          description: Lista de runs
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RunsResponse'
+                $ref: "#/components/schemas/RunsResponse"
+
   /api/runs/execute:
     post:
-      summary: Execute manual run
+      operationId: executeRun
+      summary: Ejecutar búsqueda de leads
       responses:
-        '200':
-          description: Run executed
+        "200":
+          description: Búsqueda ejecutada
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ActionResponse'
+                $ref: "#/components/schemas/ActionResponse"
