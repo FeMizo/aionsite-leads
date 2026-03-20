@@ -25,6 +25,7 @@ export type ProspectCandidate = {
   subject?: string;
   message?: string;
   contacted?: boolean;
+  hotLead?: boolean;
   scheduledSendAt?: string | null;
   lastContactedAt?: string | null;
   followupCount?: number;
@@ -73,6 +74,7 @@ export type DashboardProspect = {
   subject: string;
   message: string;
   contacted: boolean;
+  hotLead: boolean;
   scheduledSendAt: string | null;
   lastContactedAt: string | null;
   followupCount: number;

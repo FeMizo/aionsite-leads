@@ -24,6 +24,7 @@ function serializeProspect(prospect: {
   subject: string;
   message: string;
   contacted: boolean;
+  hotLead: boolean;
   scheduledSendAt: Date | null;
   lastContactedAt: Date | null;
   followupCount: number;

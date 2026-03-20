@@ -25,6 +25,7 @@ import {
   isScheduledSendDue,
   MAX_PER_DAY,
   MAX_PER_RUN,
+  sortProspectsForDelivery,
 } from "@/lib/send-scheduler";
 
 const TERMINAL_STATUSES: ProspectStatus[] = ["replied", "closed", "rejected"];
@@ -350,8 +351,10 @@ export async function sendInitialProspectEmails(
   const records = await loadRecords();
   const ids = Array.isArray(options.prospectIds) ? options.prospectIds : [];
   const now = new Date();
-  const pendingRecords = filterByIds(records, ids).filter(
-    (record) => record.status === "ready" && isScheduledSendDue(record, now)
+  const pendingRecords = sortProspectsForDelivery(
+    filterByIds(records, ids).filter(
+      (record) => record.status === "ready" && isScheduledSendDue(record, now)
+    )
   );
   const summary = createEmptySendSummary(records.length);
   const sendBudget = budget || (await createSendBudget());
@@ -535,10 +538,15 @@ export async function sendDueFollowupEmails(
   const records = await loadRecords();
   const ids = Array.isArray(options.prospectIds) ? options.prospectIds : [];
   const now = new Date();
-  const candidates = filterByIds(records, ids)
+  const candidates = sortProspectsForDelivery(
+    filterByIds(records, ids).filter((record) => {
+      const plan = getDueFollowupPlan(record);
+      return Boolean(plan && isScheduledSendDue(record, now));
+    })
+  )
     .map((record) => {
       const plan = getDueFollowupPlan(record);
-      return plan && isScheduledSendDue(record, now) ? { record, plan } : null;
+      return plan ? { record, plan } : null;
     })
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
   const summary = createEmptySendSummary(records.length);

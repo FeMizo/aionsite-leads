@@ -44,6 +44,7 @@ const prospectListSelect = {
   subject: true,
   message: true,
   contacted: true,
+  hotLead: true,
   scheduledSendAt: true,
   lastContactedAt: true,
   followupCount: true,
@@ -119,6 +120,7 @@ export type ProspectUpdateInput = {
   subject?: string;
   message?: string;
   contacted?: boolean;
+  hotLead?: boolean;
   scheduledSendAt?: string | null;
   lastContactedAt?: string | null;
   followupCount?: number;
@@ -141,6 +143,7 @@ function serializeProspect(record: ProspectListRecord) {
 
   return {
     ...record,
+    hotLead: record.hotLead,
     scheduledSendAt: record.scheduledSendAt ? record.scheduledSendAt.toISOString() : null,
     lastContactedAt: record.lastContactedAt ? record.lastContactedAt.toISOString() : null,
     createdAt: record.createdAt.toISOString(),
@@ -491,6 +494,10 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
     data.contacted = input.contacted;
   }
 
+  if ("hotLead" in input && typeof input.hotLead === "boolean") {
+    data.hotLead = input.hotLead;
+  }
+
   if ("scheduledSendAt" in input) {
     data.scheduledSendAt = input.scheduledSendAt ? new Date(input.scheduledSendAt) : null;
   }
@@ -753,4 +760,70 @@ export async function generateProspectDraft(
     ...draft,
     item,
   };
+}
+
+export async function markProspectReplied(
+  id: string,
+  details: {
+    source?: string;
+    messageId?: string;
+    snippet?: string;
+    receivedAt?: string;
+  } = {}
+) {
+  const prisma = getPrismaClient();
+  const current = await prisma.prospect.findUnique({
+    where: { id },
+    select: prospectListSelect,
+  });
+
+  if (!current) {
+    throw new Error("Prospecto no encontrado.");
+  }
+
+  if (current.status === "closed" || current.status === "rejected") {
+    throw new Error("El prospecto no puede marcarse como replied desde su estado actual.");
+  }
+
+  const receivedAt = details.receivedAt ? new Date(details.receivedAt) : new Date();
+
+  if (Number.isNaN(receivedAt.getTime())) {
+    throw new Error("receivedAt no es una fecha valida.");
+  }
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const prospect = await tx.prospect.update({
+      where: { id },
+      data: {
+        status: "replied",
+        contacted: true,
+        hotLead: true,
+        lastCheckedAt: receivedAt,
+        lastContactedAt: current.lastContactedAt || receivedAt,
+        scheduledSendAt: null,
+        lastError: "",
+      },
+      select: prospectListSelect,
+    });
+
+    await tx.contactEvent.create({
+      data: {
+        prospectId: id,
+        eventType: "reply_detected",
+        createdAt: receivedAt,
+        metadata: {
+          fromStatus: current.status,
+          toStatus: "replied",
+          note: "Reply detected and prospect upgraded to hot lead",
+          source: details.source || "manual",
+          messageId: details.messageId || "",
+          snippet: details.snippet || "",
+        } as Prisma.InputJsonObject,
+      },
+    });
+
+    return prospect;
+  });
+
+  return serializeProspect(updated);
 }

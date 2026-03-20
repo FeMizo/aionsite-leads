@@ -49,6 +49,8 @@ components:
           type: string
         contacted:
           type: boolean
+        hotLead:
+          type: boolean
         scheduledSendAt:
           type: string
           format: date-time
@@ -204,6 +206,8 @@ components:
           type: string
         contacted:
           type: boolean
+        hotLead:
+          type: boolean
         scheduledSendAt:
           type: string
           format: date-time
@@ -244,6 +248,19 @@ components:
       required:
         - subject
         - message
+
+    ReplyRequest:
+      type: object
+      properties:
+        source:
+          type: string
+        messageId:
+          type: string
+        snippet:
+          type: string
+        receivedAt:
+          type: string
+          format: date-time
 
     ProspectListResponse:
       type: object
@@ -560,6 +577,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ActionResponse"
+
+  /api/prospects/{id}/reply:
+    post:
+      operationId: markProspectReply
+      summary: Registrar un reply detectado y convertir el prospecto en hot lead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplyRequest"
+      responses:
+        "200":
+          description: Reply registrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProspectResponse"
 
   /api/runs:
     get:

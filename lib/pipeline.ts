@@ -180,6 +180,7 @@ function buildCreateProspectData(prospect: ProspectCandidate, runId: string) {
     subject: "",
     message: "",
     contacted: false,
+    hotLead: false,
     lastContactedAt: null,
     followupCount: 0,
     followupStage: 0,

@@ -104,6 +104,7 @@ npm run db:seed
 3. El dashboard muestra `generated`, `prospects`, `contacted` y `runs`.
 4. Desde el dashboard puedes aprobar prospectos generados, crear registros manuales y disparar correo SMTP.
 5. El GPT o cualquier integracion autenticada puede listar, aprobar, rechazar, redactar mensajes, enviar y ejecutar busquedas por API.
+6. Una integracion inbound puede registrar replies con `POST /api/prospects/{id}/reply`, lo que mueve el prospecto a `replied` y activa `hotLead=true`.
 
 ## Endpoints protegidos para GPT
 
@@ -125,6 +126,7 @@ Authorization: Bearer YOUR_INTERNAL_API_KEY
 - `POST /api/prospects/{id}/reject`
 - `POST /api/prospects/{id}/message`
 - `POST /api/prospects/{id}/send`
+- `POST /api/prospects/{id}/reply`
 
 ### Runs
 

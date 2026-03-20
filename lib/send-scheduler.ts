@@ -1,6 +1,7 @@
 import type { Prisma, Prospect } from "@/generated/prisma";
 import { getPrismaClient } from "@/lib/db";
 import { normalizeProspectType } from "@/lib/normalizers";
+import { getProspectScoreCard, type ProspectPriority } from "@/lib/prospect-scoring";
 
 export const BUSINESS_HOURS = {
   restaurant: {
@@ -27,6 +28,15 @@ type BusinessHoursConfig = {
 
 type SchedulableProspect = Pick<Prospect, "type" | "scheduledSendAt">;
 
+type PrioritizedProspect = Pick<Prospect, "type" | "createdAt" | "scheduledSendAt"> & {
+  score?: number;
+  priority?: ProspectPriority;
+  website?: string;
+  email?: string;
+  phone?: string;
+  mapsUrl?: string;
+};
+
 function getBusinessHoursConfig(type: string): BusinessHoursConfig {
   const normalizedType = normalizeProspectType(type || "");
 
@@ -41,12 +51,90 @@ function getBusinessHoursConfig(type: string): BusinessHoursConfig {
   return BUSINESS_HOURS.default;
 }
 
+export function getHumanTime(hour: number) {
+  const minutes = Math.floor(Math.random() * 41) + 10;
+
+  return {
+    hour,
+    minutes,
+  };
+}
+
+function normalizePriorityWeight(priority: ProspectPriority | undefined) {
+  if (priority === "alto") {
+    return 3;
+  }
+
+  if (priority === "medio") {
+    return 2;
+  }
+
+  return 1;
+}
+
+export function sortProspectsForDelivery<T extends PrioritizedProspect>(prospects: T[]) {
+  return [...prospects].sort((left, right) => {
+    const leftScoreInput = {
+      website: left.website || "",
+      type: left.type,
+      email: left.email || "",
+      phone: left.phone || "",
+      mapsUrl: left.mapsUrl || "",
+    };
+    const rightScoreInput = {
+      website: right.website || "",
+      type: right.type,
+      email: right.email || "",
+      phone: right.phone || "",
+      mapsUrl: right.mapsUrl || "",
+    };
+    const leftCard =
+      typeof left.score === "number" && left.priority
+        ? { score: left.score, priority: left.priority }
+        : getProspectScoreCard(leftScoreInput);
+    const rightCard =
+      typeof right.score === "number" && right.priority
+        ? { score: right.score, priority: right.priority }
+        : getProspectScoreCard(rightScoreInput);
+    const priorityDiff =
+      normalizePriorityWeight(rightCard.priority) -
+      normalizePriorityWeight(leftCard.priority);
+
+    if (priorityDiff !== 0) {
+      return priorityDiff;
+    }
+
+    if (leftCard.score !== rightCard.score) {
+      return rightCard.score - leftCard.score;
+    }
+
+    return right.createdAt.getTime() - left.createdAt.getTime();
+  });
+}
+
+export function humanizeScheduledDate(referenceDate: Date) {
+  const humanTime = getHumanTime(referenceDate.getHours());
+  const nextDate = new Date(referenceDate);
+  nextDate.setHours(humanTime.hour, humanTime.minutes, 0, 0);
+
+  return nextDate;
+}
+
 export function isGoodTimeToSend(
   prospect: Pick<SchedulableProspect, "type"> | { type: string },
   referenceDate = new Date()
 ) {
+  const day = referenceDate.getDay();
   const hour = referenceDate.getHours();
   const config = getBusinessHoursConfig(prospect.type);
+
+  if (day === 0) {
+    return false;
+  }
+
+  if (day === 1 && hour < 10) {
+    return false;
+  }
 
   if (config.avoidHours.includes(hour)) {
     return false;
@@ -85,11 +173,13 @@ export async function countEmailsSentToday(referenceDate = new Date()) {
 
 export async function scheduleSend(prospectId: string, scheduledAtInput: string) {
   const prisma = getPrismaClient();
-  const scheduledSendAt = new Date(scheduledAtInput);
+  const requestedDate = new Date(scheduledAtInput);
 
-  if (Number.isNaN(scheduledSendAt.getTime())) {
+  if (Number.isNaN(requestedDate.getTime())) {
     throw new Error("La fecha programada no es valida.");
   }
+
+  const scheduledSendAt = humanizeScheduledDate(requestedDate);
 
   if (scheduledSendAt.getTime() <= Date.now()) {
     throw new Error("La fecha programada debe estar en el futuro.");

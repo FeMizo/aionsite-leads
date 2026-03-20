@@ -142,6 +142,7 @@ function buildProspectCreateData(prepared: PreparedManualProspect, status: Prosp
     subject: "",
     message: "",
     contacted: false,
+    hotLead: false,
     lastContactedAt: null,
     followupCount: 0,
     followupStage: 0,
