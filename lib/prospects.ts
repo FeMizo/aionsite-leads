@@ -42,6 +42,7 @@ const prospectListSelect = {
   contacted: true,
   lastContactedAt: true,
   followupCount: true,
+  followupStage: true,
   status: true,
   source: true,
   createdAt: true,
@@ -115,6 +116,7 @@ export type ProspectUpdateInput = {
   contacted?: boolean;
   lastContactedAt?: string | null;
   followupCount?: number;
+  followupStage?: number;
   businessStatus?: string;
   source?: string;
 };
@@ -496,6 +498,16 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
     }
 
     data.followupCount = value;
+  }
+
+  if ("followupStage" in input) {
+    const value = Number(input.followupStage);
+
+    if (!Number.isInteger(value) || value < 0) {
+      throw new Error("followupStage debe ser un entero mayor o igual a 0.");
+    }
+
+    data.followupStage = value;
   }
 
   if ("businessStatus" in input) {

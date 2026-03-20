@@ -157,6 +157,7 @@ export async function importLegacyJsonData(options: { force?: boolean } = {}) {
             ? new Date(record.sentAt || record.updatedAt || record.createdAt || new Date())
             : null,
         followupCount: 0,
+        followupStage: ["contacted", "replied", "closed"].includes(status) ? 1 : 0,
         status,
         source: record.source || "legacy-json",
         createdAt: new Date(record.createdAt || record.generatedAt || new Date()),
@@ -193,6 +194,7 @@ export async function importLegacyJsonData(options: { force?: boolean } = {}) {
             ? new Date(record.sentAt || record.updatedAt || record.createdAt || new Date())
             : null,
         followupCount: 0,
+        followupStage: ["contacted", "replied", "closed"].includes(status) ? 1 : 0,
         status,
         source: record.source || "legacy-json",
         createdAt: new Date(record.createdAt || record.generatedAt || new Date()),

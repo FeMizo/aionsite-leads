@@ -78,6 +78,8 @@ export async function PATCH(request: NextRequest, context: ProspectRouteContext)
           : undefined,
       followupCount:
         typeof payload.followupCount === "number" ? payload.followupCount : undefined,
+      followupStage:
+        typeof payload.followupStage === "number" ? payload.followupStage : undefined,
       businessStatus:
         typeof payload.businessStatus === "string" ? payload.businessStatus : undefined,
       source: typeof payload.source === "string" ? payload.source : undefined,

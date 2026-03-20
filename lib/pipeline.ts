@@ -182,6 +182,7 @@ function buildCreateProspectData(prospect: ProspectCandidate, runId: string) {
     contacted: false,
     lastContactedAt: null,
     followupCount: 0,
+    followupStage: 0,
     status: getProspectAutomationStatus(score) as ProspectStatus,
     source: prospect.source,
     createdAt: new Date(prospect.createdAt),

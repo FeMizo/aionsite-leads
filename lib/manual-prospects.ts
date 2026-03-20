@@ -144,6 +144,7 @@ function buildProspectCreateData(prepared: PreparedManualProspect, status: Prosp
     contacted: false,
     lastContactedAt: null,
     followupCount: 0,
+    followupStage: 0,
     status,
     source: prepared.source,
     createdAt: timestamp,

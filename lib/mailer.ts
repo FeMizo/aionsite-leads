@@ -16,17 +16,55 @@ import {
   type ManualProspectInput,
   validateManualProspect,
 } from "@/lib/manual-prospects";
-import { buildProspectOutreachDraft } from "@/lib/outreach";
+import { buildProspectOutreachDraft, type OutreachMessageType } from "@/lib/outreach";
 import { getProspectScoreCard } from "@/lib/prospect-scoring";
 import { normalizeEmail } from "@/lib/normalizers";
 
-const TERMINAL_STATUSES: ProspectStatus[] = [
-  "replied",
-  "closed",
-  "rejected",
-];
-
+const TERMINAL_STATUSES: ProspectStatus[] = ["replied", "closed", "rejected"];
 const CONTACTED_STATUSES: ProspectStatus[] = ["contacted", "replied", "closed"];
+
+type FollowupPlan = {
+  stage: number;
+  type: Extract<OutreachMessageType, "followup_1" | "followup_2" | "followup_3">;
+  minDays: number;
+  eventType: string;
+  label: string;
+};
+
+type SendSummary = {
+  total: number;
+  pending: number;
+  dueFollowups: number;
+  sent: number;
+  followupsSent: number;
+  failed: number;
+  blocked: number;
+  skippedPreviouslySent: number;
+};
+
+const FOLLOWUP_SEQUENCE: FollowupPlan[] = [
+  {
+    stage: 1,
+    type: "followup_1",
+    minDays: 3,
+    eventType: "followup_1_sent",
+    label: "recordatorio suave",
+  },
+  {
+    stage: 2,
+    type: "followup_2",
+    minDays: 5,
+    eventType: "followup_2_sent",
+    label: "nuevo angulo",
+  },
+  {
+    stage: 3,
+    type: "followup_3",
+    minDays: 15,
+    eventType: "followup_3_sent",
+    label: "cierre elegante",
+  },
+];
 
 function isValidEmail(email: string) {
   return typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -93,6 +131,32 @@ function daysSince(value: Date | null) {
   return Math.floor(diffMs / (1000 * 60 * 60 * 24));
 }
 
+function createEmptySendSummary(total = 0): SendSummary {
+  return {
+    total,
+    pending: 0,
+    dueFollowups: 0,
+    sent: 0,
+    followupsSent: 0,
+    failed: 0,
+    blocked: 0,
+    skippedPreviouslySent: 0,
+  };
+}
+
+function mergeSendSummaries(left: SendSummary, right: SendSummary): SendSummary {
+  return {
+    total: Math.max(left.total, right.total),
+    pending: left.pending + right.pending,
+    dueFollowups: left.dueFollowups + right.dueFollowups,
+    sent: left.sent + right.sent,
+    followupsSent: left.followupsSent + right.followupsSent,
+    failed: left.failed + right.failed,
+    blocked: left.blocked + right.blocked,
+    skippedPreviouslySent: left.skippedPreviouslySent + right.skippedPreviouslySent,
+  };
+}
+
 async function sendEmailWithTransporter(
   transporter: nodemailer.Transporter,
   record: ProspectEmailModel
@@ -118,25 +182,43 @@ async function sendCustomEmailWithTransporter(params: {
   subject: string;
   message: string;
 }) {
-  const info = await params.transporter.sendMail({
+  return params.transporter.sendMail({
     from: `"${getFromName()}" <${getFromEmail() || getSmtpUser()}>`,
     to: params.to,
     subject: params.subject,
     text: params.message,
     html: renderPlainTextAsHtml(params.message),
   });
-
-  return info;
 }
 
 function findPreviouslyContacted(record: Prospect, records: Prospect[]) {
   const historicalRecords = records.filter(
     (item) =>
       item.id !== record.id &&
-      (item.contacted || CONTACTED_STATUSES.includes(item.status) || TERMINAL_STATUSES.includes(item.status))
+      (item.contacted ||
+        CONTACTED_STATUSES.includes(item.status) ||
+        TERMINAL_STATUSES.includes(item.status))
   );
 
   return findDuplicate(record, historicalRecords);
+}
+
+function getDueFollowupPlan(record: Prospect) {
+  if (record.status !== "contacted" || !record.contacted) {
+    return null;
+  }
+
+  const plan = FOLLOWUP_SEQUENCE.find((item) => item.stage === record.followupStage);
+
+  if (!plan) {
+    return null;
+  }
+
+  if (daysSince(record.lastContactedAt) < plan.minDays) {
+    return null;
+  }
+
+  return plan;
 }
 
 async function updateProspectWithEvent(params: {
@@ -179,87 +261,81 @@ async function updateProspectWithEvent(params: {
   });
 }
 
-function isDueForFollowup(record: Prospect) {
-  if (record.status !== "contacted") {
-    return false;
-  }
-
-  if (!record.contacted) {
-    return false;
-  }
-
-  if (record.followupCount >= 2) {
-    return false;
-  }
-
-  return daysSince(record.lastContactedAt) >= 2;
-}
-
-export async function sendProspectEmails(options: { prospectIds?: string[] } = {}) {
+async function loadRecords() {
   const prisma = getPrismaClient();
-  console.log("[send] Iniciando envio...");
 
-  const targetIds = Array.isArray(options.prospectIds) ? options.prospectIds : [];
-  const records = await prisma.prospect.findMany({
+  return prisma.prospect.findMany({
     orderBy: {
       createdAt: "asc",
     },
   });
-  const idsSet = new Set(targetIds);
+}
 
-  const pendingRecords = records.filter((record) => {
-    if (record.status !== "ready") {
-      return false;
-    }
+function filterByIds<T extends { id: string }>(records: T[], ids: string[]) {
+  const idsSet = new Set(ids);
 
-    if (!idsSet.size) {
-      return true;
-    }
+  if (!idsSet.size) {
+    return records;
+  }
 
-    return idsSet.has(record.id);
-  });
-  const followupRecords = records.filter((record) => {
-    if (!isDueForFollowup(record)) {
-      return false;
-    }
+  return records.filter((record) => idsSet.has(record.id));
+}
 
-    if (!idsSet.size) {
-      return true;
-    }
+export async function listDueFollowups(options: { prospectIds?: string[] } = {}) {
+  const records = await loadRecords();
+  const ids = Array.isArray(options.prospectIds) ? options.prospectIds : [];
 
-    return idsSet.has(record.id);
-  });
+  return filterByIds(records, ids)
+    .map((record) => {
+      const plan = getDueFollowupPlan(record);
 
-  console.log(`[send] Registros cargados: ${records.length}`);
-  console.log(`[send] Prospectos por enviar: ${pendingRecords.length}`);
-  console.log(`[send] Followups por enviar: ${followupRecords.length}`);
+      if (!plan) {
+        return null;
+      }
 
-  if (!pendingRecords.length && !followupRecords.length) {
-    return {
-      total: records.length,
-      pending: 0,
-      dueFollowups: 0,
-      sent: 0,
-      followupsSent: 0,
-      failed: 0,
-      blocked: 0,
-      skippedPreviouslySent: 0,
-    };
+      const scoring = getProspectScoreCard(record);
+
+      return {
+        id: record.id,
+        name: record.name,
+        email: record.email,
+        status: record.status,
+        priority: scoring.priority,
+        followupStage: record.followupStage,
+        followupCount: record.followupCount,
+        lastContactedAt: record.lastContactedAt?.toISOString() || null,
+        daysSinceLastContact: daysSince(record.lastContactedAt),
+        nextType: plan.type,
+        minDays: plan.minDays,
+        label: plan.label,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+}
+
+export async function sendInitialProspectEmails(options: { prospectIds?: string[] } = {}) {
+  const records = await loadRecords();
+  const ids = Array.isArray(options.prospectIds) ? options.prospectIds : [];
+  const pendingRecords = filterByIds(records, ids).filter((record) => record.status === "ready");
+  const summary = createEmptySendSummary(records.length);
+
+  summary.pending = pendingRecords.length;
+
+  console.log(`[send:initial] Registros cargados: ${records.length}`);
+  console.log(`[send:initial] Prospectos por enviar: ${pendingRecords.length}`);
+
+  if (!pendingRecords.length) {
+    return summary;
   }
 
   const transporter = createTransporter();
-  let sentCount = 0;
-  let failedCount = 0;
-  let skippedPreviouslySentCount = 0;
-  let blockedCount = 0;
-  let followupsSentCount = 0;
 
   for (const record of pendingRecords) {
     const previousContact = findPreviouslyContacted(record, records);
     const scoring = getProspectScoreCard(record);
 
     if (record.contacted || previousContact) {
-      skippedPreviouslySentCount += 1;
+      summary.skippedPreviouslySent += 1;
 
       await updateProspectWithEvent({
         prospectId: record.id,
@@ -280,7 +356,7 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
     }
 
     if (!isValidEmail(normalizeEmail(record.email))) {
-      failedCount += 1;
+      summary.failed += 1;
 
       await updateProspectWithEvent({
         prospectId: record.id,
@@ -298,12 +374,8 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
       continue;
     }
 
-    if (
-      scoring.priority !== "alto" ||
-      !record.message.trim() ||
-      record.status !== "ready"
-    ) {
-      blockedCount += 1;
+    if (scoring.priority !== "alto" || !record.message.trim() || record.status !== "ready") {
+      summary.blocked += 1;
 
       await updateProspectWithEvent({
         prospectId: record.id,
@@ -313,7 +385,8 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
         metadata: {
           fromStatus: record.status,
           toStatus: record.status,
-          note: "Blocked because contacted must be false, status must be ready, priority alto and message must exist",
+          note:
+            "Blocked because contacted must be false, status must be ready, priority alto and message must exist",
           priority: scoring.priority,
           contacted: record.contacted,
           hasSubject: Boolean(record.subject.trim()),
@@ -333,7 +406,7 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
         message: record.message.trim(),
       });
 
-      sentCount += 1;
+      summary.sent += 1;
 
       await updateProspectWithEvent({
         prospectId: record.id,
@@ -344,19 +417,19 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
         data: {
           contacted: true,
           lastContactedAt: sentAt,
+          followupStage: record.followupStage + 1,
         },
         metadata: {
           fromStatus: "ready",
           toStatus: "contacted",
           note: "Outbound email sent",
           messageId: info.messageId,
+          followupStage: record.followupStage + 1,
         } as Prisma.InputJsonObject,
       });
-
-      console.log(`[send] Enviado a ${record.name}: ${info.messageId}`);
     } catch (error) {
-      failedCount += 1;
       const message = error instanceof Error ? error.message : "Unknown email error";
+      summary.failed += 1;
 
       await updateProspectWithEvent({
         prospectId: record.id,
@@ -370,14 +443,37 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
           error: message,
         } as Prisma.InputJsonObject,
       });
-
-      console.error(`[send] Error con ${record.name}: ${message}`);
     }
   }
 
-  for (const record of followupRecords) {
+  return summary;
+}
+
+export async function sendDueFollowupEmails(options: { prospectIds?: string[] } = {}) {
+  const records = await loadRecords();
+  const ids = Array.isArray(options.prospectIds) ? options.prospectIds : [];
+  const candidates = filterByIds(records, ids)
+    .map((record) => {
+      const plan = getDueFollowupPlan(record);
+      return plan ? { record, plan } : null;
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const summary = createEmptySendSummary(records.length);
+
+  summary.dueFollowups = candidates.length;
+
+  console.log(`[send:followups] Registros cargados: ${records.length}`);
+  console.log(`[send:followups] Followups por enviar: ${candidates.length}`);
+
+  if (!candidates.length) {
+    return summary;
+  }
+
+  const transporter = createTransporter();
+
+  for (const { record, plan } of candidates) {
     if (!isValidEmail(normalizeEmail(record.email))) {
-      failedCount += 1;
+      summary.failed += 1;
 
       await updateProspectWithEvent({
         prospectId: record.id,
@@ -389,6 +485,7 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
           toStatus: record.status,
           note: "Skipped follow-up because email is invalid or empty",
           error: "Invalid or empty email for follow-up",
+          followupStage: record.followupStage,
         } as Prisma.InputJsonObject,
       });
 
@@ -398,7 +495,7 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
     const scoring = getProspectScoreCard(record);
 
     if (scoring.priority !== "alto") {
-      blockedCount += 1;
+      summary.blocked += 1;
 
       await updateProspectWithEvent({
         prospectId: record.id,
@@ -411,6 +508,7 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
           note: "Skipped follow-up because priority is not alto",
           priority: scoring.priority,
           followupCount: record.followupCount,
+          followupStage: record.followupStage,
         } as Prisma.InputJsonObject,
       });
 
@@ -418,7 +516,7 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
     }
 
     try {
-      const draft = buildProspectOutreachDraft(record, "followup");
+      const draft = buildProspectOutreachDraft(record, plan.type);
       const sentAt = new Date();
       const info = await sendCustomEmailWithTransporter({
         transporter,
@@ -427,32 +525,35 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
         message: draft.message,
       });
 
-      followupsSentCount += 1;
+      summary.followupsSent += 1;
 
       await updateProspectWithEvent({
         prospectId: record.id,
         status: "contacted",
-        eventType: "followup_sent",
+        eventType: plan.eventType,
         lastMessageId: info.messageId,
         sentAt,
         data: {
           contacted: true,
           lastContactedAt: sentAt,
           followupCount: record.followupCount + 1,
+          followupStage: record.followupStage + 1,
           subject: draft.subject,
           message: draft.message,
         },
         metadata: {
           fromStatus: record.status,
           toStatus: "contacted",
-          note: "Automated follow-up email sent",
+          note: `Automated ${plan.label} sent`,
           messageId: info.messageId,
           followupCount: record.followupCount + 1,
+          followupStage: record.followupStage + 1,
+          type: plan.type,
         } as Prisma.InputJsonObject,
       });
     } catch (error) {
-      failedCount += 1;
       const message = error instanceof Error ? error.message : "Unknown follow-up error";
+      summary.failed += 1;
 
       await updateProspectWithEvent({
         prospectId: record.id,
@@ -465,27 +566,34 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
           note: "Automated follow-up failed",
           error: message,
           followupCount: record.followupCount,
+          followupStage: record.followupStage,
+          type: plan.type,
         } as Prisma.InputJsonObject,
       });
     }
   }
 
-  console.log(`[send] Enviados: ${sentCount}`);
-  console.log(`[send] Followups enviados: ${followupsSentCount}`);
-  console.log(`[send] Fallidos: ${failedCount}`);
-  console.log(`[send] Bloqueados: ${blockedCount}`);
-  console.log(`[send] Omitidos por contacto previo: ${skippedPreviouslySentCount}`);
+  return summary;
+}
 
-  return {
-    total: records.length,
-    pending: pendingRecords.length,
-    dueFollowups: followupRecords.length,
-    sent: sentCount,
-    followupsSent: followupsSentCount,
-    failed: failedCount,
-    blocked: blockedCount,
-    skippedPreviouslySent: skippedPreviouslySentCount,
-  };
+export async function sendProspectEmails(options: {
+  prospectIds?: string[];
+  mode?: "all" | "initial" | "followups";
+} = {}) {
+  const mode = options.mode || "all";
+
+  if (mode === "initial") {
+    return sendInitialProspectEmails(options);
+  }
+
+  if (mode === "followups") {
+    return sendDueFollowupEmails(options);
+  }
+
+  const initial = await sendInitialProspectEmails(options);
+  const followups = await sendDueFollowupEmails(options);
+
+  return mergeSendSummaries(initial, followups);
 }
 
 export async function sendTestEmail(input: ManualProspectInput = {}) {
@@ -578,6 +686,7 @@ export async function sendProspectEmailById(input: {
       data: {
         contacted: true,
         lastContactedAt: sentAt,
+        followupStage: prospect.followupStage + 1,
       },
       metadata: {
         fromStatus: prospect.status,
@@ -585,6 +694,7 @@ export async function sendProspectEmailById(input: {
         note: "Outbound email sent from prospect endpoint",
         messageId: info.messageId,
         subject,
+        followupStage: prospect.followupStage + 1,
       } as Prisma.InputJsonObject,
     });
 
@@ -594,10 +704,11 @@ export async function sendProspectEmailById(input: {
       subject,
       messageId: info.messageId,
       status: "contacted" as const,
+      followupStage: prospect.followupStage + 1,
+      lastContactedAt: sentAt.toISOString(),
     };
   } catch (error) {
-    const messageText =
-      error instanceof Error ? error.message : "Unknown email error";
+    const messageText = error instanceof Error ? error.message : "Unknown email error";
 
     await updateProspectWithEvent({
       prospectId: prospect.id,

@@ -180,6 +180,7 @@ async function handleLegacyDashboardAction(payload: ProspectActionPayload) {
           data: {
             contacted: true,
             lastContactedAt: new Date(),
+            followupStage: 1,
           },
         });
 

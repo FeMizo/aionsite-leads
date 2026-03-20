@@ -16,7 +16,14 @@ type ProspectRouteContext = {
   }>;
 };
 
-const MESSAGE_TYPES = ["first_contact", "followup", "closing"] as const satisfies readonly OutreachMessageType[];
+const MESSAGE_TYPES = [
+  "first_contact",
+  "followup",
+  "followup_1",
+  "followup_2",
+  "followup_3",
+  "closing",
+] as const satisfies readonly OutreachMessageType[];
 
 function isOutreachMessageType(value: unknown): value is OutreachMessageType {
   return typeof value === "string" && MESSAGE_TYPES.includes(value as OutreachMessageType);
@@ -46,7 +53,7 @@ export async function POST(request: NextRequest, context: ProspectRouteContext) 
         if (!isOutreachMessageType(body.type)) {
           return fail(
             "INVALID_MESSAGE_TYPE",
-            "El campo type debe ser first_contact, followup o closing.",
+            "El campo type debe ser first_contact, followup, followup_1, followup_2, followup_3 o closing.",
             400
           );
         }

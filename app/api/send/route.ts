@@ -39,7 +39,11 @@ export async function POST(request: NextRequest) {
     }
 
     const ids = Array.isArray(payload.ids) ? payload.ids : [];
-    const result = await sendProspectEmails({ prospectIds: ids });
+    const mode =
+      payload.mode === "initial" || payload.mode === "followups" || payload.mode === "all"
+        ? payload.mode
+        : "all";
+    const result = await sendProspectEmails({ prospectIds: ids, mode });
 
     return ok({ result });
   } catch (error) {

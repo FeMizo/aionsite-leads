@@ -73,6 +73,8 @@ components:
           nullable: true
         followupCount:
           type: integer
+        followupStage:
+          type: integer
         status:
           type: string
           enum: [generated, analyzed, approved, ready, contacted, replied, closed, rejected]
@@ -112,6 +114,7 @@ components:
         - message
         - contacted
         - followupCount
+        - followupStage
         - score
         - priority
         - createdAt
@@ -190,7 +193,7 @@ components:
           const: true
         type:
           type: string
-          enum: [first_contact, followup, closing]
+          enum: [first_contact, followup, followup_1, followup_2, followup_3, closing]
         subject:
           type: string
         message:
@@ -313,7 +316,7 @@ paths:
               properties:
                 type:
                   type: string
-                  enum: [first_contact, followup, closing]
+                  enum: [first_contact, followup, followup_1, followup_2, followup_3, closing]
       responses:
         '200':
           description: Outreach draft

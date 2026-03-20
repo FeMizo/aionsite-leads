@@ -26,6 +26,7 @@ export type ProspectCandidate = {
   contacted?: boolean;
   lastContactedAt?: string | null;
   followupCount?: number;
+  followupStage?: number;
   status: string;
   source: string;
   createdAt: string;
@@ -72,6 +73,7 @@ export type DashboardProspect = {
   contacted: boolean;
   lastContactedAt: string | null;
   followupCount: number;
+  followupStage: number;
   status: string;
   source: string;
   createdAt: string;

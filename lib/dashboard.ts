@@ -26,6 +26,7 @@ function serializeProspect(prospect: {
   contacted: boolean;
   lastContactedAt: Date | null;
   followupCount: number;
+  followupStage: number;
   status: string;
   source: string;
   createdAt: Date;
