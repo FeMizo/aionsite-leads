@@ -4,6 +4,7 @@ import { ok, fail } from "@/lib/api";
 import { requireBearer } from "@/lib/auth";
 import { DATABASE_ENV_KEYS, formatMissingEnvError } from "@/lib/env";
 import {
+  approveProspect,
   createProspect,
   listProspects,
   parseLimit,
@@ -49,13 +50,12 @@ export async function GET(request: NextRequest) {
     return fail("INVALID_STATUS", "El parametro status no es valido.", 400, {
       allowed: [
         "generated",
-        "prospect",
+        "analyzed",
+        "approved",
+        "ready",
         "contacted",
-        "failed",
         "replied",
         "closed",
-        "archived",
-        "deleted",
         "rejected",
       ],
     });
@@ -136,69 +136,46 @@ async function handleLegacyDashboardAction(payload: ProspectActionPayload) {
   try {
     switch (payload.action) {
       case "approveGenerated": {
-        const result = await transitionProspects(ids, {
-          fromStatuses: ["generated"],
-          nextStatus: "prospect",
-          eventType: "approved_generated",
-          note: "Record moved from generated to prospect",
-          clearError: true,
-        });
+        const approved = await Promise.all(ids.map((id) => approveProspect(id)));
+        const result = {
+          changed: approved.length,
+          ids: approved.map((item) => item.id),
+        };
 
         return ok({ result });
       }
       case "approveAllGenerated": {
         const generatedIds = await prisma.prospect.findMany({
-          where: { status: "generated" },
+          where: { status: { in: ["generated", "analyzed"] } },
           select: { id: true },
         });
-        const result = await transitionProspects(
-          generatedIds.map((record) => record.id),
-          {
-            fromStatuses: ["generated"],
-            nextStatus: "prospect",
-            eventType: "approved_generated",
-            note: "All generated records moved to prospect",
-            clearError: true,
-          }
+        const approved = await Promise.all(
+          generatedIds.map((record) => approveProspect(record.id))
         );
+        const result = {
+          changed: approved.length,
+          ids: approved.map((item) => item.id),
+        };
 
         return ok({ result });
       }
-      case "restoreFailed": {
+      case "rejectRecords": {
         const result = await transitionProspects(ids, {
-          fromStatuses: ["failed"],
-          nextStatus: "prospect",
-          eventType: "restored_failed",
-          note: "Failed prospect restored to active queue",
+          fromStatuses: ["generated", "analyzed", "approved", "ready"],
+          nextStatus: "rejected",
+          eventType: "rejected",
+          note: "Record rejected from dashboard",
           clearError: true,
-        });
-
-        return ok({ result });
-      }
-      case "archiveRecords": {
-        const result = await transitionProspects(ids, {
-          nextStatus: "archived",
-          eventType: "archived",
-          note: "Record archived from dashboard",
-        });
-
-        return ok({ result });
-      }
-      case "deleteRecords": {
-        const result = await transitionProspects(ids, {
-          nextStatus: "deleted",
-          eventType: "deleted",
-          note: "Record deleted from active flow",
         });
 
         return ok({ result });
       }
       case "markContacted": {
         const result = await transitionProspects(ids, {
-          fromStatuses: ["prospect", "failed", "generated", "rejected"],
+          fromStatuses: ["ready"],
           nextStatus: "contacted",
           eventType: "marked_contacted",
-          note: "Record marked as contacted manually",
+          note: "Record marked as contacted manually from ready state",
           clearError: true,
         });
 

@@ -21,8 +21,8 @@ export default async function GeneratedPage() {
     <div className="page-stack">
       <PageHeader
         eyebrow="Generated"
-        title="Prospectos generados"
-        description="Revisa los registros encontrados por el pipeline antes de moverlos a la cola activa."
+        title="Prospectos por revisar"
+        description="Revisa los registros encontrados por el pipeline, analiza prioridad y decide si se aprueban o rechazan."
       />
 
       <DashboardMetricCards data={context.data} />
@@ -30,15 +30,14 @@ export default async function GeneratedPage() {
 
       <ProspectTable
         title="Generated"
-        description="Prospectos detectados por la ultima busqueda, pendientes de aprobar."
+        description="Prospectos en generated o analyzed pendientes de aprobacion."
         records={context.data.generated}
         endpoint="/api/prospects"
         actions={[
           { action: "approveGenerated", label: "Aprobar", variant: "primary" },
-          { action: "archiveRecords", label: "Archivar" },
-          { action: "deleteRecords", label: "Eliminar", variant: "danger" },
+          { action: "rejectRecords", label: "Rechazar", variant: "danger" },
         ]}
-        emptyLabel="No hay registros generated."
+        emptyLabel="No hay registros pendientes de revision."
       />
     </div>
   );

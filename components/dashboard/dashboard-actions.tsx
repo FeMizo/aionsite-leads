@@ -69,7 +69,7 @@ export function DashboardActions({
       <div className="panel__header">
         <div>
           <h2>Acciones operativas</h2>
-          <p>Lanza una busqueda manual, aprueba prospectos generados o envia correos.</p>
+          <p>Lanza una busqueda manual, aprueba prospectos analizados o envia correos listos.</p>
         </div>
         <span
           className={`run-status ${isCrawlActive ? "is-running" : "is-ok"}`}
@@ -103,7 +103,7 @@ export function DashboardActions({
           }
           disabled={isPending || generatedCount === 0}
         >
-          Aprobar generated
+          Aprobar pendientes
         </button>
         <button
           type="button"
@@ -111,7 +111,7 @@ export function DashboardActions({
           onClick={() => run(() => postJson("/api/send", {}))}
           disabled={isPending}
         >
-          Enviar prospectos activos
+          Enviar prospectos ready
         </button>
       </div>
       {crawlInProgress && activeRunCreatedAt ? (

@@ -137,6 +137,8 @@ function buildProspectCreateData(prepared: PreparedManualProspect, status: Prosp
     opportunity: prepared.opportunity,
     recommendedSite: prepared.recommendedSite,
     pitchAngle: prepared.pitchAngle,
+    subject: "",
+    message: "",
     status,
     source: prepared.source,
     createdAt: timestamp,
@@ -149,11 +151,6 @@ export async function createManualProspect(input: ManualProspectInput = {}) {
   const prisma = getPrismaClient();
   const prepared = validateManualProspect(input);
   const existingRecords = await prisma.prospect.findMany({
-    where: {
-      status: {
-        not: "deleted",
-      },
-    },
     select: {
       name: true,
       email: true,
@@ -172,7 +169,7 @@ export async function createManualProspect(input: ManualProspectInput = {}) {
 
   const created = await prisma.$transaction(async (tx) => {
     const prospect = await tx.prospect.create({
-      data: buildProspectCreateData(prepared, "prospect"),
+      data: buildProspectCreateData(prepared, "approved"),
     });
 
     await tx.contactEvent.create({

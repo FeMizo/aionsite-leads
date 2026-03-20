@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { ok, fail } from "@/lib/api";
 import { requireBearer } from "@/lib/auth";
 import { DATABASE_ENV_KEYS, formatMissingEnvError } from "@/lib/env";
-import { transitionProspect } from "@/lib/prospects";
+import { rejectProspect } from "@/lib/prospects";
 
 export const runtime = "nodejs";
 
@@ -27,13 +27,7 @@ export async function POST(request: NextRequest, context: ProspectRouteContext) 
 
   try {
     const { id } = await context.params;
-    const result = await transitionProspect(id, {
-      fromStatuses: ["generated", "prospect", "failed"],
-      nextStatus: "rejected",
-      eventType: "rejected",
-      note: "Record rejected through API",
-      clearError: true,
-    });
+    const result = await rejectProspect(id);
 
     return ok({ result });
   } catch (error) {

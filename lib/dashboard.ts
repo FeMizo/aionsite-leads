@@ -21,6 +21,8 @@ function serializeProspect(prospect: {
   opportunity: string;
   recommendedSite: string;
   pitchAngle: string;
+  subject: string;
+  message: string;
   status: string;
   source: string;
   createdAt: Date;
@@ -92,19 +94,20 @@ export async function getDashboardData(): Promise<DashboardData> {
     generatedCount,
     prospectsCount,
     contactedCount,
-    failedCount,
+    readyCount,
+    rejectedCount,
     runsCount,
     activeRun,
     lastRun,
     lastSend,
   ] = await Promise.all([
     prisma.prospect.findMany({
-      where: { status: "generated" },
+      where: { status: { in: ["generated", "analyzed"] } },
       orderBy: { createdAt: "desc" },
       take: 12,
     }),
     prisma.prospect.findMany({
-      where: { status: { in: ["prospect", "failed"] } },
+      where: { status: { in: ["approved", "ready"] } },
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
@@ -117,12 +120,13 @@ export async function getDashboardData(): Promise<DashboardData> {
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
-    prisma.prospect.count({ where: { status: "generated" } }),
-    prisma.prospect.count({ where: { status: "prospect" } }),
+    prisma.prospect.count({ where: { status: { in: ["generated", "analyzed"] } } }),
+    prisma.prospect.count({ where: { status: { in: ["approved", "ready"] } } }),
+    prisma.prospect.count({ where: { status: "ready" } }),
     prisma.prospect.count({
       where: { status: { in: ["contacted", "replied", "closed"] } },
     }),
-    prisma.prospect.count({ where: { status: "failed" } }),
+    prisma.prospect.count({ where: { status: "rejected" } }),
     prisma.run.count(),
     prisma.run.findFirst({
       where: { status: "running" },
@@ -149,8 +153,9 @@ export async function getDashboardData(): Promise<DashboardData> {
     metrics: {
       generated: generatedCount,
       prospects: prospectsCount,
+      ready: readyCount,
       contacted: contactedCount,
-      failed: failedCount,
+      rejected: rejectedCount,
       runs: runsCount,
     },
     crawlInProgress: Boolean(activeRun),

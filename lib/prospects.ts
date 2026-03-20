@@ -13,13 +13,12 @@ import {
 
 const PROSPECT_STATUSES = [
   "generated",
-  "prospect",
+  "analyzed",
+  "approved",
+  "ready",
   "contacted",
-  "failed",
   "replied",
   "closed",
-  "archived",
-  "deleted",
   "rejected",
 ] as const satisfies readonly ProspectStatus[];
 
@@ -37,6 +36,8 @@ const prospectListSelect = {
   opportunity: true,
   recommendedSite: true,
   pitchAngle: true,
+  subject: true,
+  message: true,
   status: true,
   source: true,
   createdAt: true,
@@ -105,6 +106,8 @@ export type ProspectUpdateInput = {
   opportunity?: string;
   recommendedSite?: string;
   pitchAngle?: string;
+  subject?: string;
+  message?: string;
   businessStatus?: string;
   source?: string;
 };
@@ -132,6 +135,66 @@ function serializeProspect(record: ProspectListRecord) {
     score: scoring.score,
     priority: scoring.priority,
   };
+}
+
+function hasStoredDraft(record: { subject: string; message: string }) {
+  return Boolean(
+    normalizeWhitespace(record.subject || "") && normalizeWhitespace(record.message || "")
+  );
+}
+
+function shouldBeReady(
+  record: Pick<
+    ProspectListRecord,
+    | "name"
+    | "contactName"
+    | "city"
+    | "email"
+    | "phone"
+    | "type"
+    | "website"
+    | "rating"
+    | "mapsUrl"
+    | "opportunity"
+    | "recommendedSite"
+    | "pitchAngle"
+    | "status"
+    | "source"
+    | "createdAt"
+    | "lastCheckedAt"
+    | "businessStatus"
+    | "subject"
+    | "message"
+  >
+) {
+  const scoring = getProspectScoreCard({
+    ...record,
+    createdAt: record.createdAt.toISOString(),
+    lastCheckedAt: record.lastCheckedAt.toISOString(),
+  });
+
+  return scoring.priority === "alto" && hasStoredDraft(record);
+}
+
+function resolveStatusAfterApproval(record: ProspectListRecord): ProspectStatus {
+  return shouldBeReady(record) ? "ready" : "approved";
+}
+
+function resolveStatusAfterDraft(record: ProspectListRecord): ProspectStatus {
+  if (record.status === "approved" || record.status === "ready") {
+    return shouldBeReady(record) ? "ready" : "approved";
+  }
+
+  if (
+    record.status === "contacted" ||
+    record.status === "replied" ||
+    record.status === "closed" ||
+    record.status === "rejected"
+  ) {
+    return record.status;
+  }
+
+  return "analyzed";
 }
 
 function serializeProspectDetail(record: ProspectDetailRecord) {
@@ -198,9 +261,7 @@ export async function listProspects(options: {
   const safeLimit = Number.isFinite(options.limit)
     ? Math.min(Math.max(Math.trunc(options.limit || 20), 1), 100)
     : 20;
-  const where = options.status
-    ? { status: options.status }
-    : { status: { not: "deleted" as ProspectStatus } };
+  const where = options.status ? { status: options.status } : undefined;
 
   const prospects = await prisma.prospect.findMany({
     where,
@@ -409,6 +470,14 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
     data.pitchAngle = normalizeWhitespace(input.pitchAngle || "");
   }
 
+  if ("subject" in input) {
+    data.subject = normalizeWhitespace(input.subject || "");
+  }
+
+  if ("message" in input) {
+    data.message = normalizeWhitespace(input.message || "");
+  }
+
   if ("businessStatus" in input) {
     data.businessStatus = normalizeWhitespace(input.businessStatus || "");
   }
@@ -438,6 +507,16 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
     data.pitchAngle = derived.pitchAngle;
   }
 
+  if (current.status === "approved" || current.status === "ready") {
+    const nextSnapshot = {
+      ...current,
+      ...data,
+      createdAt: current.createdAt,
+      lastCheckedAt: current.lastCheckedAt,
+    } as ProspectListRecord;
+    data.status = shouldBeReady(nextSnapshot) ? "ready" : "approved";
+  }
+
   if (!Object.keys(data).length) {
     throw new Error("No se enviaron campos editables.");
   }
@@ -451,9 +530,6 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
     where: {
       id: {
         not: id,
-      },
-      status: {
-        not: "deleted",
       },
     },
     select: {
@@ -499,8 +575,124 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
 
 export async function softDeleteProspect(id: string) {
   return transitionProspect(id, {
-    nextStatus: "deleted",
-    eventType: "deleted",
-    note: "Record deleted via API",
+    nextStatus: "rejected",
+    eventType: "rejected",
+    note: "Record rejected via API",
   });
+}
+
+export async function approveProspect(id: string) {
+  const prisma = getPrismaClient();
+  const current = await prisma.prospect.findUnique({
+    where: { id },
+    select: prospectListSelect,
+  });
+
+  if (!current) {
+    throw new Error("Prospecto no encontrado.");
+  }
+
+  if (!["generated", "analyzed", "approved", "rejected"].includes(current.status)) {
+    throw new Error("El prospecto no se puede aprobar desde su estado actual.");
+  }
+
+  const nextStatus = resolveStatusAfterApproval(current);
+  const timestamp = new Date();
+
+  await prisma.$transaction(async (tx) => {
+    await tx.prospect.update({
+      where: { id },
+      data: {
+        status: nextStatus,
+        lastCheckedAt: timestamp,
+        lastError: "",
+      },
+    });
+
+    await tx.contactEvent.create({
+      data: {
+        prospectId: id,
+        eventType: "approved_generated",
+        createdAt: timestamp,
+        metadata: {
+          fromStatus: current.status,
+          toStatus: nextStatus,
+          note: "Record approved through API",
+        } as Prisma.InputJsonObject,
+      },
+    });
+  });
+
+  return {
+    id,
+    status: nextStatus,
+  };
+}
+
+export async function rejectProspect(id: string) {
+  return transitionProspect(id, {
+    fromStatuses: ["generated", "analyzed", "approved", "ready"],
+    nextStatus: "rejected",
+    eventType: "rejected",
+    note: "Record rejected through API",
+    clearError: true,
+  });
+}
+
+export async function storeProspectDraft(id: string, draft: { subject: string; message: string }) {
+  const prisma = getPrismaClient();
+  const current = await prisma.prospect.findUnique({
+    where: { id },
+    select: prospectListSelect,
+  });
+
+  if (!current) {
+    throw new Error("Prospecto no encontrado.");
+  }
+
+  const subject = normalizeWhitespace(draft.subject || "");
+  const message = normalizeWhitespace(draft.message || "");
+
+  if (!subject || !message) {
+    throw new Error("El borrador requiere subject y message.");
+  }
+
+  const nextSnapshot = {
+    ...current,
+    subject,
+    message,
+  };
+  const nextStatus = resolveStatusAfterDraft(nextSnapshot);
+  const timestamp = new Date();
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const prospect = await tx.prospect.update({
+      where: { id },
+      data: {
+        subject,
+        message,
+        status: nextStatus,
+        lastCheckedAt: timestamp,
+      },
+      select: prospectListSelect,
+    });
+
+    await tx.contactEvent.create({
+      data: {
+        prospectId: id,
+        eventType: "draft_generated",
+        createdAt: timestamp,
+        metadata: {
+          fromStatus: current.status,
+          toStatus: nextStatus,
+          note: "Prospect draft generated and stored",
+          subject,
+        } as Prisma.InputJsonObject,
+      },
+    });
+
+    return prospect;
+  });
+
+  return serializeProspect(updated);
 }

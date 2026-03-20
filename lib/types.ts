@@ -3,9 +3,7 @@ import type { ProspectPriority } from "@/lib/prospect-scoring";
 export type ProspectAction =
   | "approveGenerated"
   | "approveAllGenerated"
-  | "archiveRecords"
-  | "deleteRecords"
-  | "restoreFailed"
+  | "rejectRecords"
   | "markContacted"
   | "markAsClient";
 
@@ -23,6 +21,8 @@ export type ProspectCandidate = {
   opportunity: string;
   recommendedSite: string;
   pitchAngle: string;
+  subject?: string;
+  message?: string;
   status: string;
   source: string;
   createdAt: string;
@@ -64,6 +64,8 @@ export type DashboardProspect = {
   opportunity: string;
   recommendedSite: string;
   pitchAngle: string;
+  subject: string;
+  message: string;
   status: string;
   source: string;
   createdAt: string;
@@ -102,8 +104,9 @@ export type DashboardData = {
   metrics: {
     generated: number;
     prospects: number;
+    ready: number;
     contacted: number;
-    failed: number;
+    rejected: number;
     runs: number;
   };
   crawlInProgress: boolean;

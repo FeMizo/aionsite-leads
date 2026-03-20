@@ -3,7 +3,7 @@ import { ok, fail } from "@/lib/api";
 import { requireBearer } from "@/lib/auth";
 import { DATABASE_ENV_KEYS, formatMissingEnvError } from "@/lib/env";
 import { buildProspectOutreachDraft } from "@/lib/outreach";
-import { getProspectForMessage } from "@/lib/prospects";
+import { getProspectForMessage, storeProspectDraft } from "@/lib/prospects";
 
 export const runtime = "nodejs";
 
@@ -30,8 +30,15 @@ export async function POST(request: NextRequest, context: ProspectRouteContext) 
     const { id } = await context.params;
     const prospect = await getProspectForMessage(id);
     const draft = buildProspectOutreachDraft(prospect);
+    const item = await storeProspectDraft(id, {
+      subject: draft.subject,
+      message: draft.message,
+    });
 
-    return ok(draft);
+    return ok({
+      ...draft,
+      item,
+    });
   } catch (error) {
     return fail(
       "PROSPECT_MESSAGE_FAILED",

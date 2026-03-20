@@ -22,7 +22,7 @@ export default async function ProspectsPage() {
       <PageHeader
         eyebrow="Prospects"
         title="Cola activa"
-        description="Administra prospectos activos y reactiva los que quedaron fallidos."
+        description="Administra prospectos approved y ready antes del envio."
       />
 
       <DashboardMetricCards data={context.data} />
@@ -30,15 +30,14 @@ export default async function ProspectsPage() {
 
       <ProspectTable
         title="Prospects"
-        description="Cola activa para envio o reactivacion de fallidos."
+        description="Cola activa para aprobacion final, scoring y preparacion del outreach."
         records={context.data.prospects}
         endpoint="/api/prospects"
         actions={[
-          { action: "restoreFailed", label: "Reactivar fallidos" },
-          { action: "archiveRecords", label: "Archivar" },
-          { action: "deleteRecords", label: "Eliminar", variant: "danger" },
+          { action: "approveGenerated", label: "Marcar ready/aprobado" },
+          { action: "rejectRecords", label: "Rechazar", variant: "danger" },
         ]}
-        emptyLabel="No hay prospectos activos."
+        emptyLabel="No hay prospectos approved o ready."
       />
     </div>
   );

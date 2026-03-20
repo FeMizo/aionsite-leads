@@ -64,14 +64,20 @@ function resolveDataFile(fileName: string) {
 function toProspectStatus(status: string | undefined) {
   switch (status) {
     case "generated":
-    case "prospect":
+    case "analyzed":
+    case "approved":
+    case "ready":
     case "contacted":
-    case "failed":
     case "replied":
     case "closed":
+    case "rejected":
+      return status;
+    case "prospect":
+      return "approved";
+    case "failed":
     case "archived":
     case "deleted":
-      return status;
+      return "rejected";
     default:
       return "generated";
   }
@@ -138,6 +144,8 @@ export async function importLegacyJsonData(options: { force?: boolean } = {}) {
         opportunity: record.opportunity || "",
         recommendedSite: record.recommendedSite || "",
         pitchAngle: record.pitchAngle || "",
+        subject: "",
+        message: "",
         status,
         source: record.source || "legacy-json",
         createdAt: new Date(record.createdAt || record.generatedAt || new Date()),
@@ -166,6 +174,8 @@ export async function importLegacyJsonData(options: { force?: boolean } = {}) {
         opportunity: record.opportunity || "",
         recommendedSite: record.recommendedSite || "",
         pitchAngle: record.pitchAngle || "",
+        subject: "",
+        message: "",
         status,
         source: record.source || "legacy-json",
         createdAt: new Date(record.createdAt || record.generatedAt || new Date()),

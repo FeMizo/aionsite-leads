@@ -170,6 +170,8 @@ function buildCreateProspectData(prospect: ProspectCandidate, runId: string) {
     opportunity: prospect.opportunity,
     recommendedSite: prospect.recommendedSite,
     pitchAngle: prospect.pitchAngle,
+    subject: "",
+    message: "",
     status: "generated" as ProspectStatus,
     source: prospect.source,
     createdAt: new Date(prospect.createdAt),

@@ -69,6 +69,8 @@ export async function PATCH(request: NextRequest, context: ProspectRouteContext)
       recommendedSite:
         typeof payload.recommendedSite === "string" ? payload.recommendedSite : undefined,
       pitchAngle: typeof payload.pitchAngle === "string" ? payload.pitchAngle : undefined,
+      subject: typeof payload.subject === "string" ? payload.subject : undefined,
+      message: typeof payload.message === "string" ? payload.message : undefined,
       businessStatus:
         typeof payload.businessStatus === "string" ? payload.businessStatus : undefined,
       source: typeof payload.source === "string" ? payload.source : undefined,

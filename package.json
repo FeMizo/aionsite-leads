@@ -1,6 +1,6 @@
 {
   "name": "aionsite-leads",
-  "version": "1.10.1",
+  "version": "1.10.2",
   "description": "Prospecting dashboard for AionSite backed by Postgres and Vercel Functions",
   "private": true,
   "scripts": {

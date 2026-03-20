@@ -33,20 +33,20 @@ const sectionCards = [
   {
     href: "/dashboard/generated",
     label: "Generated",
-    description: "Nuevos prospectos detectados por la ultima busqueda.",
+    description: "Prospectos nuevos o analizados pendientes de decision.",
     metricKey: "generated",
   },
   {
     href: "/dashboard/prospects",
     label: "Prospects",
-    description: "Cola activa para trabajo comercial y limpieza.",
+    description: "Prospectos aprobados y listos para preparacion comercial.",
     metricKey: "prospects",
   },
   {
     href: "/dashboard/send",
     label: "Envios",
-    description: "Prospectos listos para disparar correo SMTP.",
-    metricKey: "prospects",
+    description: "Prospectos en estado ready con draft y prioridad alta.",
+    metricKey: "ready",
   },
   {
     href: "/dashboard/contacted",
@@ -301,11 +301,11 @@ export function DashboardOverview({
         <div className="settings-grid">
           <article>
             <h3>Generated</h3>
-            <p>Aprueba o descarta los prospectos capturados por la ultima busqueda.</p>
+            <p>Analiza, aprueba o rechaza los prospectos capturados por la ultima busqueda.</p>
           </article>
           <article>
             <h3>Prospects y Envios</h3>
-            <p>Limpia la cola activa y dispara correos a los registros listos.</p>
+            <p>Trabaja aprobados, genera draft y envia solo los registros en ready.</p>
           </article>
           <article>
             <h3>Contactados y Busquedas</h3>

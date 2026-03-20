@@ -9,13 +9,12 @@ datasource db {
 
 enum ProspectStatus {
   generated
-  prospect
+  analyzed
+  approved
+  ready
   contacted
-  failed
   replied
   closed
-  archived
-  deleted
   rejected
 }
 
@@ -36,6 +35,8 @@ model Prospect {
   opportunity      String         @default("")
   recommendedSite  String         @default("")
   pitchAngle       String         @default("")
+  subject          String         @default("")
+  message          String         @default("")
   status           ProspectStatus @default(generated)
   source           String         @default("google-places")
   createdAt        DateTime       @default(now())
