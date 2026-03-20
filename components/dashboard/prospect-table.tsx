@@ -169,6 +169,8 @@ export function ProspectTable({
                 <th>Ciudad</th>
                 <th>Email</th>
                 <th>Website</th>
+                <th>Score</th>
+                <th>Prioridad</th>
                 <th>Estado</th>
                 <th>Actualizado</th>
               </tr>
@@ -214,6 +216,12 @@ export function ProspectTable({
                     ) : (
                       "Sin sitio"
                     )}
+                  </td>
+                  <td>{record.score}</td>
+                  <td>
+                    <span className={`priority-pill priority-pill--${record.priority}`}>
+                      {record.priority}
+                    </span>
                   </td>
                   <td>
                     <StatusPill status={record.status} />

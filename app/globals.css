@@ -436,6 +436,37 @@ code {
   transform: translateY(-1px);
 }
 
+.priority-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  text-transform: capitalize;
+}
+
+.priority-pill--alto {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.priority-pill--medio {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+.priority-pill--bajo {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
 .empty-state {
   padding: 2rem 1rem;
   text-align: center;

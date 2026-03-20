@@ -1,3 +1,5 @@
+import type { ProspectPriority } from "@/lib/prospect-scoring";
+
 export type ProspectAction =
   | "approveGenerated"
   | "approveAllGenerated"
@@ -26,6 +28,8 @@ export type ProspectCandidate = {
   createdAt: string;
   lastCheckedAt: string;
   businessStatus: string;
+  score?: number;
+  priority?: ProspectPriority;
   placeId?: string;
   formattedAddress?: string;
   primaryType?: string;
@@ -67,6 +71,8 @@ export type DashboardProspect = {
   businessStatus: string;
   lastError: string;
   lastMessageId: string;
+  score: number;
+  priority: ProspectPriority;
 };
 
 export type DashboardRun = {

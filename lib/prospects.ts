@@ -3,6 +3,7 @@ import { getPrismaClient } from "@/lib/db";
 import { findDuplicate } from "@/lib/dedupe";
 import { createManualProspect } from "@/lib/manual-prospects";
 import { buildOpportunity } from "@/lib/opportunity";
+import { getProspectScoreCard } from "@/lib/prospect-scoring";
 import {
   normalizeEmail,
   normalizeName,
@@ -117,11 +118,19 @@ export type TransitionConfig = {
 };
 
 function serializeProspect(record: ProspectListRecord) {
+  const scoring = getProspectScoreCard({
+    ...record,
+    createdAt: record.createdAt.toISOString(),
+    lastCheckedAt: record.lastCheckedAt.toISOString(),
+  });
+
   return {
     ...record,
     createdAt: record.createdAt.toISOString(),
     lastCheckedAt: record.lastCheckedAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
+    score: scoring.score,
+    priority: scoring.priority,
   };
 }
 

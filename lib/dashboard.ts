@@ -1,4 +1,5 @@
 import { getPrismaClient } from "@/lib/db";
+import { getProspectScoreCard } from "@/lib/prospect-scoring";
 import type {
   DashboardActivityItem,
   DashboardData,
@@ -28,10 +29,18 @@ function serializeProspect(prospect: {
   lastError: string;
   lastMessageId: string;
 }): DashboardProspect {
+  const scoring = getProspectScoreCard({
+    ...prospect,
+    createdAt: prospect.createdAt.toISOString(),
+    lastCheckedAt: prospect.lastCheckedAt.toISOString(),
+  });
+
   return {
     ...prospect,
     createdAt: prospect.createdAt.toISOString(),
     lastCheckedAt: prospect.lastCheckedAt.toISOString(),
+    score: scoring.score,
+    priority: scoring.priority,
   };
 }
 

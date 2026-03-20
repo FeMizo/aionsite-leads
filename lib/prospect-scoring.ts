@@ -1,7 +1,7 @@
 import { normalizeName, normalizeWebsite } from "@/lib/normalizers";
 import type { ProspectCandidate } from "@/lib/types";
 
-const TARGET_CITIES = ["merida", "villahermosa", "ciudad de mexico"];
+export type ProspectPriority = "alto" | "medio" | "bajo";
 
 export function inferWebsiteSignal(prospect: Pick<ProspectCandidate, "website">) {
   if (!prospect.website) {
@@ -31,51 +31,54 @@ export function inferWebsiteSignal(prospect: Pick<ProspectCandidate, "website">)
 }
 
 export function scoreProspect(prospect: ProspectCandidate) {
-  const city = normalizeName(prospect.city);
   const type = normalizeName(prospect.type);
   const websiteSignal = inferWebsiteSignal(prospect);
-  const rating = Number(prospect.rating) || 0;
   let score = 0;
 
-  if (TARGET_CITIES.includes(city)) {
+  if (websiteSignal === "missing") {
+    score += 40;
+  } else if (websiteSignal === "social-only") {
+    score += 30;
+  } else if (websiteSignal === "basic") {
     score += 20;
   }
 
-  if (websiteSignal === "missing") {
-    score += 30;
-  } else if (websiteSignal === "social-only") {
-    score += 24;
-  } else if (websiteSignal === "basic") {
-    score += 16;
-  } else {
-    score += 8;
-  }
-
-  if (type === "restaurante") {
-    score += 24;
-  } else if (type === "inmobiliaria") {
-    score += 26;
-  } else if (type === "clinica") {
-    score += 18;
-  } else {
+  if (type === "restaurante" || type === "restaurant") {
     score += 10;
-  }
-
-  if (rating >= 4.7) {
-    score += 10;
-  } else if (rating >= 4.3) {
-    score += 7;
-  } else if (rating >= 4) {
-    score += 4;
   }
 
   if (prospect.email) {
-    score += 4;
+    score += 10;
   }
 
   if (prospect.phone) {
-    score += 3;
+    score += 5;
+  }
+
+  if (prospect.mapsUrl) {
+    score += 15;
   }
 
   return score;
+}
+
+export function getPriority(score: number): ProspectPriority {
+  if (score >= 70) {
+    return "alto";
+  }
+
+  if (score >= 40) {
+    return "medio";
+  }
+
+  return "bajo";
+}
+
+export function getProspectScoreCard(prospect: ProspectCandidate) {
+  const score = scoreProspect(prospect);
+
+  return {
+    score,
+    priority: getPriority(score),
+  };
 }
