@@ -6,6 +6,7 @@ import { DATABASE_ENV_KEYS, formatMissingEnvError } from "@/lib/env";
 import {
   approveProspect,
   createProspect,
+  generateProspectDraft,
   listProspects,
   parseLimit,
   parseProspectStatus,
@@ -140,6 +141,19 @@ async function handleLegacyDashboardAction(payload: ProspectActionPayload) {
         const result = {
           changed: approved.length,
           ids: approved.map((item) => item.id),
+        };
+
+        return ok({ result });
+      }
+      case "generateDrafts": {
+        const drafted = await Promise.all(ids.map((id) => generateProspectDraft(id)));
+        const result = {
+          changed: drafted.length,
+          ids: drafted.map((item) => item.item.id),
+          statuses: drafted.map((item) => ({
+            id: item.item.id,
+            status: item.item.status,
+          })),
         };
 
         return ok({ result });

@@ -3,6 +3,10 @@ import { getPrismaClient } from "@/lib/db";
 import { findDuplicate } from "@/lib/dedupe";
 import { createManualProspect } from "@/lib/manual-prospects";
 import { buildOpportunity } from "@/lib/opportunity";
+import {
+  buildProspectOutreachDraft,
+  type OutreachMessageType,
+} from "@/lib/outreach";
 import { getProspectScoreCard } from "@/lib/prospect-scoring";
 import {
   normalizeEmail,
@@ -631,7 +635,7 @@ export async function approveProspect(id: string) {
     throw new Error("Prospecto no encontrado.");
   }
 
-  if (!["generated", "analyzed", "approved"].includes(current.status)) {
+  if (!["generated", "analyzed", "approved", "ready"].includes(current.status)) {
     throw new Error("El prospecto no se puede aprobar desde su estado actual.");
   }
 
@@ -651,12 +655,12 @@ export async function approveProspect(id: string) {
     await tx.contactEvent.create({
       data: {
         prospectId: id,
-        eventType: "approved_generated",
+        eventType: "approval_reviewed",
         createdAt: timestamp,
         metadata: {
           fromStatus: current.status,
           toStatus: nextStatus,
-          note: "Record approved through API",
+          note: "Record approval reviewed through API",
         } as Prisma.InputJsonObject,
       },
     });
@@ -734,4 +738,21 @@ export async function storeProspectDraft(id: string, draft: { subject: string; m
   });
 
   return serializeProspect(updated);
+}
+
+export async function generateProspectDraft(
+  id: string,
+  type: OutreachMessageType = "first_contact"
+) {
+  const prospect = await getProspectForMessage(id);
+  const draft = buildProspectOutreachDraft(prospect, type);
+  const item = await storeProspectDraft(id, {
+    subject: draft.subject,
+    message: draft.message,
+  });
+
+  return {
+    ...draft,
+    item,
+  };
 }

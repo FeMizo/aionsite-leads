@@ -3,6 +3,7 @@ import type { ProspectPriority } from "@/lib/prospect-scoring";
 export type ProspectAction =
   | "approveGenerated"
   | "approveAllGenerated"
+  | "generateDrafts"
   | "rejectRecords"
   | "markContacted"
   | "markAsClient";

@@ -2,11 +2,8 @@ import { NextRequest } from "next/server";
 import { ok, fail } from "@/lib/api";
 import { requireBearer } from "@/lib/auth";
 import { DATABASE_ENV_KEYS, formatMissingEnvError } from "@/lib/env";
-import {
-  buildProspectOutreachDraft,
-  type OutreachMessageType,
-} from "@/lib/outreach";
-import { getProspectForMessage, storeProspectDraft } from "@/lib/prospects";
+import type { OutreachMessageType } from "@/lib/outreach";
+import { generateProspectDraft } from "@/lib/prospects";
 
 export const runtime = "nodejs";
 
@@ -64,17 +61,9 @@ export async function POST(request: NextRequest, context: ProspectRouteContext) 
       type = "first_contact";
     }
 
-    const prospect = await getProspectForMessage(id);
-    const draft = buildProspectOutreachDraft(prospect, type);
-    const item = await storeProspectDraft(id, {
-      subject: draft.subject,
-      message: draft.message,
-    });
+    const result = await generateProspectDraft(id, type);
 
-    return ok({
-      ...draft,
-      item,
-    });
+    return ok(result);
   } catch (error) {
     return fail(
       "PROSPECT_MESSAGE_FAILED",
