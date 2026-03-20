@@ -2,8 +2,13 @@ import { normalizeName, normalizeWebsite } from "@/lib/normalizers";
 import type { ProspectCandidate } from "@/lib/types";
 
 export type ProspectPriority = "alto" | "medio" | "bajo";
+export type ProspectAutomationStatus = "approved" | "analyzed" | "rejected";
+type ProspectScoreInput = Pick<
+  ProspectCandidate,
+  "website" | "type" | "email" | "phone" | "mapsUrl"
+>;
 
-export function inferWebsiteSignal(prospect: Pick<ProspectCandidate, "website">) {
+export function inferWebsiteSignal(prospect: Pick<ProspectScoreInput, "website">) {
   if (!prospect.website) {
     return "missing";
   }
@@ -30,7 +35,7 @@ export function inferWebsiteSignal(prospect: Pick<ProspectCandidate, "website">)
   return "existing";
 }
 
-export function scoreProspect(prospect: ProspectCandidate) {
+export function scoreProspect(prospect: ProspectScoreInput) {
   const type = normalizeName(prospect.type);
   const websiteSignal = inferWebsiteSignal(prospect);
   let score = 0;
@@ -74,11 +79,24 @@ export function getPriority(score: number): ProspectPriority {
   return "bajo";
 }
 
-export function getProspectScoreCard(prospect: ProspectCandidate) {
+export function getProspectAutomationStatus(score: number): ProspectAutomationStatus {
+  if (score >= 70) {
+    return "approved";
+  }
+
+  if (score < 40) {
+    return "rejected";
+  }
+
+  return "analyzed";
+}
+
+export function getProspectScoreCard(prospect: ProspectScoreInput) {
   const score = scoreProspect(prospect);
 
   return {
     score,
     priority: getPriority(score),
+    automationStatus: getProspectAutomationStatus(score),
   };
 }

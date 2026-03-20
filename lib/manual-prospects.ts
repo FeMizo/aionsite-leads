@@ -8,6 +8,7 @@ import {
   normalizeWhitespace,
 } from "@/lib/normalizers";
 import { buildOpportunity } from "@/lib/opportunity";
+import { getProspectAutomationStatus, scoreProspect } from "@/lib/prospect-scoring";
 
 export type ManualProspectInput = {
   name?: string;
@@ -150,6 +151,7 @@ function buildProspectCreateData(prepared: PreparedManualProspect, status: Prosp
 export async function createManualProspect(input: ManualProspectInput = {}) {
   const prisma = getPrismaClient();
   const prepared = validateManualProspect(input);
+  const status = getProspectAutomationStatus(scoreProspect(prepared));
   const existingRecords = await prisma.prospect.findMany({
     select: {
       name: true,
@@ -169,7 +171,7 @@ export async function createManualProspect(input: ManualProspectInput = {}) {
 
   const created = await prisma.$transaction(async (tx) => {
     const prospect = await tx.prospect.create({
-      data: buildProspectCreateData(prepared, "approved"),
+      data: buildProspectCreateData(prepared, status),
     });
 
     await tx.contactEvent.create({

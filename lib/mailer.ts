@@ -211,11 +211,7 @@ export async function sendProspectEmails(options: { prospectIds?: string[] } = {
 
   for (const record of pendingRecords) {
     const previousContact = findPreviouslyContacted(record, records);
-    const scoring = getProspectScoreCard({
-      ...record,
-      createdAt: record.createdAt.toISOString(),
-      lastCheckedAt: record.lastCheckedAt.toISOString(),
-    });
+    const scoring = getProspectScoreCard(record);
 
     if (previousContact || CONTACTED_STATUSES.includes(record.status)) {
       skippedPreviouslySentCount += 1;
@@ -384,11 +380,7 @@ export async function sendProspectEmailById(input: {
     throw new Error("El prospecto no tiene un correo valido.");
   }
 
-  const scoring = getProspectScoreCard({
-    ...prospect,
-    createdAt: prospect.createdAt.toISOString(),
-    lastCheckedAt: prospect.lastCheckedAt.toISOString(),
-  });
+  const scoring = getProspectScoreCard(prospect);
 
   if (scoring.priority !== "alto") {
     throw new Error("El prospecto esta bloqueado: la prioridad debe ser alto.");

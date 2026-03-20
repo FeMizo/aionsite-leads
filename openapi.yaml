@@ -178,6 +178,9 @@ components:
         ok:
           type: boolean
           const: true
+        type:
+          type: string
+          enum: [first_contact, followup, closing]
         subject:
           type: string
         message:
@@ -186,7 +189,7 @@ components:
           type: string
         opportunity:
           type: string
-      required: [ok, subject, message, analysis, opportunity]
+      required: [ok, type, subject, message, analysis, opportunity]
     RunsResponse:
       type: object
       properties:
@@ -291,6 +294,16 @@ paths:
           required: true
           schema:
             type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [first_contact, followup, closing]
       responses:
         '200':
           description: Outreach draft

@@ -2,7 +2,10 @@ import { NextRequest } from "next/server";
 import { ok, fail } from "@/lib/api";
 import { requireBearer } from "@/lib/auth";
 import { DATABASE_ENV_KEYS, formatMissingEnvError } from "@/lib/env";
-import { buildProspectOutreachDraft } from "@/lib/outreach";
+import {
+  buildProspectOutreachDraft,
+  type OutreachMessageType,
+} from "@/lib/outreach";
 import { getProspectForMessage, storeProspectDraft } from "@/lib/prospects";
 
 export const runtime = "nodejs";
@@ -12,6 +15,12 @@ type ProspectRouteContext = {
     id: string;
   }>;
 };
+
+const MESSAGE_TYPES = ["first_contact", "followup", "closing"] as const satisfies readonly OutreachMessageType[];
+
+function isOutreachMessageType(value: unknown): value is OutreachMessageType {
+  return typeof value === "string" && MESSAGE_TYPES.includes(value as OutreachMessageType);
+}
 
 export async function POST(request: NextRequest, context: ProspectRouteContext) {
   const authError = requireBearer(request);
@@ -28,8 +37,28 @@ export async function POST(request: NextRequest, context: ProspectRouteContext) 
 
   try {
     const { id } = await context.params;
+    let type: OutreachMessageType = "first_contact";
+
+    try {
+      const body = (await request.json()) as { type?: unknown };
+
+      if (typeof body?.type !== "undefined") {
+        if (!isOutreachMessageType(body.type)) {
+          return fail(
+            "INVALID_MESSAGE_TYPE",
+            "El campo type debe ser first_contact, followup o closing.",
+            400
+          );
+        }
+
+        type = body.type;
+      }
+    } catch {
+      type = "first_contact";
+    }
+
     const prospect = await getProspectForMessage(id);
-    const draft = buildProspectOutreachDraft(prospect);
+    const draft = buildProspectOutreachDraft(prospect, type);
     const item = await storeProspectDraft(id, {
       subject: draft.subject,
       message: draft.message,

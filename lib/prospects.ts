@@ -3,7 +3,7 @@ import { getPrismaClient } from "@/lib/db";
 import { findDuplicate } from "@/lib/dedupe";
 import { createManualProspect } from "@/lib/manual-prospects";
 import { buildOpportunity } from "@/lib/opportunity";
-import { getProspectScoreCard } from "@/lib/prospect-scoring";
+import { getProspectAutomationStatus, getProspectScoreCard } from "@/lib/prospect-scoring";
 import {
   normalizeEmail,
   normalizeName,
@@ -121,11 +121,7 @@ export type TransitionConfig = {
 };
 
 function serializeProspect(record: ProspectListRecord) {
-  const scoring = getProspectScoreCard({
-    ...record,
-    createdAt: record.createdAt.toISOString(),
-    lastCheckedAt: record.lastCheckedAt.toISOString(),
-  });
+  const scoring = getProspectScoreCard(record);
 
   return {
     ...record,
@@ -167,16 +163,18 @@ function shouldBeReady(
     | "message"
   >
 ) {
-  const scoring = getProspectScoreCard({
-    ...record,
-    createdAt: record.createdAt.toISOString(),
-    lastCheckedAt: record.lastCheckedAt.toISOString(),
-  });
+  const scoring = getProspectScoreCard(record);
 
   return scoring.priority === "alto" && hasStoredDraft(record);
 }
 
 function resolveStatusAfterApproval(record: ProspectListRecord): ProspectStatus {
+  const scoring = getProspectScoreCard(record);
+
+  if (getProspectAutomationStatus(scoring.score) === "rejected") {
+    return "rejected";
+  }
+
   return shouldBeReady(record) ? "ready" : "approved";
 }
 

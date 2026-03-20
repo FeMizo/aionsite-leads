@@ -9,7 +9,7 @@ import {
   REQUIRE_EMAIL_FOR_FINAL_PROSPECTS,
   SEARCHES,
 } from "@/lib/search-config";
-import { scoreProspect } from "@/lib/prospect-scoring";
+import { getProspectAutomationStatus, scoreProspect } from "@/lib/prospect-scoring";
 import type { ComparableProspect, ProspectCandidate } from "@/lib/types";
 import { findEmailFromWebsite } from "@/providers/email-finder";
 import { searchBusinesses } from "@/providers/google-places";
@@ -154,6 +154,8 @@ async function enrichProspectEmail(prospect: ProspectCandidate) {
 }
 
 function buildCreateProspectData(prospect: ProspectCandidate, runId: string) {
+  const score = scoreProspect(prospect);
+
   return {
     name: prospect.name,
     normalizedName: normalizeName(prospect.name),
@@ -172,7 +174,7 @@ function buildCreateProspectData(prospect: ProspectCandidate, runId: string) {
     pitchAngle: prospect.pitchAngle,
     subject: "",
     message: "",
-    status: "generated" as ProspectStatus,
+    status: getProspectAutomationStatus(score) as ProspectStatus,
     source: prospect.source,
     createdAt: new Date(prospect.createdAt),
     lastCheckedAt: new Date(prospect.lastCheckedAt),
