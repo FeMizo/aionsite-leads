@@ -25,7 +25,7 @@ export default function RootLayout({
                 aionsite.com.mx
               </Link>
               <p>
-                Dashboard operativo para prospecting, corridas programadas y envios SMTP.
+                Dashboard operativo para prospecting, busquedas programadas y envios SMTP.
               </p>
             </div>
             <Navigation />

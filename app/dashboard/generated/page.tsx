@@ -30,7 +30,7 @@ export default async function GeneratedPage() {
 
       <ProspectTable
         title="Generated"
-        description="Prospectos detectados por la ultima corrida, pendientes de aprobar."
+        description="Prospectos detectados por la ultima busqueda, pendientes de aprobar."
         records={context.data.generated}
         endpoint="/api/prospects"
         actions={[

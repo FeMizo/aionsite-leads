@@ -68,6 +68,7 @@ async function sendEmailWithTransporter(
     to: record.email,
     subject: email.subject,
     text: email.text,
+    html: email.html,
   });
 
   return {

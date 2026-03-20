@@ -33,7 +33,7 @@ const sectionCards = [
   {
     href: "/dashboard/generated",
     label: "Generated",
-    description: "Nuevos prospectos detectados por la ultima corrida.",
+    description: "Nuevos prospectos detectados por la ultima busqueda.",
     metricKey: "generated",
   },
   {
@@ -56,7 +56,7 @@ const sectionCards = [
   },
   {
     href: "/dashboard/runs",
-    label: "Corridas",
+    label: "Busquedas",
     description: "Metricas y estado del pipeline automatizado.",
     metricKey: "runs",
   },
@@ -194,10 +194,10 @@ export function DashboardActivitySummary({ data }: { data: DashboardData }) {
         <p className="activity-card__value">{formatActivityDate(data.activeRun?.createdAt || data.lastCrawl?.at)}</p>
         <p>
           {data.activeRun
-            ? "La corrida actual sigue ejecutandose."
+            ? "La busqueda actual sigue ejecutandose."
             : data.lastCrawl
               ? `${data.lastCrawl.source || "Pipeline"} · ${data.lastCrawl.status || "completed"}`
-              : "Todavia no hay corridas registradas."}
+              : "Todavia no hay busquedas registradas."}
         </p>
       </article>
       <article className="activity-card">
@@ -245,7 +245,7 @@ export function DashboardSetupPanel({ setup }: { setup: DashboardSetupState }) {
           <h3>Google Places</h3>
           <p>
             {setup.missingGooglePlacesEnv.join(", ") ||
-              "Configurado y listo para corridas manuales o cron"}
+              "Configurado y listo para busquedas manuales o cron"}
           </p>
         </article>
         <article>
@@ -276,7 +276,7 @@ export function DashboardOverview({
       <PageHeader
         eyebrow="Dashboard"
         title="Prospecting pipeline en Vercel + Postgres"
-        description="Usa el lateral para navegar por generated, activos, envios, contactados y corridas sin cargar todo en la misma pantalla."
+        description="Usa el lateral para navegar por generated, activos, envios, contactados y busquedas sin cargar todo en la misma pantalla."
       />
 
       <DashboardMetricCards data={data} />
@@ -301,14 +301,14 @@ export function DashboardOverview({
         <div className="settings-grid">
           <article>
             <h3>Generated</h3>
-            <p>Aprueba o descarta los prospectos capturados por la ultima corrida.</p>
+            <p>Aprueba o descarta los prospectos capturados por la ultima busqueda.</p>
           </article>
           <article>
             <h3>Prospects y Envios</h3>
             <p>Limpia la cola activa y dispara correos a los registros listos.</p>
           </article>
           <article>
-            <h3>Contactados y Corridas</h3>
+            <h3>Contactados y Busquedas</h3>
             <p>Consulta seguimiento comercial y la salud operativa del pipeline.</p>
           </article>
         </div>

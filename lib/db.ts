@@ -7,8 +7,24 @@ declare global {
   var __aionsitePrisma__: PrismaClient | undefined;
 }
 
+function normalizeDatabaseConnectionString(connectionString: string) {
+  try {
+    const url = new URL(connectionString);
+    const sslMode = url.searchParams.get("sslmode");
+
+    // Keep current pg behavior explicit and avoid the deprecation warning.
+    if (sslMode === "require" || sslMode === "verify-ca") {
+      url.searchParams.set("sslmode", "verify-full");
+    }
+
+    return url.toString();
+  } catch {
+    return connectionString;
+  }
+}
+
 function createPrismaClient() {
-  const connectionString = getDatabaseUrl();
+  const connectionString = normalizeDatabaseConnectionString(getDatabaseUrl());
 
   if (!connectionString) {
     throw new Error("DATABASE_URL no esta configurada.");

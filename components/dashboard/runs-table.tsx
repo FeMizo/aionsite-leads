@@ -6,14 +6,14 @@ type RunsTableProps = {
 
 export function RunsTable({ runs }: RunsTableProps) {
   if (!runs.length) {
-    return <div className="empty-state">Todavia no hay corridas registradas.</div>;
+    return <div className="empty-state">Todavia no hay busquedas registradas.</div>;
   }
 
   return (
     <section className="panel">
       <div className="panel__header">
         <div>
-          <h2>Corridas recientes</h2>
+          <h2>Busquedas recientes</h2>
           <p>Metricas operativas por ejecucion del pipeline de prospecting.</p>
         </div>
       </div>

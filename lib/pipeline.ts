@@ -311,7 +311,7 @@ export async function runProspectSearch(source = "google-places") {
     };
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "No se pudo ejecutar la corrida.";
+      error instanceof Error ? error.message : "No se pudo ejecutar la busqueda.";
 
     console.error(`[prospect-run] Error: ${message}`);
 

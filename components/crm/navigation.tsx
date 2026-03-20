@@ -9,7 +9,7 @@ const items = [
   { href: "/dashboard/prospects", label: "Prospects" },
   { href: "/dashboard/send", label: "Envios" },
   { href: "/dashboard/contacted", label: "Contactados" },
-  { href: "/dashboard/runs", label: "Corridas" },
+  { href: "/dashboard/runs", label: "Busquedas" },
 ];
 
 export function Navigation() {

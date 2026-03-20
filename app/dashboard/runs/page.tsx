@@ -20,7 +20,7 @@ export default async function RunsPage() {
   return (
     <div className="page-stack">
       <PageHeader
-        eyebrow="Corridas"
+        eyebrow="Busquedas"
         title="Historial del pipeline"
         description="Audita el rendimiento de busqueda, deduplicacion y enriquecimiento en cada ejecucion."
       />

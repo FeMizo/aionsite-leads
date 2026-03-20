@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         error:
           error instanceof Error
             ? error.message
-            : "No se pudo ejecutar la corrida programada.",
+            : "No se pudo ejecutar la busqueda programada.",
       },
       { status: 500 }
     );
@@ -70,7 +70,7 @@ export async function POST() {
         error:
           error instanceof Error
             ? error.message
-            : "No se pudo ejecutar la corrida manual.",
+            : "No se pudo ejecutar la busqueda manual.",
       },
       { status: 500 }
     );

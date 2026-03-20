@@ -69,7 +69,7 @@ export function DashboardActions({
       <div className="panel__header">
         <div>
           <h2>Acciones operativas</h2>
-          <p>Lanza una corrida manual, aprueba prospectos generados o envia correos.</p>
+          <p>Lanza una busqueda manual, aprueba prospectos generados o envia correos.</p>
         </div>
         <span
           className={`run-status ${isCrawlActive ? "is-running" : "is-ok"}`}
@@ -89,7 +89,7 @@ export function DashboardActions({
           onClick={() => run(() => postJson("/api/cron"))}
           disabled={isCrawlActive}
         >
-          {isCrawlActive ? "Ejecutando crawl..." : "Ejecutar corrida"}
+          {isCrawlActive ? "Ejecutando crawl..." : "Ejecutar busqueda"}
         </button>
         <button
           type="button"
@@ -116,7 +116,7 @@ export function DashboardActions({
       </div>
       {crawlInProgress && activeRunCreatedAt ? (
         <p className="crm-muted">
-          Corrida iniciada el {new Date(activeRunCreatedAt).toLocaleString()}.
+          Busqueda iniciada el {new Date(activeRunCreatedAt).toLocaleString()}.
         </p>
       ) : null}
       {error ? <p className="crm-error">{error}</p> : null}
