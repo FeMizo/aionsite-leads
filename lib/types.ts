@@ -126,6 +126,7 @@ export type DashboardData = {
   activeRun: DashboardRun | null;
   lastCrawl: DashboardActivityItem | null;
   lastSend: DashboardActivityItem | null;
+  nextCrawlAt: string;
   generated: DashboardProspect[];
   prospects: DashboardProspect[];
   ready: DashboardProspect[];

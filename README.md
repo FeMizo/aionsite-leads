@@ -252,7 +252,7 @@ npm run db:seed
 
 ## Notas
 
-- El cron en `vercel.json` usa `0 9 */2 * *` y Vercel lo interpreta en UTC.
+- El cron en `vercel.json` usa `0 9 * * 1,3,5` y Vercel lo interpreta en UTC.
 - El repo ya incluye `prisma/migrations`, por lo que `prisma migrate deploy` es reproducible.
 - Si faltan variables, las APIs responden `503` con detalle claro en JSON.
 - Se agrego el estado `rejected` para rechazar leads sin borrar su historial.

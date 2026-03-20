@@ -192,7 +192,9 @@ export function DashboardActivitySummary({ data }: { data: DashboardData }) {
     <section className="settings-grid">
       <article className="activity-card">
         <h3>{crawlLabel}</h3>
-        <p className="activity-card__value">{formatActivityDate(data.activeRun?.createdAt || data.lastCrawl?.at)}</p>
+        <p className="activity-card__value">
+          {formatActivityDate(data.activeRun?.createdAt || data.lastCrawl?.at)}
+        </p>
         <p>
           {data.activeRun
             ? "La busqueda actual sigue ejecutandose."
@@ -202,11 +204,18 @@ export function DashboardActivitySummary({ data }: { data: DashboardData }) {
         </p>
       </article>
       <article className="activity-card">
+        <h3>Siguiente crawl automatico</h3>
+        <p className="activity-card__value">{formatActivityDate(data.nextCrawlAt)}</p>
+        <p>Cron `0 9 * * 1,3,5` en UTC. Corre lunes, miercoles y viernes; si cae fin de semana, pasa al lunes.</p>
+      </article>
+      <article className="activity-card">
         <h3>Ultimo envio</h3>
         <p className="activity-card__value">{formatActivityDate(data.lastSend?.at)}</p>
         <p>
           {data.lastSend
-            ? `${data.lastSend.prospectName || "Prospecto"}${data.lastSend.email ? ` · ${data.lastSend.email}` : ""}`
+            ? `${data.lastSend.prospectName || "Prospecto"}${
+                data.lastSend.email ? ` · ${data.lastSend.email}` : ""
+              }`
             : "Todavia no se ha enviado ningun correo."}
         </p>
       </article>
@@ -252,8 +261,7 @@ export function DashboardSetupPanel({ setup }: { setup: DashboardSetupState }) {
         <article>
           <h3>SMTP</h3>
           <p>
-            {setup.missingSmtpEnv.join(", ") ||
-              "Configurado y listo para enviar correos"}
+            {setup.missingSmtpEnv.join(", ") || "Configurado y listo para enviar correos"}
           </p>
         </article>
         <article>

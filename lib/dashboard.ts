@@ -1,4 +1,5 @@
 import { getPrismaClient } from "@/lib/db";
+import { getNextProspectingCrawlAt } from "@/lib/automation";
 import { getProspectScoreCard } from "@/lib/prospect-scoring";
 import type {
   DashboardActivityItem,
@@ -94,6 +95,7 @@ function serializeActivityItem(item: {
 
 export async function getDashboardData(): Promise<DashboardData> {
   const prisma = getPrismaClient();
+  const nextCrawlAt = getNextProspectingCrawlAt();
   const [
     generated,
     prospects,
@@ -176,6 +178,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     activeRun: activeRun ? serializeRun(activeRun) : null,
     lastCrawl: lastRun ? serializeActivityItem(lastRun) : null,
     lastSend: lastSend ? serializeActivityItem(lastSend) : null,
+    nextCrawlAt,
     generated: generated.map(serializeProspect),
     prospects: prospects.map(serializeProspect),
     ready: ready.map(serializeProspect),
