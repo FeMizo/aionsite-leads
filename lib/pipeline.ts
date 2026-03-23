@@ -14,7 +14,11 @@ import {
   REQUIRE_EMAIL_FOR_FINAL_PROSPECTS,
   SEARCHES,
 } from "@/lib/search-config";
-import { getProspectAutomationStatus, scoreProspect } from "@/lib/prospect-scoring";
+import {
+  MINIMUM_QUALIFIED_PROSPECT_SCORE,
+  getProspectAutomationStatus,
+  scoreProspect,
+} from "@/lib/prospect-scoring";
 import type { ComparableProspect, ProspectCandidate } from "@/lib/types";
 import { findEmailFromWebsite } from "@/providers/email-finder";
 import { searchBusinesses } from "@/providers/google-places";
@@ -236,11 +240,14 @@ export async function runProspectSearch(source = "google-places") {
         prospect,
         score: scoreProspect(prospect),
       }))
+      .filter((item) => item.score >= MINIMUM_QUALIFIED_PROSPECT_SCORE)
       .sort((left, right) => right.score - left.score);
+
+    const lowScoreDiscarded = uniqueProspects.length - scoredCandidates.length;
 
     if (scoredCandidates.length < DESIRED_PROSPECT_COUNT) {
       throw new Error(
-        `Se encontraron ${scoredCandidates.length} prospectos unicos, pero se necesitan ${DESIRED_PROSPECT_COUNT}.`
+        `Se encontraron ${scoredCandidates.length} prospectos unicos con score >= ${MINIMUM_QUALIFIED_PROSPECT_SCORE}, pero se necesitan ${DESIRED_PROSPECT_COUNT}.`
       );
     }
 
@@ -284,6 +291,9 @@ export async function runProspectSearch(source = "google-places") {
     console.log(`[prospect-run] Places encontrados: ${metrics.placesFound}`);
     console.log(
       `[prospect-run] Duplicados filtrados: ${metrics.duplicatesFiltered}`
+    );
+    console.log(
+      `[prospect-run] Prospectos descartados por score < ${MINIMUM_QUALIFIED_PROSPECT_SCORE}: ${lowScoreDiscarded}`
     );
     console.log(`[prospect-run] Prospectos sin email descartados: ${prospectsWithoutEmail}`);
     console.log(`[prospect-run] Prospectos finales guardados: ${metrics.prospectsSaved}`);

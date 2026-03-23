@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { formatDashboardDateTime } from "@/lib/date-format";
 import { getProspectDisplayStatus, getProspectStatusLabel } from "@/lib/prospect-status";
+import { compareSortValues, type SortDirection, type SortType } from "@/lib/table-sort";
+import { SortIndicator } from "@/components/dashboard/sort-indicator";
 import type { DashboardProspect } from "@/lib/types";
 import { StatusPill } from "@/components/dashboard/status-pill";
 
@@ -22,6 +24,28 @@ type ProspectTableProps = {
   endpoint: "/api/prospects" | "/api/send";
   emptyLabel: string;
 };
+
+type ProspectSortKey =
+  | "name"
+  | "type"
+  | "city"
+  | "email"
+  | "website"
+  | "score"
+  | "priority"
+  | "status"
+  | "scheduledSendAt"
+  | "lastCheckedAt";
+
+type ProspectColumn = {
+  key: ProspectSortKey;
+  label: string;
+  type: SortType;
+  defaultDirection: SortDirection;
+  getValue: (record: DashboardProspect) => unknown;
+};
+
+type ProspectTab = "all" | "ready" | "scheduled";
 
 async function postAction(
   endpoint: "/api/prospects" | "/api/send",
@@ -118,37 +142,176 @@ export function ProspectTable({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [activeTab, setActiveTab] = useState<ProspectTab>("all");
+  const [sortState, setSortState] = useState<{
+    key: ProspectSortKey;
+    direction: SortDirection;
+  } | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const showScheduledColumn =
     endpoint === "/api/send" || records.some((record) => Boolean(record.scheduledSendAt));
+  const showSendTabs = endpoint === "/api/send";
+
+  const columns = useMemo<ProspectColumn[]>(
+    () => [
+      {
+        key: "name",
+        label: "Negocio",
+        type: "string",
+        defaultDirection: "asc",
+        getValue: (record) => record.name,
+      },
+      {
+        key: "type",
+        label: "Categoria",
+        type: "string",
+        defaultDirection: "asc",
+        getValue: (record) => record.type,
+      },
+      {
+        key: "city",
+        label: "Ciudad",
+        type: "string",
+        defaultDirection: "asc",
+        getValue: (record) => record.city,
+      },
+      {
+        key: "email",
+        label: "Email",
+        type: "string",
+        defaultDirection: "asc",
+        getValue: (record) => record.email,
+      },
+      {
+        key: "website",
+        label: "Website",
+        type: "string",
+        defaultDirection: "asc",
+        getValue: (record) => record.website,
+      },
+      {
+        key: "score",
+        label: "Score",
+        type: "number",
+        defaultDirection: "desc",
+        getValue: (record) => record.score,
+      },
+      {
+        key: "priority",
+        label: "Prioridad",
+        type: "number",
+        defaultDirection: "desc",
+        getValue: (record) => {
+          if (record.priority === "alto") {
+            return 3;
+          }
+
+          if (record.priority === "medio") {
+            return 2;
+          }
+
+          return 1;
+        },
+      },
+      {
+        key: "status",
+        label: "Estado",
+        type: "string",
+        defaultDirection: "asc",
+        getValue: (record) =>
+          getProspectStatusLabel(getProspectDisplayStatus(record.status, record.scheduledSendAt)),
+      },
+      {
+        key: "scheduledSendAt",
+        label: "Envio",
+        type: "date",
+        defaultDirection: "asc",
+        getValue: (record) => record.scheduledSendAt,
+      },
+      {
+        key: "lastCheckedAt",
+        label: "Actualizado",
+        type: "date",
+        defaultDirection: "desc",
+        getValue: (record) => record.lastCheckedAt,
+      },
+    ],
+    []
+  );
 
   const filteredRecords = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    if (!normalizedQuery) {
-      return records;
+    let nextRecords = records;
+
+    if (showSendTabs && activeTab !== "all") {
+      nextRecords = nextRecords.filter((record) => getDisplayStatus(record) === activeTab);
     }
 
-    return records.filter((record) =>
-      [
-        getProspectDisplayStatus(record.status, record.scheduledSendAt),
-        getProspectStatusLabel(getProspectDisplayStatus(record.status, record.scheduledSendAt)),
-      ]
-        .concat([
-          record.name,
-          record.type,
-          record.city,
-          record.email,
-          record.website,
-          record.source,
-          record.status,
-        ])
-        .join(" ")
-        .toLowerCase()
-        .includes(normalizedQuery)
+    if (normalizedQuery) {
+      nextRecords = nextRecords.filter((record) =>
+        [
+          getProspectDisplayStatus(record.status, record.scheduledSendAt),
+          getProspectStatusLabel(getProspectDisplayStatus(record.status, record.scheduledSendAt)),
+        ]
+          .concat([
+            record.name,
+            record.type,
+            record.city,
+            record.email,
+            record.website,
+            record.source,
+            record.status,
+          ])
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedQuery)
+      );
+    }
+
+    if (!sortState) {
+      return nextRecords;
+    }
+
+    const activeColumn = columns.find((column) => column.key === sortState.key);
+
+    if (!activeColumn) {
+      return nextRecords;
+    }
+
+    return [...nextRecords].sort((left, right) =>
+      compareSortValues(
+        activeColumn.getValue(left),
+        activeColumn.getValue(right),
+        activeColumn.type,
+        sortState.direction
+      )
     );
-  }, [query, records]);
+  }, [activeTab, columns, query, records, showSendTabs, sortState]);
+
+  const tabCounts = useMemo(
+    () => ({
+      all: records.length,
+      ready: records.filter((record) => getDisplayStatus(record) === "ready").length,
+      scheduled: records.filter((record) => getDisplayStatus(record) === "scheduled").length,
+    }),
+    [records]
+  );
+
+  useEffect(() => {
+    const visibleIds = new Set(filteredRecords.map((record) => record.id));
+
+    setSelectedIds((current) => {
+      const next = current.filter((id) => visibleIds.has(id));
+
+      if (next.length === current.length && next.every((id, index) => id === current[index])) {
+        return current;
+      }
+
+      return next;
+    });
+  }, [filteredRecords]);
 
   function getScheduledLabel(record: DashboardProspect) {
     if (!record.scheduledSendAt) {
@@ -230,6 +393,40 @@ export function ProspectTable({
     return selectedIds.includes(recordId);
   }
 
+  function toggleSort(column: ProspectColumn) {
+    setSortState((current) => {
+      if (!current || current.key !== column.key) {
+        return {
+          key: column.key,
+          direction: column.defaultDirection,
+        };
+      }
+
+      return {
+        key: column.key,
+        direction: current.direction === "asc" ? "desc" : "asc",
+      };
+    });
+  }
+
+  function getSortDirection(columnKey: ProspectSortKey): SortDirection | null {
+    if (!sortState || sortState.key !== columnKey) {
+      return null;
+    }
+
+    return sortState.direction;
+  }
+
+  function getEmptyStateLabel() {
+    if (!showSendTabs || activeTab === "all") {
+      return emptyLabel;
+    }
+
+    return activeTab === "scheduled"
+      ? "No hay prospectos programados para envio."
+      : "No hay prospectos ready para enviar.";
+  }
+
   return (
     <section className="panel">
       <div className="panel__header">
@@ -244,6 +441,26 @@ export function ProspectTable({
           onChange={(event) => setQuery(event.target.value)}
         />
       </div>
+
+      {showSendTabs ? (
+        <div className="crm-tabs" aria-label="Filtros de envios">
+          {[
+            { key: "all" as const, label: "Todos", count: tabCounts.all },
+            { key: "ready" as const, label: "Ready", count: tabCounts.ready },
+            { key: "scheduled" as const, label: "Programados", count: tabCounts.scheduled },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              className={activeTab === tab.key ? "crm-tab is-active" : "crm-tab"}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              <span>{tab.label}</span>
+              <strong>{tab.count}</strong>
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <div className="panel__actions">
         {actions.map((action) => (
@@ -263,7 +480,7 @@ export function ProspectTable({
       {error ? <p className="crm-error">{error}</p> : null}
 
       {!filteredRecords.length ? (
-        <div className="empty-state">{emptyLabel}</div>
+        <div className="empty-state">{getEmptyStateLabel()}</div>
       ) : (
         <div className="crm-table-wrap">
           <table className="crm-table">
@@ -280,16 +497,24 @@ export function ProspectTable({
                     disabled={selectableRecords.length === 0}
                   />
                 </th>
-                <th>Negocio</th>
-                <th>Categoria</th>
-                <th>Ciudad</th>
-                <th>Email</th>
-                <th>Website</th>
-                <th>Score</th>
-                <th>Prioridad</th>
-                <th>Estado</th>
-                {showScheduledColumn ? <th>Envio</th> : null}
-                <th>Actualizado</th>
+                {columns
+                  .filter((column) => showScheduledColumn || column.key !== "scheduledSendAt")
+                  .map((column) => (
+                    <th key={column.key}>
+                      <button
+                        type="button"
+                        className={
+                          sortState?.key === column.key
+                            ? "crm-table__sort is-active"
+                            : "crm-table__sort"
+                        }
+                        onClick={() => toggleSort(column)}
+                      >
+                        <span>{column.label}</span>
+                        <SortIndicator direction={getSortDirection(column.key)} />
+                      </button>
+                    </th>
+                  ))}
               </tr>
             </thead>
             <tbody>

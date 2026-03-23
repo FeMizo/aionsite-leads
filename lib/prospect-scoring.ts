@@ -3,6 +3,8 @@ import type { ProspectCandidate } from "@/lib/types";
 
 export type ProspectPriority = "alto" | "medio" | "bajo";
 export type ProspectAutomationStatus = "approved" | "analyzed";
+export const MINIMUM_QUALIFIED_PROSPECT_SCORE = 40;
+
 type ProspectScoreInput = Pick<
   ProspectCandidate,
   "website" | "type" | "email" | "phone" | "mapsUrl"
@@ -72,7 +74,7 @@ export function getPriority(score: number): ProspectPriority {
     return "alto";
   }
 
-  if (score >= 40) {
+  if (score >= MINIMUM_QUALIFIED_PROSPECT_SCORE) {
     return "medio";
   }
 
