@@ -21,6 +21,7 @@ import { getProspectScoreCard } from "@/lib/prospect-scoring";
 import { normalizeEmail } from "@/lib/normalizers";
 import {
   countEmailsSentToday,
+  getNextRecommendedSendAt,
   isGoodTimeToSend,
   isScheduledSendDue,
   MAX_PER_DAY,
@@ -43,6 +44,12 @@ type SendSummary = {
   total: number;
   pending: number;
   dueFollowups: number;
+  scheduled: number;
+  scheduledCreated: number;
+  scheduledItems: Array<{
+    id: string;
+    scheduledSendAt: string;
+  }>;
   sent: number;
   followupsSent: number;
   failed: number;
@@ -149,6 +156,9 @@ function createEmptySendSummary(total = 0): SendSummary {
     total,
     pending: 0,
     dueFollowups: 0,
+    scheduled: 0,
+    scheduledCreated: 0,
+    scheduledItems: [],
     sent: 0,
     followupsSent: 0,
     failed: 0,
@@ -162,6 +172,9 @@ function mergeSendSummaries(left: SendSummary, right: SendSummary): SendSummary 
     total: Math.max(left.total, right.total),
     pending: left.pending + right.pending,
     dueFollowups: left.dueFollowups + right.dueFollowups,
+    scheduled: left.scheduled + right.scheduled,
+    scheduledCreated: left.scheduledCreated + right.scheduledCreated,
+    scheduledItems: [...left.scheduledItems, ...right.scheduledItems],
     sent: left.sent + right.sent,
     followupsSent: left.followupsSent + right.followupsSent,
     failed: left.failed + right.failed,
@@ -312,6 +325,32 @@ function filterByIds<T extends { id: string }>(records: T[], ids: string[]) {
   return records.filter((record) => idsSet.has(record.id));
 }
 
+async function autoScheduleProspectForLater(
+  record: Prospect,
+  reason: "outside_business_hours" | "rate_limited",
+  referenceDate = new Date()
+) {
+  const scheduledSendAt = getNextRecommendedSendAt(record, referenceDate);
+
+  await updateProspectWithEvent({
+    prospectId: record.id,
+    status: record.status,
+    eventType: "send_auto_scheduled",
+    data: {
+      scheduledSendAt,
+    },
+    metadata: {
+      fromStatus: record.status,
+      toStatus: record.status,
+      note: "Prospect scheduled automatically for the next valid send window",
+      reason,
+      scheduledSendAt: scheduledSendAt.toISOString(),
+    } as Prisma.InputJsonObject,
+  });
+
+  return scheduledSendAt;
+}
+
 export async function listDueFollowups(options: { prospectIds?: string[] } = {}) {
   const records = await loadRecords();
   const ids = Array.isArray(options.prospectIds) ? options.prospectIds : [];
@@ -351,18 +390,26 @@ export async function sendInitialProspectEmails(
   const records = await loadRecords();
   const ids = Array.isArray(options.prospectIds) ? options.prospectIds : [];
   const now = new Date();
+  const readyRecords = filterByIds(records, ids).filter((record) => record.status === "ready");
+  const scheduledRecords = readyRecords.filter((record) => !isScheduledSendDue(record, now));
   const pendingRecords = sortProspectsForDelivery(
-    filterByIds(records, ids).filter(
-      (record) => record.status === "ready" && isScheduledSendDue(record, now)
-    )
+    readyRecords.filter((record) => isScheduledSendDue(record, now))
   );
   const summary = createEmptySendSummary(records.length);
   const sendBudget = budget || (await createSendBudget());
 
   summary.pending = pendingRecords.length;
+  summary.scheduled = scheduledRecords.length;
+  summary.scheduledItems = scheduledRecords
+    .filter((record) => Boolean(record.scheduledSendAt))
+    .map((record) => ({
+      id: record.id,
+      scheduledSendAt: record.scheduledSendAt!.toISOString(),
+    }));
 
   console.log(`[send:initial] Registros cargados: ${records.length}`);
   console.log(`[send:initial] Prospectos por enviar: ${pendingRecords.length}`);
+  console.log(`[send:initial] Prospectos programados para despues: ${scheduledRecords.length}`);
 
   if (!pendingRecords.length) {
     return summary;
@@ -372,19 +419,26 @@ export async function sendInitialProspectEmails(
 
   for (const record of pendingRecords) {
     if (!canSendMore(sendBudget)) {
-      summary.blocked += 1;
+      summary.scheduled += 1;
+      summary.scheduledCreated += 1;
+
+      const scheduledSendAt = await autoScheduleProspectForLater(record, "rate_limited", now);
+      summary.scheduledItems.push({
+        id: record.id,
+        scheduledSendAt: scheduledSendAt.toISOString(),
+      });
 
       await updateProspectWithEvent({
         prospectId: record.id,
         status: record.status,
         eventType: "send_rate_limited",
-        lastError: "Blocked because MAX_PER_RUN or MAX_PER_DAY was reached",
         metadata: {
           fromStatus: record.status,
           toStatus: record.status,
-          note: "Blocked because MAX_PER_RUN or MAX_PER_DAY was reached",
+          note: "Reached send budget and auto-scheduled for the next valid window",
           remainingRun: sendBudget.remainingRun,
           remainingDay: sendBudget.remainingDay,
+          scheduledSendAt: scheduledSendAt.toISOString(),
         } as Prisma.InputJsonObject,
       });
 
@@ -392,7 +446,6 @@ export async function sendInitialProspectEmails(
     }
 
     const previousContact = findPreviouslyContacted(record, records);
-    const scoring = getProspectScoreCard(record);
 
     if (record.contacted || previousContact) {
       summary.skippedPreviouslySent += 1;
@@ -434,7 +487,7 @@ export async function sendInitialProspectEmails(
       continue;
     }
 
-    if (scoring.priority !== "alto" || !record.message.trim() || record.status !== "ready") {
+    if (!record.subject.trim() || !record.message.trim() || record.status !== "ready") {
       summary.blocked += 1;
 
       await updateProspectWithEvent({
@@ -446,8 +499,7 @@ export async function sendInitialProspectEmails(
           fromStatus: record.status,
           toStatus: record.status,
           note:
-            "Blocked because contacted must be false, status must be ready, priority alto and message must exist",
-          priority: scoring.priority,
+            "Blocked because contacted must be false, status must be ready, and subject/message must exist",
           contacted: record.contacted,
           hasSubject: Boolean(record.subject.trim()),
           hasMessage: Boolean(record.message.trim()),
@@ -458,18 +510,28 @@ export async function sendInitialProspectEmails(
     }
 
     if (!isGoodTimeToSend(record, now)) {
-      summary.blocked += 1;
+      summary.scheduled += 1;
+      summary.scheduledCreated += 1;
+
+      const scheduledSendAt = await autoScheduleProspectForLater(
+        record,
+        "outside_business_hours",
+        now
+      );
+      summary.scheduledItems.push({
+        id: record.id,
+        scheduledSendAt: scheduledSendAt.toISOString(),
+      });
 
       await updateProspectWithEvent({
         prospectId: record.id,
         status: record.status,
         eventType: "send_outside_business_hours",
-        lastError: "Blocked because current hour is outside recommended business hours",
         metadata: {
           fromStatus: record.status,
           toStatus: record.status,
-          note: "Blocked because current hour is outside recommended business hours",
-          scheduledSendAt: record.scheduledSendAt?.toISOString() || null,
+          note: "Current hour is outside business hours and the send was auto-scheduled",
+          scheduledSendAt: scheduledSendAt.toISOString(),
           currentHour: now.getHours(),
         } as Prisma.InputJsonObject,
       });
@@ -538,11 +600,10 @@ export async function sendDueFollowupEmails(
   const records = await loadRecords();
   const ids = Array.isArray(options.prospectIds) ? options.prospectIds : [];
   const now = new Date();
+  const dueRecords = filterByIds(records, ids).filter((record) => Boolean(getDueFollowupPlan(record)));
+  const scheduledRecords = dueRecords.filter((record) => !isScheduledSendDue(record, now));
   const candidates = sortProspectsForDelivery(
-    filterByIds(records, ids).filter((record) => {
-      const plan = getDueFollowupPlan(record);
-      return Boolean(plan && isScheduledSendDue(record, now));
-    })
+    dueRecords.filter((record) => isScheduledSendDue(record, now))
   )
     .map((record) => {
       const plan = getDueFollowupPlan(record);
@@ -553,9 +614,17 @@ export async function sendDueFollowupEmails(
   const sendBudget = budget || (await createSendBudget());
 
   summary.dueFollowups = candidates.length;
+  summary.scheduled = scheduledRecords.length;
+  summary.scheduledItems = scheduledRecords
+    .filter((record) => Boolean(record.scheduledSendAt))
+    .map((record) => ({
+      id: record.id,
+      scheduledSendAt: record.scheduledSendAt!.toISOString(),
+    }));
 
   console.log(`[send:followups] Registros cargados: ${records.length}`);
   console.log(`[send:followups] Followups por enviar: ${candidates.length}`);
+  console.log(`[send:followups] Followups programados para despues: ${scheduledRecords.length}`);
 
   if (!candidates.length) {
     return summary;
@@ -776,12 +845,6 @@ export async function sendProspectEmailById(input: {
 
   if (!isValidEmail(normalizeEmail(prospect.email))) {
     throw new Error("El prospecto no tiene un correo valido.");
-  }
-
-  const scoring = getProspectScoreCard(prospect);
-
-  if (scoring.priority !== "alto") {
-    throw new Error("El prospecto esta bloqueado: la prioridad debe ser alto.");
   }
 
   if (!prospect.message.trim()) {

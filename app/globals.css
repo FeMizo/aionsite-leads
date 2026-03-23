@@ -378,6 +378,18 @@ code {
   background: #d3eee6;
 }
 
+.crm-table__row.is-disabled {
+  cursor: not-allowed;
+}
+
+.crm-table__row.is-disabled td {
+  opacity: 0.72;
+}
+
+.crm-table__row.is-disabled:hover td {
+  background: transparent;
+}
+
 .crm-table th {
   font-size: 0.82rem;
   text-transform: uppercase;
@@ -401,6 +413,21 @@ code {
 .record-primary span {
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.record-secondary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.record-secondary strong {
+  font-size: 0.92rem;
+}
+
+.record-secondary span {
+  color: var(--muted);
+  font-size: 0.84rem;
 }
 
 .status-pill {
@@ -441,6 +468,12 @@ code {
   background: #dcfce7;
   color: #166534;
   border-color: #bbf7d0;
+}
+
+.status-pill--scheduled {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
 }
 
 .status-pill--contacted,

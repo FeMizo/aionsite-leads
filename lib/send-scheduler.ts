@@ -154,6 +154,37 @@ export function isScheduledSendDue(
   return prospect.scheduledSendAt.getTime() <= referenceDate.getTime();
 }
 
+export function getNextRecommendedSendAt(
+  prospect: Pick<SchedulableProspect, "type"> | { type: string },
+  referenceDate = new Date()
+) {
+  const config = getBusinessHoursConfig(prospect.type);
+
+  for (let dayOffset = 0; dayOffset < 14; dayOffset += 1) {
+    for (const hour of config.bestHours) {
+      const candidate = new Date(referenceDate);
+      candidate.setDate(referenceDate.getDate() + dayOffset);
+      candidate.setHours(hour, 0, 0, 0);
+
+      if (candidate.getTime() <= referenceDate.getTime()) {
+        continue;
+      }
+
+      if (!isGoodTimeToSend(prospect, candidate)) {
+        continue;
+      }
+
+      return humanizeScheduledDate(candidate);
+    }
+  }
+
+  const fallback = new Date(referenceDate);
+  fallback.setDate(referenceDate.getDate() + 1);
+  fallback.setHours(BUSINESS_HOURS.default.bestHours[0], 0, 0, 0);
+
+  return humanizeScheduledDate(fallback);
+}
+
 export async function countEmailsSentToday(referenceDate = new Date()) {
   const prisma = getPrismaClient();
   const startOfDay = new Date(referenceDate);

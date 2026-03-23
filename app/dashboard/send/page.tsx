@@ -23,7 +23,7 @@ export default async function SendPage() {
       <PageHeader
         eyebrow="Envios"
         title="Envio de correos"
-        description="Selecciona prospectos ready con draft guardado. El envio real sigue validando prioridad alta y reglas SMTP."
+        description="Selecciona prospectos listos o programados. Si ya tienen fecha futura de envio, se muestran como programados con su horario exacto."
       />
 
       <DashboardMetricCards data={context.data} />
@@ -32,11 +32,11 @@ export default async function SendPage() {
 
       <ProspectTable
         title="Enviar seleccionados"
-        description="Los prospectos llegan aqui cuando ya tienen draft. Al enviar, el backend valida prioridad alta, email y estado listo."
+        description="Los prospectos llegan aqui cuando ya tienen draft. Si tienen una fecha futura, veras estado programado con fecha y hora; el backend solo enviara cuando ya corresponda."
         records={context.data.ready}
         endpoint="/api/send"
         actions={[{ action: "sendSelected", label: "Enviar correos", variant: "primary" }]}
-        emptyLabel="No hay prospectos ready para envio."
+        emptyLabel="No hay prospectos listos o programados para envio."
       />
     </div>
   );
