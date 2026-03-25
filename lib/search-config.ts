@@ -1,112 +1,21 @@
 import type { SearchSpec } from "@/lib/types";
+import { SEARCH_CITIES, SEARCH_PLACE_TYPES } from "@/lib/search-targets";
 
 export const DESIRED_PROSPECT_COUNT = 6;
 export const REQUIRED_TYPES = ["inmobiliaria", "restaurant"];
 export const REQUIRE_EMAIL_FOR_FINAL_PROSPECTS = true;
 
-export const SEARCHES: SearchSpec[] = [
-  {
-    id: "restaurant-merida",
-    city: "Merida",
-    label: "restaurante en Merida",
-    textQuery: "restaurante en Merida, Yucatan, Mexico",
-    typeLabel: "restaurant",
-    includedType: "restaurant",
-  },
-  {
-    id: "real-estate-merida",
-    city: "Merida",
-    label: "inmobiliaria en Merida",
-    textQuery: "inmobiliaria en Merida, Yucatan, Mexico",
-    typeLabel: "inmobiliaria",
-    includedType: "real_estate_agency",
-  },
-  {
-    id: "clinic-merida",
-    city: "Merida",
-    label: "clinica en Merida",
-    textQuery: "clinica en Merida, Yucatan, Mexico",
-    typeLabel: "clinica",
-    includedType: "doctor",
-  },
-  {
-    id: "restaurant-villahermosa",
-    city: "Villahermosa",
-    label: "restaurante en Villahermosa",
-    textQuery: "restaurante en Villahermosa, Tabasco, Mexico",
-    typeLabel: "restaurant",
-    includedType: "restaurant",
-  },
-  {
-    id: "real-estate-villahermosa",
-    city: "Villahermosa",
-    label: "inmobiliaria en Villahermosa",
-    textQuery: "inmobiliaria en Villahermosa, Tabasco, Mexico",
-    typeLabel: "inmobiliaria",
-    includedType: "real_estate_agency",
-  },
-  {
-    id: "restaurant-cdmx",
-    city: "Ciudad de Mexico",
-    label: "restaurante en Ciudad de Mexico",
-    textQuery: "restaurante en Ciudad de Mexico, Mexico",
-    typeLabel: "restaurant",
-    includedType: "restaurant",
-  },
-  {
-    id: "real-estate-cdmx",
-    city: "Ciudad de Mexico",
-    label: "inmobiliaria en Ciudad de Mexico",
-    textQuery: "inmobiliaria en Ciudad de Mexico, Mexico",
-    typeLabel: "inmobiliaria",
-    includedType: "real_estate_agency",
-  },
-  {
-    id: "restaurant-guadalajara",
-    city: "Guadalajara",
-    label: "restaurante en Guadalajara",
-    textQuery: "restaurante en Guadalajara, Jalisco, Mexico",
-    typeLabel: "restaurant",
-    includedType: "restaurant",
-  },
-  {
-    id: "real-estate-guadalajara",
-    city: "Guadalajara",
-    label: "inmobiliaria en Guadalajara",
-    textQuery: "inmobiliaria en Guadalajara, Jalisco, Mexico",
-    typeLabel: "inmobiliaria",
-    includedType: "real_estate_agency",
-  },
-  {
-    id: "restaurant-puebla",
-    city: "Puebla",
-    label: "restaurante en Puebla",
-    textQuery: "restaurante en Puebla, Puebla, Mexico",
-    typeLabel: "restaurant",
-    includedType: "restaurant",
-  },
-  {
-    id: "real-estate-puebla",
-    city: "Puebla",
-    label: "inmobiliaria en Puebla",
-    textQuery: "inmobiliaria en Puebla, Puebla, Mexico",
-    typeLabel: "inmobiliaria",
-    includedType: "real_estate_agency",
-  },
-  {
-    id: "restaurant-monterrey",
-    city: "Monterrey",
-    label: "restaurante en Monterrey",
-    textQuery: "restaurante en Monterrey, Nuevo Leon, Mexico",
-    typeLabel: "restaurant",
-    includedType: "restaurant",
-  },
-  {
-    id: "real-estate-monterrey",
-    city: "Monterrey",
-    label: "inmobiliaria en Monterrey",
-    textQuery: "inmobiliaria en Monterrey, Nuevo Leon, Mexico",
-    typeLabel: "inmobiliaria",
-    includedType: "real_estate_agency",
-  },
-];
+function buildSearchSpec(city: (typeof SEARCH_CITIES)[number], placeType: (typeof SEARCH_PLACE_TYPES)[number]): SearchSpec {
+  return {
+    id: `${placeType.slug}-${city.slug}`,
+    city: city.city,
+    label: `${placeType.label} en ${city.city}`,
+    textQuery: `${placeType.label} en ${city.queryLocation}`,
+    typeLabel: placeType.typeLabel,
+    includedType: placeType.includedType,
+  };
+}
+
+export const SEARCHES: SearchSpec[] = SEARCH_CITIES.flatMap((city) =>
+  SEARCH_PLACE_TYPES.map((placeType) => buildSearchSpec(city, placeType))
+);

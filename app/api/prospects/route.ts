@@ -4,6 +4,7 @@ import { ok, fail } from "@/lib/api";
 import { requireBearer } from "@/lib/auth";
 import { DATABASE_ENV_KEYS, formatMissingEnvError } from "@/lib/env";
 import {
+  autoPrepareProspectsForOutreach,
   approveProspect,
   createProspect,
   generateProspectDraft,
@@ -138,9 +139,13 @@ async function handleLegacyDashboardAction(payload: ProspectActionPayload) {
     switch (payload.action) {
       case "approveGenerated": {
         const approved = await Promise.all(ids.map((id) => approveProspect(id)));
+        const autoPrepared = await autoPrepareProspectsForOutreach({
+          prospectIds: approved.map((item) => item.id),
+        });
         const result = {
           changed: approved.length,
           ids: approved.map((item) => item.id),
+          autoPrepared,
         };
 
         return ok({ result });
@@ -166,9 +171,13 @@ async function handleLegacyDashboardAction(payload: ProspectActionPayload) {
         const approved = await Promise.all(
           generatedIds.map((record) => approveProspect(record.id))
         );
+        const autoPrepared = await autoPrepareProspectsForOutreach({
+          prospectIds: approved.map((item) => item.id),
+        });
         const result = {
           changed: approved.length,
           ids: approved.map((item) => item.id),
+          autoPrepared,
         };
 
         return ok({ result });

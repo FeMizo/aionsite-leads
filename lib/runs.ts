@@ -1,5 +1,6 @@
 import { getPrismaClient } from "@/lib/db";
 import { runProspectSearch } from "@/lib/pipeline";
+import { autoPrepareProspectsForOutreach } from "@/lib/prospects";
 import {
   DATABASE_ENV_KEYS,
   GOOGLE_PLACES_ENV_KEYS,
@@ -34,7 +35,15 @@ export function getRunExecutionConfigError() {
 }
 
 export async function executeProspectRun() {
-  return runProspectSearch();
+  const result = await runProspectSearch();
+  const automation = await autoPrepareProspectsForOutreach({
+    runId: result.runId,
+  });
+
+  return {
+    ...result,
+    automation,
+  };
 }
 
 export async function listRecentRuns(limit = 20) {

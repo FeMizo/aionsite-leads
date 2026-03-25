@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { getApiErrorMessage } from "@/lib/api-client";
 import { formatDashboardDateTime } from "@/lib/date-format";
 
 async function postJson(url: string, payload?: Record<string, unknown>) {
@@ -15,7 +16,7 @@ async function postJson(url: string, payload?: Record<string, unknown>) {
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.error || "No se pudo completar la accion.");
+    throw new Error(getApiErrorMessage(body, "No se pudo completar la accion."));
   }
 }
 

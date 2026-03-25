@@ -19,6 +19,7 @@ import {
 import { buildProspectOutreachDraft, type OutreachMessageType } from "@/lib/outreach";
 import { getProspectScoreCard } from "@/lib/prospect-scoring";
 import { normalizeEmail } from "@/lib/normalizers";
+import { getMexicoCityTimeParts } from "@/lib/mexico-city-time";
 import {
   countEmailsSentToday,
   getNextRecommendedSendAt,
@@ -634,20 +635,26 @@ export async function sendDueFollowupEmails(
 
   for (const { record, plan } of candidates) {
     if (!canSendMore(sendBudget)) {
-      summary.blocked += 1;
+      summary.scheduled += 1;
+      summary.scheduledCreated += 1;
+      const scheduledSendAt = await autoScheduleProspectForLater(record, "rate_limited", now);
+      summary.scheduledItems.push({
+        id: record.id,
+        scheduledSendAt: scheduledSendAt.toISOString(),
+      });
 
       await updateProspectWithEvent({
         prospectId: record.id,
         status: record.status,
         eventType: "followup_rate_limited",
-        lastError: "Blocked because MAX_PER_RUN or MAX_PER_DAY was reached",
         metadata: {
           fromStatus: record.status,
           toStatus: record.status,
-          note: "Blocked because MAX_PER_RUN or MAX_PER_DAY was reached",
+          note: "Reached send budget and auto-scheduled follow-up for the next valid window",
           remainingRun: sendBudget.remainingRun,
           remainingDay: sendBudget.remainingDay,
           followupStage: record.followupStage,
+          scheduledSendAt: scheduledSendAt.toISOString(),
         } as Prisma.InputJsonObject,
       });
 
@@ -698,20 +705,31 @@ export async function sendDueFollowupEmails(
     }
 
     if (!isGoodTimeToSend(record, now)) {
-      summary.blocked += 1;
+      summary.scheduled += 1;
+      summary.scheduledCreated += 1;
+      const scheduledSendAt = await autoScheduleProspectForLater(
+        record,
+        "outside_business_hours",
+        now
+      );
+      summary.scheduledItems.push({
+        id: record.id,
+        scheduledSendAt: scheduledSendAt.toISOString(),
+      });
+      const localParts = getMexicoCityTimeParts(now);
 
       await updateProspectWithEvent({
         prospectId: record.id,
         status: record.status,
         eventType: "followup_outside_business_hours",
-        lastError: "Blocked because current hour is outside recommended business hours",
         metadata: {
           fromStatus: record.status,
           toStatus: record.status,
-          note: "Blocked because current hour is outside recommended business hours",
+          note: "Current time is outside the allowed windows and the follow-up was auto-scheduled",
           followupStage: record.followupStage,
-          scheduledSendAt: record.scheduledSendAt?.toISOString() || null,
-          currentHour: now.getHours(),
+          scheduledSendAt: scheduledSendAt.toISOString(),
+          currentHour: localParts.hour,
+          currentMinute: localParts.minute,
         } as Prisma.InputJsonObject,
       });
 
@@ -864,6 +882,46 @@ export async function sendProspectEmailById(input: {
 
   if (!message) {
     throw new Error("El mensaje es obligatorio.");
+  }
+
+  const now = new Date();
+
+  if (!isScheduledSendDue(prospect, now)) {
+    return {
+      id: prospect.id,
+      email: prospect.email,
+      subject,
+      status: "scheduled" as const,
+      scheduledSendAt: prospect.scheduledSendAt?.toISOString() || null,
+    };
+  }
+
+  if (!isGoodTimeToSend(prospect, now)) {
+    const scheduledSendAt = await autoScheduleProspectForLater(
+      prospect,
+      "outside_business_hours",
+      now
+    );
+
+    await updateProspectWithEvent({
+      prospectId: prospect.id,
+      status: prospect.status,
+      eventType: "send_outside_business_hours",
+      metadata: {
+        fromStatus: prospect.status,
+        toStatus: prospect.status,
+        note: "Manual send was auto-scheduled because current time is outside allowed windows",
+        scheduledSendAt: scheduledSendAt.toISOString(),
+      } as Prisma.InputJsonObject,
+    });
+
+    return {
+      id: prospect.id,
+      email: prospect.email,
+      subject,
+      status: "scheduled" as const,
+      scheduledSendAt: scheduledSendAt.toISOString(),
+    };
   }
 
   const transporter = createTransporter();

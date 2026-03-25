@@ -7,7 +7,10 @@ import {
   buildProspectOutreachDraft,
   type OutreachMessageType,
 } from "@/lib/outreach";
-import { getProspectScoreCard } from "@/lib/prospect-scoring";
+import {
+  getProspectScoreCard,
+  shouldAutoAdvanceProspect,
+} from "@/lib/prospect-scoring";
 import {
   normalizeEmail,
   normalizeName,
@@ -187,15 +190,38 @@ function shouldBeReady(
   return hasStoredDraft(record);
 }
 
+function shouldAutoPrepareForOutreach(
+  record: Pick<
+    ProspectListRecord,
+    | "name"
+    | "contactName"
+    | "city"
+    | "email"
+    | "phone"
+    | "type"
+    | "website"
+    | "rating"
+    | "mapsUrl"
+    | "opportunity"
+    | "recommendedSite"
+    | "pitchAngle"
+    | "status"
+    | "source"
+    | "createdAt"
+    | "lastCheckedAt"
+    | "businessStatus"
+    | "subject"
+    | "message"
+  >
+) {
+  return shouldAutoAdvanceProspect(getProspectScoreCard(record).score);
+}
+
 function resolveStatusAfterApproval(record: ProspectListRecord): ProspectStatus {
   return shouldBeReady(record) ? "ready" : "approved";
 }
 
 function resolveStatusAfterDraft(record: ProspectListRecord): ProspectStatus {
-  if (record.status === "approved" || record.status === "ready") {
-    return shouldBeReady(record) ? "ready" : "approved";
-  }
-
   if (
     record.status === "contacted" ||
     record.status === "replied" ||
@@ -205,7 +231,15 @@ function resolveStatusAfterDraft(record: ProspectListRecord): ProspectStatus {
     return record.status;
   }
 
-  return "analyzed";
+  if (shouldBeReady(record) && shouldAutoPrepareForOutreach(record)) {
+    return "ready";
+  }
+
+  if (record.status === "approved" || record.status === "ready") {
+    return shouldBeReady(record) ? "ready" : "approved";
+  }
+
+  return shouldBeReady(record) ? "approved" : "analyzed";
 }
 
 function serializeProspectDetail(record: ProspectDetailRecord) {
@@ -321,9 +355,78 @@ export async function createProspect(input: {
   type?: string;
   website?: string;
 }) {
+  const prisma = getPrismaClient();
   const prospect = await createManualProspect(input);
+  await autoPrepareProspectsForOutreach({
+    prospectIds: [prospect.id],
+  });
+  const updated = await prisma.prospect.findUnique({
+    where: { id: prospect.id },
+    select: prospectListSelect,
+  });
 
-  return serializeProspect(prospect);
+  if (!updated) {
+    throw new Error("Prospecto no encontrado.");
+  }
+
+  return serializeProspect(updated);
+}
+
+export async function autoPrepareProspectsForOutreach(options: {
+  prospectIds?: string[];
+  runId?: string;
+} = {}) {
+  const prisma = getPrismaClient();
+  const prospectIds = Array.isArray(options.prospectIds) ? options.prospectIds : [];
+  const records = await prisma.prospect.findMany({
+    where: {
+      ...(prospectIds.length ? { id: { in: prospectIds } } : {}),
+      ...(options.runId ? { runId: options.runId } : {}),
+      status: { in: ["generated", "analyzed", "approved", "ready"] },
+    },
+    orderBy: { createdAt: "desc" },
+    select: prospectListSelect,
+  });
+  const result = {
+    evaluated: records.length,
+    eligible: 0,
+    prepared: 0,
+    skippedMissingEmail: 0,
+    ids: [] as string[],
+    statuses: [] as Array<{
+      id: string;
+      status: ProspectStatus;
+      scriptVariant: string | null;
+    }>,
+  };
+
+  for (const record of records) {
+    if (!shouldAutoPrepareForOutreach(record)) {
+      continue;
+    }
+
+    result.eligible += 1;
+
+    if (!normalizeEmail(record.email)) {
+      result.skippedMissingEmail += 1;
+      continue;
+    }
+
+    const drafted = await generateProspectDraft(record.id);
+
+    result.prepared += 1;
+    result.ids.push(drafted.item.id);
+    result.statuses.push({
+      id: drafted.item.id,
+      status: drafted.item.status as ProspectStatus,
+      scriptVariant:
+        "scriptVariant" in drafted && typeof drafted.scriptVariant === "string"
+          ? drafted.scriptVariant
+          : null,
+    });
+  }
+
+  return result;
 }
 
 export async function transitionProspects(ids: string[], config: TransitionConfig) {

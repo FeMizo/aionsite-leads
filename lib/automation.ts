@@ -1,26 +1,26 @@
-export const PROSPECTING_CRON = "0 9 * * 1,3,5";
+import { createMexicoCityDate, getMexicoCityTimeParts } from "@/lib/mexico-city-time";
+
+export const PROSPECTING_CRON = "0 15 */2 * *";
 
 export function getNextProspectingCrawlAt(referenceDate = new Date()) {
-  const validWeekdays = new Set([1, 3, 5]);
+  const referenceParts = getMexicoCityTimeParts(referenceDate);
 
-  for (let offsetDays = 0; offsetDays < 14; offsetDays += 1) {
-    const candidate = new Date(
-      Date.UTC(
-        referenceDate.getUTCFullYear(),
-        referenceDate.getUTCMonth(),
-        referenceDate.getUTCDate() + offsetDays,
-        9,
-        0,
-        0,
-        0
-      )
-    );
+  for (let offsetDays = 0; offsetDays < 62; offsetDays += 1) {
+    const candidate = createMexicoCityDate({
+      year: referenceParts.year,
+      month: referenceParts.month,
+      day: referenceParts.day + offsetDays,
+      hour: 9,
+      minute: 0,
+      second: 0,
+    });
+    const candidateParts = getMexicoCityTimeParts(candidate);
 
     if (candidate <= referenceDate) {
       continue;
     }
 
-    if (validWeekdays.has(candidate.getUTCDay())) {
+    if (candidateParts.day % 2 === 1) {
       return candidate.toISOString();
     }
   }

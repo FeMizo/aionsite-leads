@@ -1,30 +1,32 @@
 import type { Prisma, Prospect } from "@/generated/prisma";
 import { getPrismaClient } from "@/lib/db";
-import { normalizeProspectType } from "@/lib/normalizers";
+import {
+  addMexicoCityDays,
+  createMexicoCityDate,
+  getMexicoCityDayBounds,
+  getMexicoCityTimeParts,
+} from "@/lib/mexico-city-time";
 import { getProspectScoreCard, type ProspectPriority } from "@/lib/prospect-scoring";
 
-export const BUSINESS_HOURS = {
-  restaurant: {
-    bestHours: [10, 11, 12],
-    avoidHours: [13, 14, 15, 19, 20, 21],
-  },
-  hotel: {
-    bestHours: [9, 10, 11, 16, 17],
-    avoidHours: [22, 23, 0, 1, 2, 3, 4, 5],
-  },
-  default: {
-    bestHours: [9, 10, 11, 16, 17],
-    avoidHours: [22, 23, 0, 1, 2, 3, 4, 5],
-  },
-} as const;
+export const SEND_WINDOWS = [
+  { startHour: 8, startMinute: 0, endHour: 10, endMinute: 0 },
+  { startHour: 12, startMinute: 30, endHour: 14, endMinute: 0 },
+] as const;
+
+export const SEND_WINDOW_SLOTS = [
+  { hour: 8, minute: 0 },
+  { hour: 8, minute: 30 },
+  { hour: 9, minute: 0 },
+  { hour: 9, minute: 30 },
+  { hour: 10, minute: 0 },
+  { hour: 12, minute: 30 },
+  { hour: 13, minute: 0 },
+  { hour: 13, minute: 30 },
+  { hour: 14, minute: 0 },
+] as const;
 
 export const MAX_PER_RUN = 3;
 export const MAX_PER_DAY = 15;
-
-type BusinessHoursConfig = {
-  bestHours: readonly number[];
-  avoidHours: readonly number[];
-};
 
 type SchedulableProspect = Pick<Prospect, "type" | "scheduledSendAt">;
 
@@ -37,27 +39,64 @@ type PrioritizedProspect = Pick<Prospect, "type" | "createdAt" | "scheduledSendA
   mapsUrl?: string;
 };
 
-function getBusinessHoursConfig(type: string): BusinessHoursConfig {
-  const normalizedType = normalizeProspectType(type || "");
-
-  if (normalizedType === "restaurant") {
-    return BUSINESS_HOURS.restaurant;
-  }
-
-  if (normalizedType === "hotel") {
-    return BUSINESS_HOURS.hotel;
-  }
-
-  return BUSINESS_HOURS.default;
+function toMinutes(hour: number, minute: number) {
+  return hour * 60 + minute;
 }
 
-export function getHumanTime(hour: number) {
-  const minutes = Math.floor(Math.random() * 41) + 10;
+function getReferenceMinutes(referenceDate: Date) {
+  const parts = getMexicoCityTimeParts(referenceDate);
+  return toMinutes(parts.hour, parts.minute);
+}
 
-  return {
-    hour,
-    minutes,
-  };
+function isWithinSendWindow(referenceDate: Date) {
+  const minutes = getReferenceMinutes(referenceDate);
+
+  return SEND_WINDOWS.some((window) => {
+    const start = toMinutes(window.startHour, window.startMinute);
+    const end = toMinutes(window.endHour, window.endMinute);
+
+    return minutes >= start && minutes <= end;
+  });
+}
+
+function isAvoidedSendWindow(referenceDate: Date) {
+  const minutes = getReferenceMinutes(referenceDate);
+
+  return minutes >= toMinutes(15, 0) && minutes <= toMinutes(18, 59);
+}
+
+function alignToNextDeliverySlot(referenceDate: Date) {
+  for (let dayOffset = 0; dayOffset < 14; dayOffset += 1) {
+    const baseDate = addMexicoCityDays(referenceDate, dayOffset, {
+      hour: 0,
+      minute: 0,
+      second: 0,
+    });
+
+    for (const slot of SEND_WINDOW_SLOTS) {
+      const parts = getMexicoCityTimeParts(baseDate);
+      const candidate = createMexicoCityDate({
+        year: parts.year,
+        month: parts.month,
+        day: parts.day,
+        hour: slot.hour,
+        minute: slot.minute,
+        second: 0,
+      });
+
+      if (candidate.getTime() > referenceDate.getTime()) {
+        return candidate;
+      }
+    }
+  }
+
+  const fallback = addMexicoCityDays(referenceDate, 1, {
+    hour: SEND_WINDOW_SLOTS[0].hour,
+    minute: SEND_WINDOW_SLOTS[0].minute,
+    second: 0,
+  });
+
+  return fallback;
 }
 
 function normalizePriorityWeight(priority: ProspectPriority | undefined) {
@@ -112,35 +151,21 @@ export function sortProspectsForDelivery<T extends PrioritizedProspect>(prospect
   });
 }
 
-export function humanizeScheduledDate(referenceDate: Date) {
-  const humanTime = getHumanTime(referenceDate.getHours());
-  const nextDate = new Date(referenceDate);
-  nextDate.setHours(humanTime.hour, humanTime.minutes, 0, 0);
-
-  return nextDate;
-}
-
 export function isGoodTimeToSend(
-  prospect: Pick<SchedulableProspect, "type"> | { type: string },
+  _prospect: Pick<SchedulableProspect, "type"> | { type: string },
   referenceDate = new Date()
 ) {
-  const day = referenceDate.getDay();
-  const hour = referenceDate.getHours();
-  const config = getBusinessHoursConfig(prospect.type);
+  const minutes = getReferenceMinutes(referenceDate);
 
-  if (day === 0) {
+  if (minutes < toMinutes(8, 0)) {
     return false;
   }
 
-  if (day === 1 && hour < 10) {
+  if (isAvoidedSendWindow(referenceDate)) {
     return false;
   }
 
-  if (config.avoidHours.includes(hour)) {
-    return false;
-  }
-
-  return config.bestHours.includes(hour);
+  return isWithinSendWindow(referenceDate);
 }
 
 export function isScheduledSendDue(
@@ -155,40 +180,15 @@ export function isScheduledSendDue(
 }
 
 export function getNextRecommendedSendAt(
-  prospect: Pick<SchedulableProspect, "type"> | { type: string },
+  _prospect: Pick<SchedulableProspect, "type"> | { type: string },
   referenceDate = new Date()
 ) {
-  const config = getBusinessHoursConfig(prospect.type);
-
-  for (let dayOffset = 0; dayOffset < 14; dayOffset += 1) {
-    for (const hour of config.bestHours) {
-      const candidate = new Date(referenceDate);
-      candidate.setDate(referenceDate.getDate() + dayOffset);
-      candidate.setHours(hour, 0, 0, 0);
-
-      if (candidate.getTime() <= referenceDate.getTime()) {
-        continue;
-      }
-
-      if (!isGoodTimeToSend(prospect, candidate)) {
-        continue;
-      }
-
-      return humanizeScheduledDate(candidate);
-    }
-  }
-
-  const fallback = new Date(referenceDate);
-  fallback.setDate(referenceDate.getDate() + 1);
-  fallback.setHours(BUSINESS_HOURS.default.bestHours[0], 0, 0, 0);
-
-  return humanizeScheduledDate(fallback);
+  return alignToNextDeliverySlot(referenceDate);
 }
 
 export async function countEmailsSentToday(referenceDate = new Date()) {
   const prisma = getPrismaClient();
-  const startOfDay = new Date(referenceDate);
-  startOfDay.setHours(0, 0, 0, 0);
+  const { start, end } = getMexicoCityDayBounds(referenceDate);
 
   return prisma.contactEvent.count({
     where: {
@@ -196,7 +196,8 @@ export async function countEmailsSentToday(referenceDate = new Date()) {
         in: ["send_success", "followup_1_sent", "followup_2_sent", "followup_3_sent"],
       },
       createdAt: {
-        gte: startOfDay,
+        gte: start,
+        lt: end,
       },
     },
   });
@@ -210,7 +211,7 @@ export async function scheduleSend(prospectId: string, scheduledAtInput: string)
     throw new Error("La fecha programada no es valida.");
   }
 
-  const scheduledSendAt = humanizeScheduledDate(requestedDate);
+  const scheduledSendAt = alignToNextDeliverySlot(new Date(requestedDate.getTime() - 1000));
 
   if (scheduledSendAt.getTime() <= Date.now()) {
     throw new Error("La fecha programada debe estar en el futuro.");
@@ -225,7 +226,9 @@ export async function scheduleSend(prospectId: string, scheduledAtInput: string)
   }
 
   if (!isGoodTimeToSend(prospect, scheduledSendAt)) {
-    throw new Error("La fecha programada cae fuera del horario recomendado para este tipo de negocio.");
+    throw new Error(
+      "La fecha programada cae fuera de las ventanas permitidas de envio."
+    );
   }
 
   const updated = await prisma.$transaction(async (tx) => {

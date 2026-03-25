@@ -4,6 +4,7 @@ import type { ProspectCandidate } from "@/lib/types";
 export type ProspectPriority = "alto" | "medio" | "bajo";
 export type ProspectAutomationStatus = "approved" | "analyzed";
 export const MINIMUM_QUALIFIED_PROSPECT_SCORE = 40;
+export const AUTO_READY_PROSPECT_SCORE = 50;
 
 type ProspectScoreInput = Pick<
   ProspectCandidate,
@@ -87,6 +88,10 @@ export function getProspectAutomationStatus(score: number): ProspectAutomationSt
   }
 
   return "analyzed";
+}
+
+export function shouldAutoAdvanceProspect(score: number) {
+  return score > AUTO_READY_PROSPECT_SCORE;
 }
 
 export function getProspectScoreCard(prospect: ProspectScoreInput) {
