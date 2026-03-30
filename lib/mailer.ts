@@ -19,10 +19,11 @@ import {
 import { buildProspectOutreachDraft, type OutreachMessageType } from "@/lib/outreach";
 import { getProspectScoreCard } from "@/lib/prospect-scoring";
 import { normalizeEmail } from "@/lib/normalizers";
-import { getMexicoCityTimeParts } from "@/lib/mexico-city-time";
+import { getTimeZoneParts } from "@/lib/mexico-city-time";
+import { getProspectTimeZone } from "@/lib/prospect-timezone";
 import {
   countEmailsSentToday,
-  getNextRecommendedSendAt,
+  getNextAvailableScheduledSendAt,
   isGoodTimeToSend,
   isScheduledSendDue,
   MAX_PER_DAY,
@@ -49,6 +50,7 @@ type SendSummary = {
   scheduledCreated: number;
   scheduledItems: Array<{
     id: string;
+    city: string;
     scheduledSendAt: string;
   }>;
   sent: number;
@@ -331,7 +333,9 @@ async function autoScheduleProspectForLater(
   reason: "outside_business_hours" | "rate_limited",
   referenceDate = new Date()
 ) {
-  const scheduledSendAt = getNextRecommendedSendAt(record, referenceDate);
+  const scheduledSendAt = await getNextAvailableScheduledSendAt(record, referenceDate, {
+    excludeProspectId: record.id,
+  });
 
   await updateProspectWithEvent({
     prospectId: record.id,
@@ -405,6 +409,7 @@ export async function sendInitialProspectEmails(
     .filter((record) => Boolean(record.scheduledSendAt))
     .map((record) => ({
       id: record.id,
+      city: record.city,
       scheduledSendAt: record.scheduledSendAt!.toISOString(),
     }));
 
@@ -426,6 +431,7 @@ export async function sendInitialProspectEmails(
       const scheduledSendAt = await autoScheduleProspectForLater(record, "rate_limited", now);
       summary.scheduledItems.push({
         id: record.id,
+        city: record.city,
         scheduledSendAt: scheduledSendAt.toISOString(),
       });
 
@@ -521,6 +527,7 @@ export async function sendInitialProspectEmails(
       );
       summary.scheduledItems.push({
         id: record.id,
+        city: record.city,
         scheduledSendAt: scheduledSendAt.toISOString(),
       });
 
@@ -620,6 +627,7 @@ export async function sendDueFollowupEmails(
     .filter((record) => Boolean(record.scheduledSendAt))
     .map((record) => ({
       id: record.id,
+      city: record.city,
       scheduledSendAt: record.scheduledSendAt!.toISOString(),
     }));
 
@@ -640,6 +648,7 @@ export async function sendDueFollowupEmails(
       const scheduledSendAt = await autoScheduleProspectForLater(record, "rate_limited", now);
       summary.scheduledItems.push({
         id: record.id,
+        city: record.city,
         scheduledSendAt: scheduledSendAt.toISOString(),
       });
 
@@ -714,9 +723,10 @@ export async function sendDueFollowupEmails(
       );
       summary.scheduledItems.push({
         id: record.id,
+        city: record.city,
         scheduledSendAt: scheduledSendAt.toISOString(),
       });
-      const localParts = getMexicoCityTimeParts(now);
+      const localParts = getTimeZoneParts(now, getProspectTimeZone(record.city));
 
       await updateProspectWithEvent({
         prospectId: record.id,

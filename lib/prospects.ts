@@ -11,6 +11,7 @@ import {
   getProspectScoreCard,
   shouldAutoAdvanceProspect,
 } from "@/lib/prospect-scoring";
+import { getNextAvailableScheduledSendAt } from "@/lib/send-scheduler";
 import {
   normalizeEmail,
   normalizeName,
@@ -602,7 +603,18 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
   }
 
   if ("scheduledSendAt" in input) {
-    data.scheduledSendAt = input.scheduledSendAt ? new Date(input.scheduledSendAt) : null;
+    data.scheduledSendAt = input.scheduledSendAt
+      ? await getNextAvailableScheduledSendAt(
+          {
+            type: current.type,
+            city: current.city,
+          },
+          new Date(input.scheduledSendAt),
+          {
+            excludeProspectId: current.id,
+          }
+        )
+      : null;
   }
 
   if ("lastContactedAt" in input) {

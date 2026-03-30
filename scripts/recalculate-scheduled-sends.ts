@@ -1,7 +1,13 @@
 import "dotenv/config";
 import type { Prisma } from "@/generated/prisma";
 import { getPrismaClient } from "@/lib/db";
-import { getNextRecommendedSendAt } from "@/lib/send-scheduler";
+import { getProspectTimeZone } from "@/lib/prospect-timezone";
+import {
+  getNextRecommendedSendAt,
+  isScheduledSendAligned,
+  MAX_PER_SCHEDULED_SLOT,
+  normalizeScheduledSendAt,
+} from "@/lib/send-scheduler";
 
 const APPLY_FLAG = "--apply";
 const PREVIEW_LIMIT = 20;
@@ -25,17 +31,26 @@ async function main() {
         not: null,
       },
     },
-    orderBy: {
-      scheduledSendAt: "asc",
-    },
+    orderBy: [
+      {
+        scheduledSendAt: "asc",
+      },
+      {
+        createdAt: "asc",
+      },
+    ],
     select: {
       id: true,
       name: true,
       status: true,
+      city: true,
       type: true,
+      createdAt: true,
       scheduledSendAt: true,
     },
   });
+
+  const assignedCounts = new Map<string, number>();
 
   const changes = prospects
     .map((prospect) => {
@@ -43,9 +58,22 @@ async function main() {
         return null;
       }
 
+      const timeZone = getProspectTimeZone(prospect.city);
       const referenceDate =
         prospect.scheduledSendAt.getTime() > now.getTime() ? prospect.scheduledSendAt : now;
-      const recalculated = getNextRecommendedSendAt(prospect, referenceDate);
+      let recalculated =
+        prospect.scheduledSendAt.getTime() > now.getTime() &&
+        isScheduledSendAligned(prospect.scheduledSendAt, timeZone)
+          ? prospect.scheduledSendAt
+          : normalizeScheduledSendAt(referenceDate, timeZone);
+
+      let slotKey = recalculated.toISOString();
+      while ((assignedCounts.get(slotKey) || 0) >= MAX_PER_SCHEDULED_SLOT) {
+        recalculated = getNextRecommendedSendAt(prospect, recalculated);
+        slotKey = recalculated.toISOString();
+      }
+
+      assignedCounts.set(slotKey, (assignedCounts.get(slotKey) || 0) + 1);
 
       if (recalculated.getTime() === prospect.scheduledSendAt.getTime()) {
         return null;

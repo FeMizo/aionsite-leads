@@ -1,11 +1,12 @@
 import type { Prisma, Prospect } from "@/generated/prisma";
 import { getPrismaClient } from "@/lib/db";
 import {
-  addMexicoCityDays,
-  createMexicoCityDate,
   getMexicoCityDayBounds,
-  getMexicoCityTimeParts,
+  addTimeZoneDays,
+  createTimeZoneDate,
+  getTimeZoneParts,
 } from "@/lib/mexico-city-time";
+import { getProspectTimeZone } from "@/lib/prospect-timezone";
 import { getProspectScoreCard, type ProspectPriority } from "@/lib/prospect-scoring";
 
 export const SEND_WINDOWS = [
@@ -27,10 +28,13 @@ export const SEND_WINDOW_SLOTS = [
 
 export const MAX_PER_RUN = 3;
 export const MAX_PER_DAY = 15;
+export const MAX_PER_SCHEDULED_SLOT = 3;
 
-type SchedulableProspect = Pick<Prospect, "type" | "scheduledSendAt">;
+const ACTIVE_SCHEDULED_STATUSES = ["ready", "contacted"] as const;
 
-type PrioritizedProspect = Pick<Prospect, "type" | "createdAt" | "scheduledSendAt"> & {
+type SchedulableProspect = Pick<Prospect, "type" | "city" | "scheduledSendAt">;
+
+type PrioritizedProspect = Pick<Prospect, "type" | "city" | "createdAt" | "scheduledSendAt"> & {
   score?: number;
   priority?: ProspectPriority;
   website?: string;
@@ -43,13 +47,13 @@ function toMinutes(hour: number, minute: number) {
   return hour * 60 + minute;
 }
 
-function getReferenceMinutes(referenceDate: Date) {
-  const parts = getMexicoCityTimeParts(referenceDate);
+function getReferenceMinutes(referenceDate: Date, timeZone: string) {
+  const parts = getTimeZoneParts(referenceDate, timeZone);
   return toMinutes(parts.hour, parts.minute);
 }
 
-function isWithinSendWindow(referenceDate: Date) {
-  const minutes = getReferenceMinutes(referenceDate);
+function isWithinSendWindow(referenceDate: Date, timeZone: string) {
+  const minutes = getReferenceMinutes(referenceDate, timeZone);
 
   return SEND_WINDOWS.some((window) => {
     const start = toMinutes(window.startHour, window.startMinute);
@@ -59,30 +63,30 @@ function isWithinSendWindow(referenceDate: Date) {
   });
 }
 
-function isAvoidedSendWindow(referenceDate: Date) {
-  const minutes = getReferenceMinutes(referenceDate);
+function isAvoidedSendWindow(referenceDate: Date, timeZone: string) {
+  const minutes = getReferenceMinutes(referenceDate, timeZone);
 
   return minutes >= toMinutes(15, 0) && minutes <= toMinutes(18, 59);
 }
 
-function alignToNextDeliverySlot(referenceDate: Date) {
+function alignToNextDeliverySlot(referenceDate: Date, timeZone: string) {
   for (let dayOffset = 0; dayOffset < 14; dayOffset += 1) {
-    const baseDate = addMexicoCityDays(referenceDate, dayOffset, {
+    const baseDate = addTimeZoneDays(referenceDate, dayOffset, timeZone, {
       hour: 0,
       minute: 0,
       second: 0,
     });
 
     for (const slot of SEND_WINDOW_SLOTS) {
-      const parts = getMexicoCityTimeParts(baseDate);
-      const candidate = createMexicoCityDate({
+      const parts = getTimeZoneParts(baseDate, timeZone);
+      const candidate = createTimeZoneDate({
         year: parts.year,
         month: parts.month,
         day: parts.day,
         hour: slot.hour,
         minute: slot.minute,
         second: 0,
-      });
+      }, timeZone);
 
       if (candidate.getTime() > referenceDate.getTime()) {
         return candidate;
@@ -90,13 +94,60 @@ function alignToNextDeliverySlot(referenceDate: Date) {
     }
   }
 
-  const fallback = addMexicoCityDays(referenceDate, 1, {
+  const fallback = addTimeZoneDays(referenceDate, 1, timeZone, {
     hour: SEND_WINDOW_SLOTS[0].hour,
     minute: SEND_WINDOW_SLOTS[0].minute,
     second: 0,
   });
 
   return fallback;
+}
+
+function isExactDeliverySlot(referenceDate: Date, timeZone: string) {
+  const parts = getTimeZoneParts(referenceDate, timeZone);
+
+  if (parts.second !== 0) {
+    return false;
+  }
+
+  return SEND_WINDOW_SLOTS.some(
+    (slot) => slot.hour === parts.hour && slot.minute === parts.minute
+  );
+}
+
+export function normalizeScheduledSendAt(
+  referenceDate: Date,
+  timeZone = getProspectTimeZone()
+) {
+  if (Number.isNaN(referenceDate.getTime())) {
+    throw new Error("La fecha programada no es valida.");
+  }
+
+  if (isExactDeliverySlot(referenceDate, timeZone)) {
+    const parts = getTimeZoneParts(referenceDate, timeZone);
+
+    return createTimeZoneDate({
+      year: parts.year,
+      month: parts.month,
+      day: parts.day,
+      hour: parts.hour,
+      minute: parts.minute,
+      second: 0,
+    }, timeZone);
+  }
+
+  return alignToNextDeliverySlot(new Date(referenceDate.getTime() - 1000), timeZone);
+}
+
+export function isScheduledSendAligned(
+  referenceDate: Date,
+  timeZone = getProspectTimeZone()
+) {
+  if (Number.isNaN(referenceDate.getTime())) {
+    return false;
+  }
+
+  return normalizeScheduledSendAt(referenceDate, timeZone).getTime() === referenceDate.getTime();
 }
 
 function normalizePriorityWeight(priority: ProspectPriority | undefined) {
@@ -152,20 +203,21 @@ export function sortProspectsForDelivery<T extends PrioritizedProspect>(prospect
 }
 
 export function isGoodTimeToSend(
-  _prospect: Pick<SchedulableProspect, "type"> | { type: string },
+  prospect: Pick<SchedulableProspect, "type" | "city"> | { type: string; city?: string | null },
   referenceDate = new Date()
 ) {
-  const minutes = getReferenceMinutes(referenceDate);
+  const timeZone = getProspectTimeZone(prospect.city);
+  const minutes = getReferenceMinutes(referenceDate, timeZone);
 
   if (minutes < toMinutes(8, 0)) {
     return false;
   }
 
-  if (isAvoidedSendWindow(referenceDate)) {
+  if (isAvoidedSendWindow(referenceDate, timeZone)) {
     return false;
   }
 
-  return isWithinSendWindow(referenceDate);
+  return isWithinSendWindow(referenceDate, timeZone);
 }
 
 export function isScheduledSendDue(
@@ -180,10 +232,59 @@ export function isScheduledSendDue(
 }
 
 export function getNextRecommendedSendAt(
-  _prospect: Pick<SchedulableProspect, "type"> | { type: string },
+  prospect: Pick<SchedulableProspect, "type" | "city"> | { type: string; city?: string | null },
   referenceDate = new Date()
 ) {
-  return alignToNextDeliverySlot(referenceDate);
+  const timeZone = getProspectTimeZone(prospect.city);
+  return normalizeScheduledSendAt(alignToNextDeliverySlot(referenceDate, timeZone), timeZone);
+}
+
+async function countScheduledProspectsForSlot(
+  scheduledSendAt: Date,
+  options: {
+    excludeProspectId?: string;
+  } = {}
+) {
+  const prisma = getPrismaClient();
+
+  return prisma.prospect.count({
+    where: {
+      status: {
+        in: [...ACTIVE_SCHEDULED_STATUSES],
+      },
+      scheduledSendAt,
+      ...(options.excludeProspectId
+        ? {
+            id: {
+              not: options.excludeProspectId,
+            },
+          }
+        : {}),
+    },
+  });
+}
+
+export async function getNextAvailableScheduledSendAt(
+  prospect: Pick<SchedulableProspect, "type" | "city"> | { type: string; city?: string | null },
+  referenceDate = new Date(),
+  options: {
+    excludeProspectId?: string;
+  } = {}
+) {
+  const timeZone = getProspectTimeZone(prospect.city);
+  let candidate = normalizeScheduledSendAt(referenceDate, timeZone);
+
+  for (let attempt = 0; attempt < 126; attempt += 1) {
+    const scheduledCount = await countScheduledProspectsForSlot(candidate, options);
+
+    if (scheduledCount < MAX_PER_SCHEDULED_SLOT) {
+      return candidate;
+    }
+
+    candidate = getNextRecommendedSendAt(prospect, candidate);
+  }
+
+  throw new Error("No se pudo encontrar un horario disponible para el envio programado.");
 }
 
 export async function countEmailsSentToday(referenceDate = new Date()) {
@@ -207,22 +308,20 @@ export async function scheduleSend(prospectId: string, scheduledAtInput: string)
   const prisma = getPrismaClient();
   const requestedDate = new Date(scheduledAtInput);
 
-  if (Number.isNaN(requestedDate.getTime())) {
-    throw new Error("La fecha programada no es valida.");
-  }
-
-  const scheduledSendAt = alignToNextDeliverySlot(new Date(requestedDate.getTime() - 1000));
-
-  if (scheduledSendAt.getTime() <= Date.now()) {
-    throw new Error("La fecha programada debe estar en el futuro.");
-  }
-
   const prospect = await prisma.prospect.findUnique({
     where: { id: prospectId },
   });
 
   if (!prospect) {
     throw new Error("Prospecto no encontrado.");
+  }
+
+  const scheduledSendAt = await getNextAvailableScheduledSendAt(prospect, requestedDate, {
+    excludeProspectId: prospect.id,
+  });
+
+  if (scheduledSendAt.getTime() <= Date.now()) {
+    throw new Error("La fecha programada debe estar en el futuro.");
   }
 
   if (!isGoodTimeToSend(prospect, scheduledSendAt)) {

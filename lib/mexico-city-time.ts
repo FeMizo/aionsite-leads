@@ -10,17 +10,7 @@ type TimeZoneParts = {
   weekday: number;
 };
 
-const PARTS_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  timeZone: MEXICO_CITY_TIME_ZONE,
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  weekday: "short",
-  hourCycle: "h23",
-});
+const FORMATTER_CACHE = new Map<string, Intl.DateTimeFormat>();
 
 const WEEKDAY_INDEX: Record<string, number> = {
   Sun: 0,
@@ -32,14 +22,40 @@ const WEEKDAY_INDEX: Record<string, number> = {
   Sat: 6,
 };
 
-function getFormatterParts(date: Date) {
-  return PARTS_FORMATTER.formatToParts(date);
+function getPartsFormatter(timeZone: string) {
+  const cached = FORMATTER_CACHE.get(timeZone);
+
+  if (cached) {
+    return cached;
+  }
+
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    weekday: "short",
+    hourCycle: "h23",
+  });
+
+  FORMATTER_CACHE.set(timeZone, formatter);
+  return formatter;
 }
 
-export function getMexicoCityTimeParts(date = new Date()): TimeZoneParts {
+function getFormatterParts(date: Date, timeZone: string) {
+  return getPartsFormatter(timeZone).formatToParts(date);
+}
+
+export function getTimeZoneParts(
+  date = new Date(),
+  timeZone = MEXICO_CITY_TIME_ZONE
+): TimeZoneParts {
   const values = new Map<string, string>();
 
-  for (const part of getFormatterParts(date)) {
+  for (const part of getFormatterParts(date, timeZone)) {
     if (part.type !== "literal") {
       values.set(part.type, part.value);
     }
@@ -56,8 +72,12 @@ export function getMexicoCityTimeParts(date = new Date()): TimeZoneParts {
   };
 }
 
-function getTimeZoneOffsetMs(date: Date) {
-  const parts = getMexicoCityTimeParts(date);
+export function getMexicoCityTimeParts(date = new Date()): TimeZoneParts {
+  return getTimeZoneParts(date, MEXICO_CITY_TIME_ZONE);
+}
+
+function getTimeZoneOffsetMs(date: Date, timeZone: string) {
+  const parts = getTimeZoneParts(date, timeZone);
   const asUtc = Date.UTC(
     parts.year,
     parts.month - 1,
@@ -71,14 +91,17 @@ function getTimeZoneOffsetMs(date: Date) {
   return asUtc - date.getTime();
 }
 
-export function createMexicoCityDate(input: {
-  year: number;
-  month: number;
-  day: number;
-  hour?: number;
-  minute?: number;
-  second?: number;
-}) {
+export function createTimeZoneDate(
+  input: {
+    year: number;
+    month: number;
+    day: number;
+    hour?: number;
+    minute?: number;
+    second?: number;
+  },
+  timeZone = MEXICO_CITY_TIME_ZONE
+) {
   const utcGuess = Date.UTC(
     input.year,
     input.month - 1,
@@ -89,9 +112,42 @@ export function createMexicoCityDate(input: {
     0
   );
   const guessDate = new Date(utcGuess);
-  const offsetMs = getTimeZoneOffsetMs(guessDate);
+  const offsetMs = getTimeZoneOffsetMs(guessDate, timeZone);
 
   return new Date(utcGuess - offsetMs);
+}
+
+export function createMexicoCityDate(input: {
+  year: number;
+  month: number;
+  day: number;
+  hour?: number;
+  minute?: number;
+  second?: number;
+}) {
+  return createTimeZoneDate(input, MEXICO_CITY_TIME_ZONE);
+}
+
+export function addTimeZoneDays(
+  date: Date,
+  offsetDays: number,
+  timeZone = MEXICO_CITY_TIME_ZONE,
+  overrides: {
+    hour?: number;
+    minute?: number;
+    second?: number;
+  } = {}
+) {
+  const parts = getTimeZoneParts(date, timeZone);
+
+  return createTimeZoneDate({
+    year: parts.year,
+    month: parts.month,
+    day: parts.day + offsetDays,
+    hour: overrides.hour ?? parts.hour,
+    minute: overrides.minute ?? parts.minute,
+    second: overrides.second ?? parts.second,
+  }, timeZone);
 }
 
 export function addMexicoCityDays(
@@ -103,29 +159,26 @@ export function addMexicoCityDays(
     second?: number;
   } = {}
 ) {
-  const parts = getMexicoCityTimeParts(date);
-
-  return createMexicoCityDate({
-    year: parts.year,
-    month: parts.month,
-    day: parts.day + offsetDays,
-    hour: overrides.hour ?? parts.hour,
-    minute: overrides.minute ?? parts.minute,
-    second: overrides.second ?? parts.second,
-  });
+  return addTimeZoneDays(date, offsetDays, MEXICO_CITY_TIME_ZONE, overrides);
 }
 
-export function getMexicoCityDayBounds(referenceDate = new Date()) {
-  const parts = getMexicoCityTimeParts(referenceDate);
-  const start = createMexicoCityDate({
-    year: parts.year,
-    month: parts.month,
-    day: parts.day,
-    hour: 0,
-    minute: 0,
-    second: 0,
-  });
-  const nextStart = addMexicoCityDays(start, 1, {
+export function getTimeZoneDayBounds(
+  referenceDate = new Date(),
+  timeZone = MEXICO_CITY_TIME_ZONE
+) {
+  const parts = getTimeZoneParts(referenceDate, timeZone);
+  const start = createTimeZoneDate(
+    {
+      year: parts.year,
+      month: parts.month,
+      day: parts.day,
+      hour: 0,
+      minute: 0,
+      second: 0,
+    },
+    timeZone
+  );
+  const nextStart = addTimeZoneDays(start, 1, timeZone, {
     hour: 0,
     minute: 0,
     second: 0,
@@ -135,4 +188,8 @@ export function getMexicoCityDayBounds(referenceDate = new Date()) {
     start,
     end: nextStart,
   };
+}
+
+export function getMexicoCityDayBounds(referenceDate = new Date()) {
+  return getTimeZoneDayBounds(referenceDate, MEXICO_CITY_TIME_ZONE);
 }

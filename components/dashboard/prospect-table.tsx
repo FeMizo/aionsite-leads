@@ -92,15 +92,23 @@ function getActionSuccessMessage(
     ? result.scheduledItems
         .map((item) =>
           item && typeof item === "object" && "scheduledSendAt" in item
-            ? String((item as { scheduledSendAt?: unknown }).scheduledSendAt || "")
-            : ""
+            ? {
+                scheduledSendAt: String(
+                  (item as { scheduledSendAt?: unknown }).scheduledSendAt || ""
+                ),
+                city:
+                  "city" in item && typeof item.city === "string" ? item.city : "",
+              }
+            : null
         )
-        .filter((value) => value)
+        .filter((value): value is { scheduledSendAt: string; city: string } => Boolean(value))
     : [];
   const blocked = Number(result.blocked || 0);
   const failed = Number(result.failed || 0);
   const firstScheduledLabel = scheduledItems[0]
-    ? formatDashboardDateTime(scheduledItems[0])
+    ? formatDashboardDateTime(scheduledItems[0].scheduledSendAt, {
+        city: scheduledItems[0].city,
+      })
     : null;
 
   if (sent > 0) {
@@ -318,7 +326,9 @@ export function ProspectTable({
       return "Enviar ahora";
     }
 
-    return formatDashboardDateTime(record.scheduledSendAt);
+    return formatDashboardDateTime(record.scheduledSendAt, {
+      city: record.city,
+    });
   }
 
   function getScheduledHint(record: DashboardProspect) {
