@@ -15,6 +15,30 @@ const DEFAULT_TEST_PROSPECT = {
 };
 
 type ManualProspectForm = typeof DEFAULT_TEST_PROSPECT;
+type ManualProspectMode = "manual" | "smtp";
+
+const MODE_COPY: Record<
+  ManualProspectMode,
+  {
+    title: string;
+    description: string;
+    actionLabel: string;
+    helperText: string;
+  }
+> = {
+  manual: {
+    title: "Prospecto manual",
+    description: "Captura un prospecto manualmente y agregalo a la cola activa del CRM.",
+    actionLabel: "Guardar prospecto",
+    helperText: "Este flujo crea un registro en la base y lo deja disponible para el pipeline.",
+  },
+  smtp: {
+    title: "Prueba SMTP",
+    description: "Usa los datos actuales del formulario para enviar una prueba SMTP a tu correo.",
+    actionLabel: "Enviar prueba",
+    helperText: "La prueba no crea un registro en la base; solo valida el envio con el payload actual.",
+  },
+};
 
 async function postJson(url: string, payload: Record<string, unknown>) {
   const response = await fetch(url, {
@@ -35,10 +59,13 @@ async function postJson(url: string, payload: Record<string, unknown>) {
 
 export function ManualProspectPanel() {
   const [form, setForm] = useState<ManualProspectForm>(DEFAULT_TEST_PROSPECT);
+  const [mode, setMode] = useState<ManualProspectMode>("manual");
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const activeModeCopy = MODE_COPY[mode];
 
   function updateField(field: keyof ManualProspectForm, value: string) {
     setForm((current) => ({
@@ -62,6 +89,12 @@ export function ManualProspectPanel() {
         );
       }
     });
+  }
+
+  function switchMode(nextMode: ManualProspectMode) {
+    setMode(nextMode);
+    setError("");
+    setSuccess("");
   }
 
   function saveProspect() {
@@ -100,101 +133,124 @@ export function ManualProspectPanel() {
       <div className="panel__header">
         <div>
           <h2>Prospecto manual y prueba SMTP</h2>
-          <p>
-            Captura un prospecto manualmente o usa este mismo formulario para enviar una prueba a tu correo.
-          </p>
+          <p>Cambia entre ambos flujos sin salir de esta pantalla.</p>
         </div>
-      </div>
-
-      <div className="crm-form-grid">
-        <label className="crm-field">
-          <span>Empresa</span>
-          <input
-            className="crm-input"
-            value={form.name}
-            onChange={(event) => updateField("name", event.target.value)}
-            placeholder="Nombre del negocio"
-          />
-        </label>
-        <label className="crm-field">
-          <span>Nombre</span>
-          <input
-            className="crm-input"
-            value={form.contactName}
-            onChange={(event) => updateField("contactName", event.target.value)}
-            placeholder="Contacto principal"
-          />
-        </label>
-        <label className="crm-field">
-          <span>Correo</span>
-          <input
-            className="crm-input"
-            type="email"
-            value={form.email}
-            onChange={(event) => updateField("email", event.target.value)}
-            placeholder="correo@empresa.com"
-          />
-        </label>
-        <label className="crm-field">
-          <span>Telefono</span>
-          <input
-            className="crm-input"
-            value={form.phone}
-            onChange={(event) => updateField("phone", event.target.value)}
-            placeholder="Telefono"
-          />
-        </label>
-        <label className="crm-field">
-          <span>Tipo de empresa</span>
-          <input
-            className="crm-input"
-            value={form.type}
-            onChange={(event) => updateField("type", event.target.value)}
-            placeholder="Categoria"
-          />
-        </label>
-        <label className="crm-field">
-          <span>Ciudad</span>
-          <input
-            className="crm-input"
-            value={form.city}
-            onChange={(event) => updateField("city", event.target.value)}
-            placeholder="Ciudad"
-          />
-        </label>
-        <label className="crm-field crm-field--full">
-          <span>Website</span>
-          <input
-            className="crm-input"
-            value={form.website}
-            onChange={(event) => updateField("website", event.target.value)}
-            placeholder="https://empresa.com"
-          />
-        </label>
-      </div>
-
-      <div className="panel__actions">
-        <button
-          type="button"
-          className="crm-button crm-button--primary"
-          onClick={saveProspect}
-          disabled={isPending}
-        >
-          {isPending ? "Procesando..." : "Guardar prospecto"}
-        </button>
         <button
           type="button"
           className="crm-button crm-button--secondary"
-          onClick={sendTest}
-          disabled={isPending}
+          onClick={() => setIsCollapsed((current) => !current)}
+          aria-expanded={!isCollapsed}
         >
-          {isPending ? "Procesando..." : "Enviar prueba"}
+          {isCollapsed ? "Expandir" : "Colapsar"}
         </button>
       </div>
 
-      <p className="crm-muted">
-        La prueba usa los datos actuales del formulario y no crea un registro en la base.
-      </p>
+      {isCollapsed ? (
+        <p className="crm-muted">
+          {activeModeCopy.title}: {activeModeCopy.description}
+        </p>
+      ) : (
+        <>
+          <div className="crm-tabs" aria-label="Flujo manual o SMTP">
+            <button
+              type="button"
+              className={mode === "manual" ? "crm-tab is-active" : "crm-tab"}
+              onClick={() => switchMode("manual")}
+            >
+              <span>Prospecto manual</span>
+            </button>
+            <button
+              type="button"
+              className={mode === "smtp" ? "crm-tab is-active" : "crm-tab"}
+              onClick={() => switchMode("smtp")}
+            >
+              <span>Prueba SMTP</span>
+            </button>
+          </div>
+
+          <p className="crm-muted">{activeModeCopy.description}</p>
+
+          <div className="crm-form-grid">
+            <label className="crm-field">
+              <span>Empresa</span>
+              <input
+                className="crm-input"
+                value={form.name}
+                onChange={(event) => updateField("name", event.target.value)}
+                placeholder="Nombre del negocio"
+              />
+            </label>
+            <label className="crm-field">
+              <span>Nombre</span>
+              <input
+                className="crm-input"
+                value={form.contactName}
+                onChange={(event) => updateField("contactName", event.target.value)}
+                placeholder="Contacto principal"
+              />
+            </label>
+            <label className="crm-field">
+              <span>Correo</span>
+              <input
+                className="crm-input"
+                type="email"
+                value={form.email}
+                onChange={(event) => updateField("email", event.target.value)}
+                placeholder="correo@empresa.com"
+              />
+            </label>
+            <label className="crm-field">
+              <span>Telefono</span>
+              <input
+                className="crm-input"
+                value={form.phone}
+                onChange={(event) => updateField("phone", event.target.value)}
+                placeholder="Telefono"
+              />
+            </label>
+            <label className="crm-field">
+              <span>Tipo de empresa</span>
+              <input
+                className="crm-input"
+                value={form.type}
+                onChange={(event) => updateField("type", event.target.value)}
+                placeholder="Categoria"
+              />
+            </label>
+            <label className="crm-field">
+              <span>Ciudad</span>
+              <input
+                className="crm-input"
+                value={form.city}
+                onChange={(event) => updateField("city", event.target.value)}
+                placeholder="Ciudad"
+              />
+            </label>
+            <label className="crm-field crm-field--full">
+              <span>Website</span>
+              <input
+                className="crm-input"
+                value={form.website}
+                onChange={(event) => updateField("website", event.target.value)}
+                placeholder="https://empresa.com"
+              />
+            </label>
+          </div>
+
+          <div className="panel__actions">
+            <button
+              type="button"
+              className="crm-button crm-button--primary"
+              onClick={mode === "manual" ? saveProspect : sendTest}
+              disabled={isPending}
+            >
+              {isPending ? "Procesando..." : activeModeCopy.actionLabel}
+            </button>
+          </div>
+
+          <p className="crm-muted">{activeModeCopy.helperText}</p>
+        </>
+      )}
       {success ? <p className="crm-success">{success}</p> : null}
       {error ? <p className="crm-error">{error}</p> : null}
     </section>
