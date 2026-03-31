@@ -1,8 +1,9 @@
+import { LEAD_TYPES } from "@/lib/lead-types";
 import type { SearchSpec } from "@/lib/types";
 import { SEARCH_CITIES, SEARCH_PLACE_TYPES } from "@/lib/search-targets";
 
 export const DESIRED_PROSPECT_COUNT = 6;
-export const REQUIRED_TYPES = ["inmobiliaria", "restaurant"];
+export const REQUIRED_TYPES = [...LEAD_TYPES];
 export const REQUIRE_EMAIL_FOR_FINAL_PROSPECTS = true;
 
 function buildSearchSpec(city: (typeof SEARCH_CITIES)[number], placeType: (typeof SEARCH_PLACE_TYPES)[number]): SearchSpec {

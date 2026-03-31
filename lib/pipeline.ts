@@ -1,11 +1,11 @@
 import type { Prisma, ProspectStatus } from "@/generated/prisma";
 import { getPrismaClient } from "@/lib/db";
 import { filterUniqueProspects, findDuplicate } from "@/lib/dedupe";
+import { resolveLeadType } from "@/lib/lead-types";
 import {
   normalizeEmail,
   normalizeName,
   normalizePhone,
-  normalizeProspectType,
 } from "@/lib/normalizers";
 import { buildOpportunity } from "@/lib/opportunity";
 import {
@@ -29,7 +29,13 @@ function nowIso() {
 
 function normalizeProspect(rawProspect: ProspectCandidate): ProspectCandidate {
   const timestamp = nowIso();
-  const derived = buildOpportunity(rawProspect);
+  const type = resolveLeadType(rawProspect);
+  const derived = buildOpportunity({
+    type,
+    website: rawProspect.website,
+    rating: rawProspect.rating,
+    userRatingCount: rawProspect.userRatingCount,
+  });
 
   return {
     name: String(rawProspect.name || "").trim(),
@@ -37,9 +43,10 @@ function normalizeProspect(rawProspect: ProspectCandidate): ProspectCandidate {
     city: String(rawProspect.city || "").trim(),
     email: normalizeEmail(rawProspect.email || "") || "",
     phone: normalizePhone(rawProspect.phone || "") || "",
-    type: normalizeProspectType(String(rawProspect.type || "Negocio local")),
+    type,
     website: String(rawProspect.website || "").trim(),
     rating: rawProspect.rating ? String(rawProspect.rating).trim() : "",
+    userRatingCount: rawProspect.userRatingCount ?? null,
     mapsUrl: String(rawProspect.mapsUrl || "").trim(),
     opportunity: rawProspect.opportunity || derived.opportunity,
     recommendedSite: rawProspect.recommendedSite || derived.recommendedSite,
@@ -69,13 +76,9 @@ function buildSelectedOrder(
       return normalizeName(item.prospect.type) === normalizeName(requiredType);
     });
 
-    if (!match) {
-      throw new Error(
-        `No se encontro un prospecto unico para la categoria requerida: ${requiredType}.`
-      );
+    if (match) {
+      ordered.push(match);
     }
-
-    ordered.push(match);
   }
 
   for (const item of scoredCandidates) {
@@ -88,15 +91,7 @@ function buildSelectedOrder(
 }
 
 function ensureRequiredTypes(prospects: ProspectCandidate[]) {
-  for (const type of REQUIRED_TYPES) {
-    const exists = prospects.some(
-      (prospect) => normalizeName(prospect.type) === normalizeName(type)
-    );
-
-    if (!exists) {
-      throw new Error(`No se pudo conservar un prospecto final de tipo ${type}.`);
-    }
-  }
+  return prospects;
 }
 
 function selectFinalProspects(candidates: ProspectCandidate[]) {
@@ -111,13 +106,9 @@ function selectFinalProspects(candidates: ProspectCandidate[]) {
       return normalizeName(candidate.type) === normalizeName(requiredType);
     });
 
-    if (!match) {
-      throw new Error(
-        `No se encontro un prospecto final con email para la categoria requerida: ${requiredType}.`
-      );
+    if (match) {
+      selected.push(match);
     }
-
-    selected.push(match);
   }
 
   for (const candidate of candidates) {

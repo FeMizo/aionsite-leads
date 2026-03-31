@@ -1,4 +1,9 @@
 import { buildEmail } from "@/lib/email-template";
+import {
+  LEAD_TYPE_BAD_REVIEWS,
+  LEAD_TYPE_NO_WEBSITE,
+  resolveLeadType,
+} from "@/lib/lead-types";
 import { buildOpportunity } from "@/lib/opportunity";
 
 export type OutreachMessageType =
@@ -31,16 +36,26 @@ function getGreeting(name: string, contactName: string) {
 }
 
 function getOpportunityContext(prospect: OutreachProspect) {
+  const leadType = resolveLeadType({
+    type: prospect.type,
+    website: prospect.website,
+    rating: prospect.rating,
+  });
   const derived = buildOpportunity({
     type: prospect.type,
     website: prospect.website,
+    rating: prospect.rating,
+    userRatingCount: null,
   });
   const opportunity = prospect.opportunity || derived.opportunity;
   const recommendedSite = prospect.recommendedSite || derived.recommendedSite;
   const pitchAngle = prospect.pitchAngle || derived.pitchAngle;
-  const analysis = prospect.website
-    ? "El prospecto ya tiene website. El enfoque debe ir a rediseno, claridad de oferta y conversion."
-    : "El prospecto no tiene website claro. El enfoque debe ir a presencia digital, confianza y captacion de contactos.";
+  const analysis =
+    leadType === LEAD_TYPE_NO_WEBSITE
+      ? "El prospecto no tiene sitio propio. El enfoque debe ir a presencia digital, confianza y captacion de contactos."
+      : leadType === LEAD_TYPE_BAD_REVIEWS
+        ? "El prospecto ya tiene trafico y reputacion mejorable. El enfoque debe ir a confianza, pruebas sociales y conversion."
+        : "El prospecto ya tiene presencia digital, pero requiere rediseno, claridad de oferta y mejor conversion.";
 
   return {
     opportunity,

@@ -38,6 +38,7 @@ type PrioritizedProspect = Pick<Prospect, "type" | "city" | "createdAt" | "sched
   score?: number;
   priority?: ProspectPriority;
   website?: string;
+  rating?: string;
   email?: string;
   phone?: string;
   mapsUrl?: string;
@@ -167,6 +168,7 @@ export function sortProspectsForDelivery<T extends PrioritizedProspect>(prospect
     const leftScoreInput = {
       website: left.website || "",
       type: left.type,
+      rating: left.rating || "",
       email: left.email || "",
       phone: left.phone || "",
       mapsUrl: left.mapsUrl || "",
@@ -174,6 +176,7 @@ export function sortProspectsForDelivery<T extends PrioritizedProspect>(prospect
     const rightScoreInput = {
       website: right.website || "",
       type: right.type,
+      rating: right.rating || "",
       email: right.email || "",
       phone: right.phone || "",
       mapsUrl: right.mapsUrl || "",

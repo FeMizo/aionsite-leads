@@ -1,54 +1,39 @@
-import { normalizeName } from "@/lib/normalizers";
-import { inferWebsiteSignal } from "@/lib/prospect-scoring";
+import {
+  LEAD_TYPE_BAD_REVIEWS,
+  LEAD_TYPE_NO_WEBSITE,
+  resolveLeadType,
+} from "@/lib/lead-types";
 import type { ProspectCandidate } from "@/lib/types";
 
 export function buildOpportunity(
-  prospect: Pick<ProspectCandidate, "type" | "website">
+  prospect: Pick<ProspectCandidate, "type" | "website" | "rating" | "userRatingCount">
 ) {
-  const type = normalizeName(prospect.type);
-  const websiteSignal = inferWebsiteSignal({
-    website: prospect.website,
-  });
+  const leadType = resolveLeadType(prospect);
 
-  if (type === "inmobiliaria") {
+  if (leadType === LEAD_TYPE_NO_WEBSITE) {
     return {
       opportunity:
-        websiteSignal === "missing"
-          ? "no tienen sitio propio para captar compradores y vendedores"
-          : "su sitio actual puede captar mas leads de propiedades",
-      recommendedSite: "portal inmobiliario con catalogo, filtros y formularios",
-      pitchAngle: "generar mas consultas calificadas de propiedades",
+        "no cuentan con un sitio propio para generar confianza y captar contactos directos",
+      recommendedSite: "sitio comercial con servicios, testimonios y CTA claros",
+      pitchAngle: "captar contactos directos sin depender solo de Google o redes",
     };
   }
 
-  if (type === "restaurante") {
+  if (leadType === LEAD_TYPE_BAD_REVIEWS) {
     return {
       opportunity:
-        websiteSignal === "missing" || websiteSignal === "social-only"
-          ? "dependen de Google y redes para reservas o pedidos"
-          : "su sitio actual puede convertir mejor visitas en reservas",
-      recommendedSite: "sitio con menu, reservas, mapa y CTA a WhatsApp",
-      pitchAngle: "captar reservas directas sin depender solo de redes",
-    };
-  }
-
-  if (type === "clinica") {
-    return {
-      opportunity:
-        websiteSignal === "missing"
-          ? "no tienen un sitio claro para captar citas y transmitir confianza"
-          : "pueden convertir mejor las busquedas locales en citas",
-      recommendedSite: "sitio medico con servicios, doctores y solicitud de citas",
-      pitchAngle: "generar mas citas desde busquedas locales de alta intencion",
+        "ya reciben trafico y visibilidad, pero su reputacion digital todavia deja dinero sobre la mesa",
+      recommendedSite:
+        "sitio de confianza con pruebas sociales, casos, FAQs y llamadas a la accion",
+      pitchAngle: "convertir mejor el trafico actual mientras refuerzan confianza",
     };
   }
 
   return {
     opportunity:
-      websiteSignal === "missing"
-        ? "no cuentan con un sitio propio para generar confianza y contactos"
-        : "su presencia digital puede modernizarse para convertir mejor",
-    recommendedSite: "sitio de presentacion con servicios, testimonios y contacto",
-    pitchAngle: "verse mas profesionales y captar solicitudes directas",
+      "su sitio actual o presencia digital se puede modernizar para transmitir mas confianza y convertir mejor",
+    recommendedSite:
+      "sitio redisenado con mejor estructura, velocidad, SEO local y CTA claros",
+    pitchAngle: "aprovechar mejor el trafico actual con una presencia mas solida",
   };
 }

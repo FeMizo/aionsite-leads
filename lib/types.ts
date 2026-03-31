@@ -18,6 +18,7 @@ export type ProspectCandidate = {
   type: string;
   website: string;
   rating: string;
+  userRatingCount?: number | null;
   mapsUrl: string;
   opportunity: string;
   recommendedSite: string;

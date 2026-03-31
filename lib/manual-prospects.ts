@@ -1,11 +1,11 @@
 import type { Prisma, ProspectStatus } from "@/generated/prisma";
 import { getPrismaClient } from "@/lib/db";
 import { findDuplicate } from "@/lib/dedupe";
+import { inferLeadType, normalizeLeadType } from "@/lib/lead-types";
 import {
   normalizeEmail,
   normalizeName,
   normalizePhone,
-  normalizeProspectType,
   normalizeWhitespace,
 } from "@/lib/normalizers";
 import { buildOpportunity } from "@/lib/opportunity";
@@ -70,11 +70,19 @@ export function prepareManualProspect(input: ManualProspectInput = {}): Prepared
   const city = normalizeWhitespace(input.city || "");
   const email = normalizeEmail(input.email || "");
   const phone = normalizePhone(input.phone || "");
-  const type = normalizeProspectType(input.type || "Negocio local");
   const website = normalizeWebsiteInput(input.website || "");
+  const type =
+    normalizeLeadType(input.type || "") ||
+    inferLeadType({
+      website,
+      rating: "",
+      userRatingCount: null,
+    });
   const derived = buildOpportunity({
     type,
     website,
+    rating: "",
+    userRatingCount: null,
   });
 
   return {
@@ -110,7 +118,7 @@ export function validateManualProspect(
   }
 
   if (!prepared.type) {
-    throw new Error("El tipo de empresa es obligatorio.");
+    throw new Error("El tipo de lead es obligatorio.");
   }
 
   if (options.requireEmail && !prepared.email) {

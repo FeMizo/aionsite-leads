@@ -1,5 +1,10 @@
-import { normalizeName, normalizeWebsite } from "@/lib/normalizers";
+import {
+  LEAD_TYPE_BAD_REVIEWS,
+  LEAD_TYPE_NO_WEBSITE,
+  resolveLeadType,
+} from "@/lib/lead-types";
 import type { ProspectCandidate } from "@/lib/types";
+import { inferWebsiteSignal } from "@/lib/website-signals";
 
 export type ProspectPriority = "alto" | "medio" | "bajo";
 export type ProspectAutomationStatus = "approved" | "analyzed";
@@ -8,51 +13,28 @@ export const AUTO_READY_PROSPECT_SCORE = 50;
 
 type ProspectScoreInput = Pick<
   ProspectCandidate,
-  "website" | "type" | "email" | "phone" | "mapsUrl"
+  "website" | "type" | "email" | "phone" | "mapsUrl" | "rating" | "userRatingCount"
 >;
 
-export function inferWebsiteSignal(prospect: Pick<ProspectScoreInput, "website">) {
-  if (!prospect.website) {
-    return "missing";
-  }
-
-  const website = normalizeWebsite(prospect.website);
-
-  if (
-    website.includes("facebook.com") ||
-    website.includes("instagram.com") ||
-    website.includes("wa.me") ||
-    website.includes("linktr.ee")
-  ) {
-    return "social-only";
-  }
-
-  if (
-    website.includes("ueniweb.com") ||
-    website.includes("wixsite.com") ||
-    website.includes("sites.google.com")
-  ) {
-    return "basic";
-  }
-
-  return "existing";
-}
-
 export function scoreProspect(prospect: ProspectScoreInput) {
-  const type = normalizeName(prospect.type);
+  const leadType = resolveLeadType(prospect);
   const websiteSignal = inferWebsiteSignal(prospect);
   let score = 0;
 
-  if (websiteSignal === "missing") {
-    score += 40;
+  if (leadType === LEAD_TYPE_NO_WEBSITE) {
+    score += 45;
+  } else if (leadType === LEAD_TYPE_BAD_REVIEWS) {
+    score += 35;
   } else if (websiteSignal === "social-only") {
-    score += 30;
+    score += 35;
   } else if (websiteSignal === "basic") {
-    score += 20;
+    score += 30;
+  } else {
+    score += 25;
   }
 
-  if (type === "restaurante" || type === "restaurant") {
-    score += 10;
+  if (prospect.rating) {
+    score += 5;
   }
 
   if (prospect.email) {

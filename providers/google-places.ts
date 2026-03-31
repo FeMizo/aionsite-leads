@@ -14,6 +14,7 @@ const DEFAULT_FIELD_MASK = [
   "places.websiteUri",
   "places.nationalPhoneNumber",
   "places.rating",
+  "places.userRatingCount",
   "places.primaryType",
   "places.googleMapsUri",
   "places.businessStatus",
@@ -26,6 +27,7 @@ type GooglePlace = {
   websiteUri?: string;
   nationalPhoneNumber?: string;
   rating?: number;
+  userRatingCount?: number;
   primaryType?: string;
   googleMapsUri?: string;
   businessStatus?: string;
@@ -50,6 +52,7 @@ function mapGooglePlaceToProspect(
     type: search.typeLabel.toLowerCase(),
     website: place.websiteUri || "",
     rating: place.rating ? String(place.rating) : "",
+    userRatingCount: place.userRatingCount ?? null,
     mapsUrl: place.googleMapsUri || "",
     opportunity: "",
     recommendedSite: "",

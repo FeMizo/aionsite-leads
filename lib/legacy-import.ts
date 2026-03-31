@@ -2,11 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Prisma } from "@/generated/prisma";
 import { getPrismaClient } from "@/lib/db";
+import { resolveLeadType } from "@/lib/lead-types";
 import {
   normalizeEmail,
   normalizeName,
   normalizePhone,
-  normalizeProspectType,
 } from "@/lib/normalizers";
 
 type LegacyRecord = {
@@ -142,7 +142,12 @@ export async function importLegacyJsonData(options: { force?: boolean } = {}) {
         normalizedEmail: normalizeEmail(record.email || ""),
         phone: record.phone || "",
         normalizedPhone: normalizePhone(record.phone || ""),
-        type: normalizeProspectType(record.type || record.category || ""),
+        type: resolveLeadType({
+          type: record.type || record.category || "",
+          website: record.website || "",
+          rating: record.rating || "",
+          userRatingCount: null,
+        }),
         website: record.website || "",
         rating: record.rating || "",
         mapsUrl: record.mapsUrl || "",
@@ -179,7 +184,12 @@ export async function importLegacyJsonData(options: { force?: boolean } = {}) {
         normalizedEmail: normalizeEmail(record.email || ""),
         phone: record.phone || "",
         normalizedPhone: normalizePhone(record.phone || ""),
-        type: normalizeProspectType(record.type || record.category || ""),
+        type: resolveLeadType({
+          type: record.type || record.category || "",
+          website: record.website || "",
+          rating: record.rating || "",
+          userRatingCount: null,
+        }),
         website: record.website || "",
         rating: record.rating || "",
         mapsUrl: record.mapsUrl || "",

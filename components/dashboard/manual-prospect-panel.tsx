@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getApiErrorMessage } from "@/lib/api-client";
+import { LEAD_TYPES } from "@/lib/lead-types";
 
 const DEFAULT_TEST_PROSPECT = {
   name: "Aion Site",
@@ -10,7 +11,7 @@ const DEFAULT_TEST_PROSPECT = {
   city: "Carmen",
   email: "femiss0693@gmail.com",
   phone: "9381238531",
-  type: "Websites",
+  type: LEAD_TYPES[0],
   website: "https://aionsite.com.mx/",
 };
 
@@ -209,13 +210,18 @@ export function ManualProspectPanel() {
               />
             </label>
             <label className="crm-field">
-              <span>Tipo de empresa</span>
-              <input
+              <span>Tipo de lead</span>
+              <select
                 className="crm-input"
                 value={form.type}
                 onChange={(event) => updateField("type", event.target.value)}
-                placeholder="Categoria"
-              />
+              >
+                {LEAD_TYPES.map((leadType) => (
+                  <option key={leadType} value={leadType}>
+                    {leadType}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="crm-field">
               <span>Ciudad</span>

@@ -2,6 +2,7 @@ import type { Prisma, ProspectStatus } from "@/generated/prisma";
 import { getPrismaClient } from "@/lib/db";
 import { findDuplicate } from "@/lib/dedupe";
 import { createManualProspect } from "@/lib/manual-prospects";
+import { inferLeadType, normalizeLeadType } from "@/lib/lead-types";
 import { buildOpportunity } from "@/lib/opportunity";
 import {
   buildProspectOutreachDraft,
@@ -16,7 +17,6 @@ import {
   normalizeEmail,
   normalizeName,
   normalizePhone,
-  normalizeProspectType,
   normalizeWhitespace,
 } from "@/lib/normalizers";
 
@@ -553,10 +553,10 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
   }
 
   if ("type" in input) {
-    const value = normalizeProspectType(input.type || "");
+    const value = normalizeLeadType(input.type || "");
 
     if (!value) {
-      throw new Error("El tipo no puede quedar vacio.");
+      throw new Error("El tipo de lead no es valido.");
     }
 
     data.type = value;
@@ -649,13 +649,29 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
     data.source = normalizeWhitespace(input.source || "");
   }
 
-  const mergedType =
-    typeof data.type === "string" ? data.type : current.type;
   const mergedWebsite =
     typeof data.website === "string" ? data.website : current.website;
+  const mergedRating =
+    typeof data.rating === "string" ? data.rating : current.rating;
+  const mergedType =
+    typeof data.type === "string"
+      ? data.type
+      : "website" in input || "rating" in input
+        ? inferLeadType({
+            website: mergedWebsite,
+            rating: mergedRating,
+            userRatingCount: null,
+          })
+        : current.type;
+
+  if ("type" in input || "website" in input || "rating" in input) {
+    data.type = mergedType;
+  }
   const derived = buildOpportunity({
     type: mergedType,
     website: mergedWebsite,
+    rating: mergedRating,
+    userRatingCount: null,
   });
 
   if (!("opportunity" in input)) {
