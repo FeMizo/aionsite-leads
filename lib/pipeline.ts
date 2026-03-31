@@ -17,14 +17,27 @@ import {
 import {
   MINIMUM_QUALIFIED_PROSPECT_SCORE,
   getProspectAutomationStatus,
+  hasRatingOpportunity,
   scoreProspect,
 } from "@/lib/prospect-scoring";
 import type { ComparableProspect, ProspectCandidate } from "@/lib/types";
+import { inferWebsiteSignal } from "@/lib/website-signals";
 import { findEmailFromWebsite } from "@/providers/email-finder";
 import { searchBusinesses } from "@/providers/google-places";
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function shouldAuditProspect(prospect: ProspectCandidate) {
+  const websiteSignal = inferWebsiteSignal(prospect);
+
+  return (
+    websiteSignal === "missing" ||
+    websiteSignal === "social-only" ||
+    websiteSignal === "basic" ||
+    hasRatingOpportunity(prospect)
+  );
 }
 
 function normalizeProspect(rawProspect: ProspectCandidate): ProspectCandidate {
@@ -35,6 +48,11 @@ function normalizeProspect(rawProspect: ProspectCandidate): ProspectCandidate {
     website: rawProspect.website,
     rating: rawProspect.rating,
     userRatingCount: rawProspect.userRatingCount,
+    websiteFetchFailed: rawProspect.websiteFetchFailed,
+    websiteLoadTimeMs: rawProspect.websiteLoadTimeMs,
+    hasWhatsappCta: rawProspect.hasWhatsappCta,
+    hasContactCta: rawProspect.hasContactCta,
+    isMobileFriendly: rawProspect.isMobileFriendly,
   });
 
   return {
@@ -47,6 +65,11 @@ function normalizeProspect(rawProspect: ProspectCandidate): ProspectCandidate {
     website: String(rawProspect.website || "").trim(),
     rating: rawProspect.rating ? String(rawProspect.rating).trim() : "",
     userRatingCount: rawProspect.userRatingCount ?? null,
+    websiteFetchFailed: rawProspect.websiteFetchFailed ?? false,
+    websiteLoadTimeMs: rawProspect.websiteLoadTimeMs ?? null,
+    hasWhatsappCta: rawProspect.hasWhatsappCta ?? null,
+    hasContactCta: rawProspect.hasContactCta ?? null,
+    isMobileFriendly: rawProspect.isMobileFriendly ?? null,
     mapsUrl: String(rawProspect.mapsUrl || "").trim(),
     opportunity: rawProspect.opportunity || derived.opportunity,
     recommendedSite: rawProspect.recommendedSite || derived.recommendedSite,
@@ -146,6 +169,11 @@ async function enrichProspectEmail(prospect: ProspectCandidate) {
     prospect: {
       ...prospect,
       email: normalized || prospect.email,
+      websiteFetchFailed: enrichment.audit.fetchFailed,
+      websiteLoadTimeMs: enrichment.audit.loadTimeMs,
+      hasWhatsappCta: enrichment.audit.hasWhatsappCta,
+      hasContactCta: enrichment.audit.hasContactCta,
+      isMobileFriendly: enrichment.audit.isMobileFriendly,
       lastCheckedAt: nowIso(),
     },
     fetchCount: enrichment.fetchCount,
@@ -168,6 +196,11 @@ function buildCreateProspectData(prospect: ProspectCandidate, runId: string) {
     type: prospect.type,
     website: prospect.website,
     rating: prospect.rating,
+    websiteFetchFailed: prospect.websiteFetchFailed ?? false,
+    websiteLoadTimeMs: prospect.websiteLoadTimeMs ?? null,
+    hasWhatsappCta: prospect.hasWhatsappCta ?? null,
+    hasContactCta: prospect.hasContactCta ?? null,
+    isMobileFriendly: prospect.isMobileFriendly ?? null,
     mapsUrl: prospect.mapsUrl,
     opportunity: prospect.opportunity,
     recommendedSite: prospect.recommendedSite,
@@ -226,7 +259,21 @@ export async function runProspectSearch(source = "google-places") {
       existingProspects
     );
 
-    const scoredCandidates = uniqueProspects
+    const enrichedCandidates: ProspectCandidate[] = [];
+
+    for (const prospect of uniqueProspects) {
+      if (!shouldAuditProspect(prospect)) {
+        enrichedCandidates.push(prospect);
+        continue;
+      }
+
+      const enriched = await enrichProspectEmail(prospect);
+      metrics.websiteFetches += enriched.fetchCount;
+      metrics.emailsFound += enriched.emailFound;
+      enrichedCandidates.push(enriched.prospect);
+    }
+
+    const scoredCandidates = enrichedCandidates
       .map((prospect) => ({
         prospect,
         score: scoreProspect(prospect),
@@ -234,7 +281,7 @@ export async function runProspectSearch(source = "google-places") {
       .filter((item) => item.score >= MINIMUM_QUALIFIED_PROSPECT_SCORE)
       .sort((left, right) => right.score - left.score);
 
-    const lowScoreDiscarded = uniqueProspects.length - scoredCandidates.length;
+    const lowScoreDiscarded = enrichedCandidates.length - scoredCandidates.length;
 
     if (scoredCandidates.length < DESIRED_PROSPECT_COUNT) {
       throw new Error(
@@ -249,16 +296,12 @@ export async function runProspectSearch(source = "google-places") {
     let prospectsWithoutEmail = 0;
 
     for (const item of ordered) {
-      const enriched = await enrichProspectEmail(item.prospect);
-      metrics.websiteFetches += enriched.fetchCount;
-      metrics.emailsFound += enriched.emailFound;
-
-      if (REQUIRE_EMAIL_FOR_FINAL_PROSPECTS && !normalizeEmail(enriched.prospect.email)) {
+      if (REQUIRE_EMAIL_FOR_FINAL_PROSPECTS && !normalizeEmail(item.prospect.email)) {
         prospectsWithoutEmail += 1;
         continue;
       }
 
-      const duplicate = findDuplicate(enriched.prospect, [
+      const duplicate = findDuplicate(item.prospect, [
         ...comparisonPool,
         ...eligibleProspects,
       ]);
@@ -268,7 +311,7 @@ export async function runProspectSearch(source = "google-places") {
         continue;
       }
 
-      eligibleProspects.push(enriched.prospect);
+      eligibleProspects.push(item.prospect);
     }
 
     const finalProspects = selectFinalProspects(eligibleProspects);

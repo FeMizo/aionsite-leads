@@ -14,7 +14,7 @@ export type OutreachMessageType =
   | "followup_3"
   | "closing";
 
-export type OutreachScriptVariant = "a" | "b" | "c";
+export type OutreachScriptVariant = "a" | "b";
 
 type OutreachProspect = {
   name: string;
@@ -29,7 +29,7 @@ type OutreachProspect = {
   pitchAngle: string;
 };
 
-const FIRST_CONTACT_VARIANTS = ["a", "b", "c"] as const satisfies readonly OutreachScriptVariant[];
+const FIRST_CONTACT_VARIANTS = ["a", "b"] as const satisfies readonly OutreachScriptVariant[];
 
 function getGreeting(name: string, contactName: string) {
   return contactName || name || "equipo";
@@ -78,17 +78,20 @@ function pickFirstContactVariant(prospect: OutreachProspect): OutreachScriptVari
 
 function buildFirstContactScriptA(prospect: OutreachProspect) {
   const context = getOpportunityContext(prospect);
-  const email = buildEmail({
-    ...prospect,
-    opportunity: context.opportunity,
-    recommendedSite: context.recommendedSite,
-    pitchAngle: context.pitchAngle,
-  });
+  const email = buildEmail(
+    {
+      ...prospect,
+      opportunity: context.opportunity,
+      recommendedSite: context.recommendedSite,
+      pitchAngle: context.pitchAngle,
+    },
+    "a"
+  );
 
   return {
     subject: email.subject,
     message: email.text,
-    analysis: `${context.analysis} Script A: diagnostico rapido y propuesta sin costo.`,
+    analysis: `${context.analysis} Script A/B: angulo directo sobre trafico perdido.`,
     opportunity: context.opportunity,
     scriptVariant: "a" as const,
   };
@@ -96,51 +99,22 @@ function buildFirstContactScriptA(prospect: OutreachProspect) {
 
 function buildFirstContactScriptB(prospect: OutreachProspect) {
   const context = getOpportunityContext(prospect);
-  const addressee = getGreeting(prospect.name, prospect.contactName);
+  const email = buildEmail(
+    {
+      ...prospect,
+      opportunity: context.opportunity,
+      recommendedSite: context.recommendedSite,
+      pitchAngle: context.pitchAngle,
+    },
+    "b"
+  );
 
   return {
-    subject: `${prospect.name}: una idea puntual para captar mas clientes`,
-    message: `Hola ${addressee},
-
-Revise ${prospect.name} y vi una oportunidad puntual: ${context.opportunity}.
-
-Cuando un negocio como el suyo mejora su presencia digital y ordena mejor su oferta, suele ser mas facil convertir visitas en conversaciones reales.
-
-Si le hace sentido, puedo compartirle una propuesta breve para ${context.recommendedSite}, enfocada en ${context.pitchAngle}.
-
-Si quiere verla, se la mando sin costo.
-
-Saludos,
-AionSite`,
-    analysis:
-      "Script B: mensaje mas corto, orientado a oportunidad concreta y llamada a la accion simple.",
+    subject: email.subject,
+    message: email.text,
+    analysis: `${context.analysis} Script A/B: angulo mas suave, centrado en potencial sin hablar de ads.`,
     opportunity: context.opportunity,
     scriptVariant: "b" as const,
-  };
-}
-
-function buildFirstContactScriptC(prospect: OutreachProspect) {
-  const context = getOpportunityContext(prospect);
-  const addressee = getGreeting(prospect.name, prospect.contactName);
-
-  return {
-    subject: `${prospect.name}: propuesta rapida para su presencia digital`,
-    message: `Hola ${addressee},
-
-Le escribo porque al revisar ${prospect.name} detecte que hay espacio para mejorar ${context.pitchAngle}.
-
-No lo veo como un tema de "tener o no tener sitio", sino de usar mejor su presencia digital para transmitir confianza y facilitar el contacto.
-
-En su caso, lo resolveria con ${context.recommendedSite} y una estructura muy clara alrededor de esta idea: ${context.opportunity}.
-
-Si quiere, le comparto un ejemplo visual rapido para que vea por donde lo llevaria.
-
-Saludos,
-AionSite`,
-    analysis:
-      "Script C: angulo consultivo, menos comercial y mas centrado en claridad de oferta.",
-    opportunity: context.opportunity,
-    scriptVariant: "c" as const,
   };
 }
 
@@ -149,10 +123,6 @@ function buildFirstContactDraft(prospect: OutreachProspect) {
 
   if (variant === "b") {
     return buildFirstContactScriptB(prospect);
-  }
-
-  if (variant === "c") {
-    return buildFirstContactScriptC(prospect);
   }
 
   return buildFirstContactScriptA(prospect);

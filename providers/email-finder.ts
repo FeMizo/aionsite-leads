@@ -13,6 +13,14 @@ const SOCIAL_HOSTS = [
   "linktr.ee",
 ];
 
+export type WebsiteAudit = {
+  fetchFailed: boolean;
+  loadTimeMs: number | null;
+  hasWhatsappCta: boolean;
+  hasContactCta: boolean;
+  isMobileFriendly: boolean | null;
+};
+
 function sanitizeWebsiteUrl(website: string) {
   const raw = String(website || "").trim();
   const normalized = normalizeWebsite(website);
@@ -74,6 +82,7 @@ function extractContactLinks(html: string, baseUrl: string) {
 async function fetchHtml(url: string) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
+  const startedAt = Date.now();
 
   try {
     const response = await fetch(url, {
@@ -86,24 +95,62 @@ async function fetchHtml(url: string) {
     });
 
     if (!response.ok) {
-      return { html: "", fetchCount: 1 };
+      return { html: "", fetchCount: 1, ok: false, durationMs: Date.now() - startedAt };
     }
 
     const contentType = response.headers.get("content-type") || "";
 
     if (!contentType.includes("text/html")) {
-      return { html: "", fetchCount: 1 };
+      return { html: "", fetchCount: 1, ok: false, durationMs: Date.now() - startedAt };
     }
 
     return {
       html: await response.text(),
       fetchCount: 1,
+      ok: true,
+      durationMs: Date.now() - startedAt,
     };
   } catch {
-    return { html: "", fetchCount: 1 };
+    return { html: "", fetchCount: 1, ok: false, durationMs: Date.now() - startedAt };
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function auditWebsiteHtml(
+  html: string,
+  metadata: { fetchFailed: boolean; loadTimeMs: number | null }
+): WebsiteAudit {
+  if (!html) {
+    return {
+      fetchFailed: metadata.fetchFailed,
+      loadTimeMs: metadata.loadTimeMs,
+      hasWhatsappCta: false,
+      hasContactCta: false,
+      isMobileFriendly: null,
+    };
+  }
+
+  const normalizedHtml = html.toLowerCase();
+  const hasWhatsappCta =
+    normalizedHtml.includes("wa.me/") ||
+    normalizedHtml.includes("api.whatsapp.com") ||
+    normalizedHtml.includes("whatsapp");
+  const hasContactCta =
+    hasWhatsappCta ||
+    /href\s*=\s*["'](?:mailto:|tel:)/i.test(html) ||
+    /(contacto|contact|cotiza|cotizacion|agendar|agenda|reserva|reservar|cita|llamar|escribenos)/i.test(
+      html
+    );
+  const isMobileFriendly = /<meta[^>]+name=["']viewport["']/i.test(html);
+
+  return {
+    fetchFailed: metadata.fetchFailed,
+    loadTimeMs: metadata.loadTimeMs,
+    hasWhatsappCta,
+    hasContactCta,
+    isMobileFriendly,
+  };
 }
 
 export async function findEmailFromWebsite(website: string) {
@@ -113,17 +160,29 @@ export async function findEmailFromWebsite(website: string) {
     return {
       email: "",
       fetchCount: 0,
+      audit: {
+        fetchFailed: false,
+        loadTimeMs: null,
+        hasWhatsappCta: false,
+        hasContactCta: false,
+        isMobileFriendly: null,
+      } satisfies WebsiteAudit,
     };
   }
 
   let fetchCount = 0;
   const homepage = await fetchHtml(url);
   fetchCount += homepage.fetchCount;
+  const audit = auditWebsiteHtml(homepage.html, {
+    fetchFailed: !homepage.ok,
+    loadTimeMs: homepage.durationMs,
+  });
 
   if (!homepage.html) {
     return {
       email: "",
       fetchCount,
+      audit,
     };
   }
 
@@ -133,6 +192,7 @@ export async function findEmailFromWebsite(website: string) {
     return {
       email: homepageEmails[0],
       fetchCount,
+      audit,
     };
   }
 
@@ -147,6 +207,7 @@ export async function findEmailFromWebsite(website: string) {
       return {
         email: emails[0],
         fetchCount,
+        audit,
       };
     }
   }
@@ -154,5 +215,6 @@ export async function findEmailFromWebsite(website: string) {
   return {
     email: "",
     fetchCount,
+    audit,
   };
 }

@@ -19,6 +19,11 @@ export type ProspectCandidate = {
   website: string;
   rating: string;
   userRatingCount?: number | null;
+  websiteFetchFailed?: boolean;
+  websiteLoadTimeMs?: number | null;
+  hasWhatsappCta?: boolean | null;
+  hasContactCta?: boolean | null;
+  isMobileFriendly?: boolean | null;
   mapsUrl: string;
   opportunity: string;
   recommendedSite: string;

@@ -5,6 +5,14 @@ export type SearchCityTarget = {
   timeZone: string;
 };
 
+export type SearchNicheTarget = {
+  slug: string;
+  label: string;
+  textQuery: string;
+  typeLabel?: string;
+  includedType?: string;
+};
+
 export const SEARCH_CITIES: SearchCityTarget[] = [
   {
     slug: "merida",
@@ -43,3 +51,48 @@ export const SEARCH_CITIES: SearchCityTarget[] = [
     timeZone: "America/Monterrey",
   },
 ];
+
+export const SEARCH_NICHES: SearchNicheTarget[] = [
+  {
+    slug: "dentists",
+    label: "dentistas",
+    textQuery: "dentistas",
+    typeLabel: "dentist",
+    includedType: "dentist",
+  },
+  {
+    slug: "clinics",
+    label: "clinicas",
+    textQuery: "clinicas",
+    typeLabel: "clinic",
+    includedType: "doctor",
+  },
+  {
+    slug: "lawyers",
+    label: "abogados",
+    textQuery: "abogados",
+    typeLabel: "lawyer",
+    includedType: "lawyer",
+  },
+  {
+    slug: "beauty-spa",
+    label: "esteticas y spas",
+    textQuery: "esteticas y spas",
+    typeLabel: "beauty_salon",
+    includedType: "beauty_salon",
+  },
+  {
+    slug: "mechanic-shops",
+    label: "talleres mecanicos",
+    textQuery: "talleres mecanicos",
+    typeLabel: "car_repair",
+    includedType: "car_repair",
+  },
+  {
+    slug: "small-restaurants",
+    label: "restaurantes pequenos",
+    textQuery: "restaurantes pequenos",
+    typeLabel: "restaurant",
+    includedType: "restaurant",
+  },
+] as const;

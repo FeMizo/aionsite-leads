@@ -1,59 +1,119 @@
-import {
-  LEAD_TYPE_BAD_REVIEWS,
-  LEAD_TYPE_NO_WEBSITE,
-  resolveLeadType,
-} from "@/lib/lead-types";
 import type { ProspectCandidate } from "@/lib/types";
 import { inferWebsiteSignal } from "@/lib/website-signals";
 
 export type ProspectPriority = "alto" | "medio" | "bajo";
 export type ProspectAutomationStatus = "approved" | "analyzed";
-export const MINIMUM_QUALIFIED_PROSPECT_SCORE = 40;
-export const AUTO_READY_PROSPECT_SCORE = 50;
+export const MINIMUM_QUALIFIED_PROSPECT_SCORE = 60;
+export const AUTO_READY_PROSPECT_SCORE = 60;
 
 type ProspectScoreInput = Pick<
   ProspectCandidate,
-  "website" | "type" | "email" | "phone" | "mapsUrl" | "rating" | "userRatingCount"
+  | "website"
+  | "type"
+  | "rating"
+  | "userRatingCount"
+  | "websiteFetchFailed"
+  | "websiteLoadTimeMs"
+  | "hasWhatsappCta"
+  | "hasContactCta"
+  | "isMobileFriendly"
 >;
 
-export function scoreProspect(prospect: ProspectScoreInput) {
-  const leadType = resolveLeadType(prospect);
+function parseRating(value: string) {
+  const parsed = Number.parseFloat(String(value || "").trim());
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function hasRatingOpportunity(prospect: Pick<ProspectScoreInput, "rating">) {
+  const rating = parseRating(prospect.rating || "");
+  return Boolean(rating && rating >= 3.5 && rating <= 4.5);
+}
+
+export function hasPoorWebsite(
+  prospect: Pick<
+    ProspectScoreInput,
+    "website" | "websiteFetchFailed" | "websiteLoadTimeMs"
+  >
+) {
   const websiteSignal = inferWebsiteSignal(prospect);
+
+  if (websiteSignal === "missing") {
+    return false;
+  }
+
+  return (
+    websiteSignal === "social-only" ||
+    websiteSignal === "basic" ||
+    Boolean(prospect.websiteFetchFailed) ||
+    (typeof prospect.websiteLoadTimeMs === "number" && prospect.websiteLoadTimeMs >= 4500)
+  );
+}
+
+export function lacksContactCta(
+  prospect: Pick<ProspectScoreInput, "website" | "hasWhatsappCta" | "hasContactCta">
+) {
+  if (!prospect.website) {
+    return false;
+  }
+
+  if (prospect.hasWhatsappCta === null || prospect.hasContactCta === null) {
+    return false;
+  }
+
+  return !prospect.hasWhatsappCta && !prospect.hasContactCta;
+}
+
+export function getProspectSignalCounts(prospect: ProspectScoreInput) {
+  const websiteSignal = inferWebsiteSignal(prospect);
+  const noWebsite = websiteSignal === "missing";
+  const poorWebsite = hasPoorWebsite(prospect);
+  const ratingOpportunity = hasRatingOpportunity(prospect);
+  const noCta = lacksContactCta(prospect);
+  const oldWebsite = websiteSignal === "basic";
+  const notMobileFriendly = prospect.isMobileFriendly === false;
+  const goodReviewsBadPresence =
+    !ratingOpportunity &&
+    parseRating(prospect.rating || "") !== null &&
+    parseRating(prospect.rating || "")! > 4.5 &&
+    poorWebsite;
+
+  return {
+    noWebsite,
+    poorWebsite,
+    ratingOpportunity,
+    noCta,
+    oldWebsite,
+    notMobileFriendly,
+    goodReviewsBadPresence,
+    matchedSignals: [noWebsite, poorWebsite, ratingOpportunity, noCta].filter(Boolean).length,
+  };
+}
+
+export function scoreProspect(prospect: ProspectScoreInput) {
+  const signals = getProspectSignalCounts(prospect);
   let score = 0;
 
-  if (leadType === LEAD_TYPE_NO_WEBSITE) {
-    score += 45;
-  } else if (leadType === LEAD_TYPE_BAD_REVIEWS) {
-    score += 35;
-  } else if (websiteSignal === "social-only") {
-    score += 35;
-  } else if (websiteSignal === "basic") {
+  if (signals.noWebsite) {
+    score += 40;
+  }
+
+  if (signals.poorWebsite) {
     score += 30;
-  } else {
-    score += 25;
   }
 
-  if (prospect.rating) {
-    score += 5;
+  if (signals.ratingOpportunity) {
+    score += 20;
   }
 
-  if (prospect.email) {
+  if (signals.noCta) {
     score += 10;
-  }
-
-  if (prospect.phone) {
-    score += 5;
-  }
-
-  if (prospect.mapsUrl) {
-    score += 15;
   }
 
   return score;
 }
 
 export function getPriority(score: number): ProspectPriority {
-  if (score >= 70) {
+  if (score >= 80) {
     return "alto";
   }
 
@@ -65,7 +125,7 @@ export function getPriority(score: number): ProspectPriority {
 }
 
 export function getProspectAutomationStatus(score: number): ProspectAutomationStatus {
-  if (score >= 70) {
+  if (score >= MINIMUM_QUALIFIED_PROSPECT_SCORE) {
     return "approved";
   }
 
