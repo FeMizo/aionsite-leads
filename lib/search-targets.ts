@@ -5,13 +5,6 @@ export type SearchCityTarget = {
   timeZone: string;
 };
 
-export type SearchPlaceTypeTarget = {
-  slug: string;
-  label: string;
-  typeLabel: string;
-  includedType: string;
-};
-
 export const SEARCH_CITIES: SearchCityTarget[] = [
   {
     slug: "merida",
@@ -48,26 +41,5 @@ export const SEARCH_CITIES: SearchCityTarget[] = [
     city: "Monterrey",
     queryLocation: "Monterrey, Nuevo Leon, Mexico",
     timeZone: "America/Monterrey",
-  },
-];
-
-export const SEARCH_PLACE_TYPES: SearchPlaceTypeTarget[] = [
-  {
-    slug: "restaurant",
-    label: "restaurante",
-    typeLabel: "restaurant",
-    includedType: "restaurant",
-  },
-  {
-    slug: "real-estate",
-    label: "inmobiliaria",
-    typeLabel: "inmobiliaria",
-    includedType: "real_estate_agency",
-  },
-  {
-    slug: "clinic",
-    label: "clinica",
-    typeLabel: "clinica",
-    includedType: "doctor",
   },
 ];

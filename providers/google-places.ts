@@ -49,7 +49,7 @@ function mapGooglePlaceToProspect(
     city: search.city,
     email: "",
     phone: place.nationalPhoneNumber || "",
-    type: search.typeLabel.toLowerCase(),
+    type: search.typeLabel?.toLowerCase() || place.primaryType || "negocio_local",
     website: place.websiteUri || "",
     rating: place.rating ? String(place.rating) : "",
     userRatingCount: place.userRatingCount ?? null,
@@ -72,12 +72,16 @@ async function searchPlaces(search: SearchSpec) {
   const endpoint = getGooglePlacesEndpoint(GOOGLE_PLACES_API_URL);
   const body = {
     textQuery: search.textQuery,
-    includedType: search.includedType,
-    strictTypeFiltering: true,
     languageCode: "es",
     regionCode: "MX",
     rankPreference: "RELEVANCE",
     pageSize: search.pageSize || 15,
+    ...(search.includedType
+      ? {
+          includedType: search.includedType,
+          strictTypeFiltering: true,
+        }
+      : {}),
   };
 
   const response = await fetch(endpoint, {

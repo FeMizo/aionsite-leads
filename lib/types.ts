@@ -53,8 +53,8 @@ export type SearchSpec = {
   city: string;
   label: string;
   textQuery: string;
-  typeLabel: string;
-  includedType: string;
+  typeLabel?: string;
+  includedType?: string;
   pageSize?: number;
 };
 
