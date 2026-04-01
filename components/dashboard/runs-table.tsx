@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Table } from "@/components/ui/table";
 import type { DashboardRun } from "@/lib/types";
 import { formatDashboardDateTime } from "@/lib/date-format";
 import { compareSortValues, type SortDirection, type SortType } from "@/lib/table-sort";
@@ -162,67 +163,63 @@ export function RunsTable({ runs }: RunsTableProps) {
   }
 
   return (
-    <section className="panel">
-      <div className="panel__header">
-        <div>
-          <h2>Busquedas recientes</h2>
-          <p>Metricas operativas por ejecucion del pipeline de prospecting.</p>
-        </div>
-      </div>
-
-      <div className="crm-table-wrap">
-        <table className="crm-table">
-          <thead>
-            <tr>
-              {columns.map((column) => (
-                <th key={column.key}>
-                  <button
-                    type="button"
-                    className={
-                      sortState?.key === column.key
-                        ? "crm-table__sort is-active"
-                        : "crm-table__sort"
-                    }
-                    onClick={() => toggleSort(column)}
-                  >
-                    <span>{column.label}</span>
-                    <SortIndicator direction={getSortDirection(column.key)} />
-                  </button>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sortedRuns.map((run) => (
-              <tr key={run.id}>
-                <td>{formatDashboardDateTime(run.createdAt)}</td>
-                <td>{run.source}</td>
-                <td>{run.searchesCount}</td>
-                <td>{run.placesFound}</td>
-                <td>{run.duplicatesFiltered}</td>
-                <td>{run.emailsFound}</td>
-                <td>{run.prospectsSaved}</td>
-                <td>{run.googlePlacesRequests}</td>
-                <td>{run.websiteFetches}</td>
-                <td>
-                  <span
-                    className={`run-status ${
-                      run.status === "completed"
-                        ? "is-ok"
-                        : run.status === "running"
-                          ? "is-running"
-                          : "is-error"
-                    }`}
-                    title={run.error || ""}
-                  >
-                    {run.status}
-                  </span>
-                </td>
-              </tr>
+    <Table
+      title="Busquedas recientes"
+      description="Metricas operativas por ejecucion del pipeline de prospecting."
+      hasRows={sortedRuns.length > 0}
+      emptyState={<div className="empty-state">Todavia no hay busquedas registradas.</div>}
+    >
+      <table className="crm-table">
+        <thead>
+          <tr>
+            {columns.map((column) => (
+              <th key={column.key}>
+                <button
+                  type="button"
+                  className={
+                    sortState?.key === column.key
+                      ? "crm-table__sort is-active"
+                      : "crm-table__sort"
+                  }
+                  onClick={() => toggleSort(column)}
+                >
+                  <span>{column.label}</span>
+                  <SortIndicator direction={getSortDirection(column.key)} />
+                </button>
+              </th>
             ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
+          </tr>
+        </thead>
+        <tbody>
+          {sortedRuns.map((run) => (
+            <tr key={run.id}>
+              <td>{formatDashboardDateTime(run.createdAt)}</td>
+              <td>{run.source}</td>
+              <td>{run.searchesCount}</td>
+              <td>{run.placesFound}</td>
+              <td>{run.duplicatesFiltered}</td>
+              <td>{run.emailsFound}</td>
+              <td>{run.prospectsSaved}</td>
+              <td>{run.googlePlacesRequests}</td>
+              <td>{run.websiteFetches}</td>
+              <td>
+                <span
+                  className={`run-status ${
+                    run.status === "completed"
+                      ? "is-ok"
+                      : run.status === "running"
+                        ? "is-running"
+                        : "is-error"
+                  }`}
+                  title={run.error || ""}
+                >
+                  {run.status}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Table>
   );
 }

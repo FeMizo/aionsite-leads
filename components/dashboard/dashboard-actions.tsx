@@ -3,6 +3,8 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getApiErrorMessage } from "@/lib/api-client";
+import { Banner } from "@/components/ui/banner";
+import { Button } from "@/components/ui/button";
 import { formatDashboardDateTime } from "@/lib/date-format";
 
 async function postJson(url: string, payload?: Record<string, unknown>) {
@@ -67,12 +69,10 @@ export function DashboardActions({
   }
 
   return (
-    <section className="panel panel--accent">
-      <div className="panel__header">
-        <div>
-          <h2>Acciones operativas</h2>
-          <p>Lanza una busqueda manual, aprueba prospectos analizados o envia correos listos.</p>
-        </div>
+    <Banner
+      title="Acciones operativas"
+      description="Lanza una busqueda manual, aprueba prospectos analizados o envia correos listos."
+      actions={
         <span
           className={`run-status ${isCrawlActive ? "is-running" : "is-ok"}`}
           title={
@@ -83,19 +83,20 @@ export function DashboardActions({
         >
           {isCrawlActive ? "crawl en progreso" : "crawl inactivo"}
         </span>
-      </div>
+      }
+    >
       <div className="panel__actions">
-        <button
+        <Button
           type="button"
-          className="crm-button crm-button--primary"
+          variant="primary"
           onClick={() => run(() => postJson("/api/cron"))}
           disabled={isCrawlActive}
         >
           {isCrawlActive ? "Ejecutando crawl..." : "Ejecutar busqueda"}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="crm-button crm-button--secondary"
+          variant="secondary"
           onClick={() =>
             run(() =>
               postJson("/api/prospects", {
@@ -106,15 +107,15 @@ export function DashboardActions({
           disabled={isPending || generatedCount === 0}
         >
           Aprobar pendientes
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="crm-button crm-button--secondary"
+          variant="secondary"
           onClick={() => run(() => postJson("/api/send", {}))}
           disabled={isPending}
         >
           Enviar prospectos ready
-        </button>
+        </Button>
       </div>
       {crawlInProgress && activeRunCreatedAt ? (
         <p className="crm-muted">
@@ -122,6 +123,6 @@ export function DashboardActions({
         </p>
       ) : null}
       {error ? <p className="crm-error">{error}</p> : null}
-    </section>
+    </Banner>
   );
 }

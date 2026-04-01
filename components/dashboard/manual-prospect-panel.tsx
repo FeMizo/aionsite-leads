@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { LEAD_TYPES } from "@/lib/lead-types";
+import { Button } from "@/components/ui/button";
+import { Banner } from "@/components/ui/banner";
 
 const DEFAULT_TEST_PROSPECT = {
   name: "Aion Site",
@@ -130,21 +132,20 @@ export function ManualProspectPanel() {
   }
 
   return (
-    <section className="panel panel--accent">
-      <div className="panel__header">
-        <div>
-          <h2>Prospecto manual y prueba SMTP</h2>
-          <p>Cambia entre ambos flujos sin salir de esta pantalla.</p>
-        </div>
-        <button
+    <Banner
+      title="Prospecto manual y prueba SMTP"
+      description="Cambia entre ambos flujos sin salir de esta pantalla."
+      actions={
+        <Button
           type="button"
-          className="crm-button crm-button--secondary"
+          variant="secondary"
           onClick={() => setIsCollapsed((current) => !current)}
           aria-expanded={!isCollapsed}
         >
           {isCollapsed ? "Expandir" : "Colapsar"}
-        </button>
-      </div>
+        </Button>
+      }
+    >
 
       {isCollapsed ? (
         <p className="crm-muted">
@@ -244,14 +245,14 @@ export function ManualProspectPanel() {
           </div>
 
           <div className="panel__actions">
-            <button
+            <Button
               type="button"
-              className="crm-button crm-button--primary"
+              variant="primary"
               onClick={mode === "manual" ? saveProspect : sendTest}
               disabled={isPending}
             >
               {isPending ? "Procesando..." : activeModeCopy.actionLabel}
-            </button>
+            </Button>
           </div>
 
           <p className="crm-muted">{activeModeCopy.helperText}</p>
@@ -259,6 +260,6 @@ export function ManualProspectPanel() {
       )}
       {success ? <p className="crm-success">{success}</p> : null}
       {error ? <p className="crm-error">{error}</p> : null}
-    </section>
+    </Banner>
   );
 }

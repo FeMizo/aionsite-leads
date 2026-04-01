@@ -1,6 +1,8 @@
-import Link from "next/link";
 import { DashboardActions } from "@/components/dashboard/dashboard-actions";
 import { PageHeader } from "@/components/crm/page-header";
+import { Banner } from "@/components/ui/banner";
+import { Card } from "@/components/ui/card";
+import { Section } from "@/components/ui/section";
 import { formatDashboardDateTime } from "@/lib/date-format";
 import { getDashboardData } from "@/lib/dashboard";
 import { getAppSetupState } from "@/lib/env";
@@ -100,16 +102,10 @@ export function DashboardUnavailable({ context }: { context: DashboardPageContex
           description="El proyecto ya esta listo para Vercel, pero necesitas conectar Postgres antes de poder leer y operar prospectos."
         />
 
-        <section className="panel panel--accent">
-          <div className="panel__header">
-            <div>
-              <h2>Configuracion pendiente</h2>
-              <p>
-                Agrega estas variables en tu entorno local y en Vercel para habilitar el dashboard completo.
-              </p>
-            </div>
-          </div>
-
+        <Banner
+          title="Configuracion pendiente"
+          description="Agrega estas variables en tu entorno local y en Vercel para habilitar el dashboard completo."
+        >
           <div className="settings-grid">
             <article>
               <h3>Base de datos</h3>
@@ -127,7 +123,7 @@ export function DashboardUnavailable({ context }: { context: DashboardPageContex
               <p>{context.setup.missingSmtpEnv.join(", ") || "SMTP configurado"}</p>
             </article>
           </div>
-        </section>
+        </Banner>
       </div>
     );
   }
@@ -141,17 +137,12 @@ export function DashboardUnavailable({ context }: { context: DashboardPageContex
           description="La aplicacion ya compila y esta lista para Vercel, pero la conexion actual a Postgres no pudo completarse."
         />
 
-        <section className="panel panel--accent">
-          <div className="panel__header">
-            <div>
-              <h2>Conexion fallida</h2>
-              <p>
-                Revisa tu variable de Postgres, corre `npm run db:deploy` sobre la base objetivo y vuelve a abrir el dashboard.
-              </p>
-            </div>
-          </div>
+        <Banner
+          title="Conexion fallida"
+          description="Revisa tu variable de Postgres, corre `npm run db:deploy` sobre la base objetivo y vuelve a abrir el dashboard."
+        >
           <p className="crm-error">{context.message}</p>
-        </section>
+        </Banner>
       </div>
     );
   }
@@ -163,11 +154,13 @@ export function DashboardMetricCards({ data }: { data: DashboardData }) {
   return (
     <section className="crm-cards">
       {sectionCards.map((item) => (
-        <Link key={item.href} href={item.href} className="crm-card crm-card--link">
-          <span className="crm-card__label">{item.label}</span>
-          <strong className="crm-card__value">{data.metrics[item.metricKey]}</strong>
-          <span className="crm-card__meta">{item.description}</span>
-        </Link>
+        <Card
+          key={item.href}
+          href={item.href}
+          label={item.label}
+          value={data.metrics[item.metricKey]}
+          meta={item.description}
+        />
       ))}
     </section>
   );
@@ -240,16 +233,10 @@ export function DashboardSetupPanel({ setup }: { setup: DashboardSetupState }) {
   }
 
   return (
-    <section className="panel">
-      <div className="panel__header">
-        <div>
-          <h2>Servicios pendientes</h2>
-          <p>
-            El dashboard ya puede leer la base, pero estas integraciones siguen incompletas para operar todo el flujo.
-          </p>
-        </div>
-      </div>
-
+    <Section
+      title="Servicios pendientes"
+      description="El dashboard ya puede leer la base, pero estas integraciones siguen incompletas para operar todo el flujo."
+    >
       <div className="settings-grid">
         <article>
           <h3>Google Places</h3>
@@ -269,7 +256,7 @@ export function DashboardSetupPanel({ setup }: { setup: DashboardSetupState }) {
           <p>Ejecuta `npm run db:deploy` en la base de Vercel antes de usar el dashboard en produccion.</p>
         </article>
       </div>
-    </section>
+    </Section>
   );
 }
 
@@ -297,16 +284,10 @@ export function DashboardOverview({
         activeRunCreatedAt={data.activeRun?.createdAt || null}
       />
 
-      <section className="panel">
-        <div className="panel__header">
-          <div>
-            <h2>Secciones del CRM</h2>
-            <p>
-              Cada vista concentra una parte del flujo operativo para reducir ruido y trabajar por etapa.
-            </p>
-          </div>
-        </div>
-
+      <Section
+        title="Secciones del CRM"
+        description="Cada vista concentra una parte del flujo operativo para reducir ruido y trabajar por etapa."
+      >
         <div className="settings-grid">
           <article>
             <h3>Generated</h3>
@@ -321,7 +302,7 @@ export function DashboardOverview({
             <p>Consulta seguimiento comercial y la salud operativa del pipeline.</p>
           </article>
         </div>
-      </section>
+      </Section>
     </div>
   );
 }

@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getApiErrorMessage } from "@/lib/api-client";
+import { Button } from "@/components/ui/button";
+import { Table } from "@/components/ui/table";
 import { formatDashboardDateTime } from "@/lib/date-format";
 import { getProspectDisplayStatus, getProspectStatusLabel } from "@/lib/prospect-status";
 import { compareSortValues, type SortDirection, type SortType } from "@/lib/table-sort";
@@ -438,19 +440,20 @@ export function ProspectTable({
   }
 
   return (
-    <section className="panel">
-      <div className="panel__header">
-        <div>
-          <h2>{title}</h2>
-          <p>{description}</p>
-        </div>
+    <Table
+      title={title}
+      description={description}
+      hasRows={filteredRecords.length > 0}
+      actions={
         <input
           className="crm-search"
           placeholder="Buscar negocio, email o ciudad"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
-      </div>
+      }
+      emptyState={<div className="empty-state">{getEmptyStateLabel()}</div>}
+    >
 
       {showSendTabs ? (
         <div className="crm-tabs" aria-label="Filtros de envios">
@@ -474,139 +477,132 @@ export function ProspectTable({
 
       <div className="panel__actions">
         {actions.map((action) => (
-          <button
+          <Button
             key={action.action}
-            type="button"
-            className={`crm-button crm-button--${action.variant || "secondary"}`}
+            variant={action.variant || "secondary"}
             onClick={() => runAction(action.action)}
             disabled={!selectedIds.length || isPending}
           >
             {action.label}
-          </button>
+          </Button>
         ))}
       </div>
 
       {success ? <p className="crm-success">{success}</p> : null}
       {error ? <p className="crm-error">{error}</p> : null}
 
-      {!filteredRecords.length ? (
-        <div className="empty-state">{getEmptyStateLabel()}</div>
-      ) : (
-        <div className="crm-table-wrap">
-          <table className="crm-table">
-            <thead>
-              <tr>
-                <th>
+      <table className="crm-table">
+        <thead>
+          <tr>
+            <th>
+              <input
+                type="checkbox"
+                checked={
+                  selectableRecords.length > 0 &&
+                  selectedIds.length === selectableRecords.length
+                }
+                onChange={toggleAll}
+                disabled={selectableRecords.length === 0}
+              />
+            </th>
+            {columns
+              .filter((column) => showScheduledColumn || column.key !== "scheduledSendAt")
+              .map((column) => (
+                <th key={column.key}>
+                  <button
+                    type="button"
+                    className={
+                      sortState?.key === column.key
+                        ? "crm-table__sort is-active"
+                        : "crm-table__sort"
+                    }
+                    onClick={() => toggleSort(column)}
+                  >
+                    <span>{column.label}</span>
+                    <SortIndicator direction={getSortDirection(column.key)} />
+                  </button>
+                </th>
+              ))}
+          </tr>
+        </thead>
+        <tbody>
+          {filteredRecords.map((record) => {
+            const displayStatus = getDisplayStatus(record);
+            const sendDisabled = isSendDisabled(record);
+
+            return (
+              <tr
+                key={record.id}
+                className={
+                  isSelected(record.id)
+                    ? "crm-table__row is-selected"
+                    : sendDisabled
+                    ? "crm-table__row is-disabled"
+                    : "crm-table__row"
+                }
+                onClick={() => {
+                  if (sendDisabled) {
+                    return;
+                  }
+
+                  toggleSelection(record.id);
+                }}
+              >
+                <td>
                   <input
                     type="checkbox"
-                    checked={
-                      selectableRecords.length > 0 &&
-                      selectedIds.length === selectableRecords.length
-                    }
-                    onChange={toggleAll}
-                    disabled={selectableRecords.length === 0}
+                    checked={isSelected(record.id)}
+                    disabled={sendDisabled}
+                    onClick={(event) => event.stopPropagation()}
+                    onChange={() => toggleSelection(record.id)}
                   />
-                </th>
-                {columns
-                  .filter((column) => showScheduledColumn || column.key !== "scheduledSendAt")
-                  .map((column) => (
-                    <th key={column.key}>
-                      <button
-                        type="button"
-                        className={
-                          sortState?.key === column.key
-                            ? "crm-table__sort is-active"
-                            : "crm-table__sort"
-                        }
-                        onClick={() => toggleSort(column)}
-                      >
-                        <span>{column.label}</span>
-                        <SortIndicator direction={getSortDirection(column.key)} />
-                      </button>
-                    </th>
-                  ))}
+                </td>
+                <td>
+                  <div className="record-primary">
+                    <strong>{record.name}</strong>
+                    {record.phone ? <span>{record.phone}</span> : null}
+                  </div>
+                </td>
+                <td>{record.type}</td>
+                <td>{record.city}</td>
+                <td>{record.email || "Sin email"}</td>
+                <td>
+                  {record.website ? (
+                    <a
+                      href={record.website}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      Abrir
+                    </a>
+                  ) : (
+                    "Sin sitio"
+                  )}
+                </td>
+                <td>{record.score}</td>
+                <td>
+                  <span className={`priority-pill priority-pill--${record.priority}`}>
+                    {record.priority}
+                  </span>
+                </td>
+                <td>
+                  <StatusPill status={displayStatus} />
+                </td>
+                {showScheduledColumn ? (
+                  <td>
+                    <div className="record-secondary">
+                      <strong>{getScheduledLabel(record)}</strong>
+                      <span>{getScheduledHint(record)}</span>
+                    </div>
+                  </td>
+                ) : null}
+                <td>{formatDashboardDateTime(record.lastCheckedAt)}</td>
               </tr>
-            </thead>
-            <tbody>
-              {filteredRecords.map((record) => {
-                const displayStatus = getDisplayStatus(record);
-                const sendDisabled = isSendDisabled(record);
-
-                return (
-                  <tr
-                    key={record.id}
-                    className={
-                      isSelected(record.id)
-                        ? "crm-table__row is-selected"
-                        : sendDisabled
-                        ? "crm-table__row is-disabled"
-                        : "crm-table__row"
-                    }
-                    onClick={() => {
-                      if (sendDisabled) {
-                        return;
-                      }
-
-                      toggleSelection(record.id);
-                    }}
-                  >
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={isSelected(record.id)}
-                        disabled={sendDisabled}
-                        onClick={(event) => event.stopPropagation()}
-                        onChange={() => toggleSelection(record.id)}
-                      />
-                    </td>
-                    <td>
-                      <div className="record-primary">
-                        <strong>{record.name}</strong>
-                        {record.phone ? <span>{record.phone}</span> : null}
-                      </div>
-                    </td>
-                    <td>{record.type}</td>
-                    <td>{record.city}</td>
-                    <td>{record.email || "Sin email"}</td>
-                    <td>
-                      {record.website ? (
-                        <a
-                          href={record.website}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          Abrir
-                        </a>
-                      ) : (
-                        "Sin sitio"
-                      )}
-                    </td>
-                    <td>{record.score}</td>
-                    <td>
-                      <span className={`priority-pill priority-pill--${record.priority}`}>
-                        {record.priority}
-                      </span>
-                    </td>
-                    <td>
-                      <StatusPill status={displayStatus} />
-                    </td>
-                    {showScheduledColumn ? (
-                      <td>
-                        <div className="record-secondary">
-                          <strong>{getScheduledLabel(record)}</strong>
-                          <span>{getScheduledHint(record)}</span>
-                        </div>
-                      </td>
-                    ) : null}
-                    <td>{formatDashboardDateTime(record.lastCheckedAt)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
+            );
+          })}
+        </tbody>
+      </table>
+    </Table>
   );
 }
