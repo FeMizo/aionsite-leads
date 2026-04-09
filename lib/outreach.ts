@@ -84,7 +84,7 @@ function buildFirstContactScript(prospect: OutreachProspect, variant: OutreachSc
     a: "angulo directo sobre trafico perdido por nicho y ciudad.",
     b: "angulo suave, centrado en potencial local sin hablar de ads.",
     c: "angulo de oportunidad especifica detectada en Google.",
-    d: "angulo comparativo con lo que hace la competencia.",
+    d: "angulo de potencial propio sin explotar, sin mencionar competencia.",
   };
   const email = buildEmail(
     {

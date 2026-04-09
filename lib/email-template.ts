@@ -119,9 +119,9 @@ function buildBaseHtml(params: {
 
   return `<!DOCTYPE html>
 <html lang="es">
-  <body style="margin:0;padding:0;background:#020617;font-family:Arial,sans-serif;color:#e2e8f0;">
-    <div style="padding:32px 16px;background:radial-gradient(circle at top,#2563eb 0%,#020617 42%);">
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:680px;margin:0 auto;background:#0f172a;border:1px solid rgba(148,163,184,0.18);border-radius:24px;overflow:hidden;">
+  <body style="margin:0;padding:0;background:rgb(15,23,42);font-family:Arial,sans-serif;color:#e2e8f0;">
+    <div style="padding:32px 16px;background:rgb(15,23,42);">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:680px;margin:0 auto;background:rgb(15,23,42);border:1px solid rgba(148,163,184,0.18);border-radius:24px;overflow:hidden;">
         <tr>
           <td style="padding:28px 28px 12px;">
             <img src="${BRAND_LOGO_URL}" alt="${BRAND_NAME}" width="220" style="display:block;width:220px;max-width:100%;height:auto;" />
@@ -272,23 +272,22 @@ ${BRAND_NAME}`;
   return { subject, text, html };
 }
 
-// --- Variante D: angulo de competencia y urgencia ---
+// --- Variante D: angulo de potencial propio sin explotar ---
 function buildVariantD(prospect: ProspectEmailModel) {
   const greeting = prospect.contactName
     ? `Hola ${prospect.contactName},`
     : `Hola equipo de ${prospect.name},`;
-  const nicheLabel = getNicheLabel(prospect.type);
   const cityPhrase = getCityPhrase(prospect.city);
   const pitchAngle = toSentenceCase(prospect.pitchAngle) || "captar mas contactos directos";
   const socialProof = getSocialProofLine(prospect.userRatingCount);
-  const subject = `${prospect.name}: lo que hace la competencia que ustedes no`;
+  const subject = `${prospect.name}: hay potencial que todavia no esta trabajando`;
 
   const paragraphs = [
-    `Estuve revisando varios ${nicheLabel} ${cityPhrase}.`,
-    `Los que mas contactos reciben tienen algo en comun: estan mejor configurados para ${pitchAngle}.`,
+    `Estuve revisando la presencia digital de ${prospect.name} ${cityPhrase}.`,
+    `Tienen cosas buenas, pero hay potencial que todavia no esta trabajando: ${pitchAngle}.`,
     ...(socialProof ? [socialProof] : []),
-    `En el caso de ${prospect.name}, hay un par de ajustes puntuales que podrian cambiar eso rapido.`,
-    `Le grabo un video corto mostrando exactamente que estan haciendo diferente y como replicarlo?`,
+    `Con un par de ajustes puntuales eso cambia, sin necesidad de invertir en publicidad.`,
+    `Le grabo un video corto mostrando exactamente que ajustaria y por que funcionaria para su negocio?`,
   ];
 
   const text = `${greeting}
