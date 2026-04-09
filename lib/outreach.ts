@@ -99,6 +99,7 @@ function buildFirstContactScript(prospect: OutreachProspect, variant: OutreachSc
   return {
     subject: email.subject,
     message: email.text,
+    html: email.html,
     analysis: `${context.analysis} Variante ${variant.toUpperCase()}: ${analysisLabels[variant]}`,
     opportunity: context.opportunity,
     scriptVariant: variant,
@@ -129,6 +130,7 @@ Si quiere lo platicamos rapido, le mando el video?
 
 Saludos,
 AionSite`,
+    html: null,
     analysis: "Follow-up 1: recordatorio con ciudad y problema especifico para recuperar atencion.",
     opportunity: context.opportunity,
   };
@@ -156,6 +158,7 @@ Le explico en 2 minutos como lo resolveria para ${prospect.name}?
 
 Saludos,
 AionSite`,
+    html: null,
     analysis: "Follow-up 2: nuevo angulo con reseñas como prueba social y enfoque en conversion.",
     opportunity: context.opportunity,
   };
@@ -177,6 +180,7 @@ Si en algun momento quieren retomarlo, estamos.
 
 Saludos,
 AionSite`,
+    html: null,
     analysis: "Follow-up 3: cierre elegante con idea central clara y puerta abierta.",
     opportunity: context.opportunity,
   };

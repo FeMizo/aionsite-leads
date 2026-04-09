@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
@@ -559,7 +560,13 @@ export function ProspectTable({
                 </td>
                 <td>
                   <div className="record-primary">
-                    <strong>{record.name}</strong>
+                    <Link
+                      href={`/dashboard/prospects/${record.id}`}
+                      className="record-primary__link"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {record.name}
+                    </Link>
                     {record.phone ? <span>{record.phone}</span> : null}
                   </div>
                 </td>
