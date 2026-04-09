@@ -76,12 +76,7 @@ async function searchPlaces(search: SearchSpec) {
     regionCode: "MX",
     rankPreference: "RELEVANCE",
     pageSize: search.pageSize || 15,
-    ...(search.includedType
-      ? {
-          includedType: search.includedType,
-          strictTypeFiltering: true,
-        }
-      : {}),
+    ...(search.includedType ? { includedType: search.includedType } : {}),
   };
 
   const response = await fetch(endpoint, {

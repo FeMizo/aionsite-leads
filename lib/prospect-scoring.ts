@@ -5,6 +5,7 @@ export type ProspectPriority = "alto" | "medio" | "bajo";
 export type ProspectAutomationStatus = "approved" | "analyzed";
 export const MINIMUM_QUALIFIED_PROSPECT_SCORE = 50;
 export const AUTO_READY_PROSPECT_SCORE = 75;
+const INCOMPLETE_AUDIT_BASELINE_SCORE = 12;
 
 type ProspectScoreInput = Pick<
   ProspectCandidate,
@@ -26,6 +27,17 @@ function parseRating(value: string) {
 
 function parseReviewCount(value: number | null | undefined): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function hasStoredAuditSnapshot(prospect: ProspectScoreInput): boolean {
+  return (
+    typeof prospect.userRatingCount === "number" ||
+    Boolean(prospect.websiteFetchFailed) ||
+    typeof prospect.websiteLoadTimeMs === "number" ||
+    prospect.hasWhatsappCta !== null && prospect.hasWhatsappCta !== undefined ||
+    prospect.hasContactCta !== null && prospect.hasContactCta !== undefined ||
+    prospect.isMobileFriendly !== null && prospect.isMobileFriendly !== undefined
+  );
 }
 
 // --- Señales individuales ---
@@ -114,6 +126,7 @@ export function getProspectSignalCounts(prospect: ProspectScoreInput) {
 export function scoreProspect(prospect: ProspectScoreInput): number {
   const websiteSignal = inferWebsiteSignal(prospect);
   const reviewCount = parseReviewCount(prospect.userRatingCount);
+  const rating = parseRating(prospect.rating || "");
   let score = 0;
 
   // 1. ESTADO DEL SITIO WEB (señales mutuamente excluyentes, ordenadas por gravedad)
@@ -161,6 +174,17 @@ export function scoreProspect(prospect: ProspectScoreInput): number {
   // 4. SEÑAL DE RATING (problema de reputacion activo = urgencia de mejorar presencia)
   if (hasRatingOpportunity(prospect)) {
     score += 20;
+  }
+
+  // Older records can lose review-count and audit fields after persistence.
+  // Give them a small baseline instead of rendering as 0 when we still know
+  // they have a website or rating, but keep them clearly below qualification.
+  if (
+    score === 0 &&
+    !hasStoredAuditSnapshot(prospect) &&
+    (websiteSignal === "existing" || rating !== null)
+  ) {
+    return INCOMPLETE_AUDIT_BASELINE_SCORE;
   }
 
   return score;

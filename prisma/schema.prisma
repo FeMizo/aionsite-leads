@@ -54,6 +54,7 @@ model Prospect {
   lastCheckedAt    DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   businessStatus   String         @default("")
+  primaryType      String         @default("")
   lastError        String         @default("")
   lastMessageId    String         @default("")
   runId            String?

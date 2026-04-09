@@ -45,6 +45,7 @@ async function main() {
       status: true,
       city: true,
       type: true,
+      primaryType: true,
       createdAt: true,
       scheduledSendAt: true,
     },
@@ -59,13 +60,14 @@ async function main() {
       }
 
       const timeZone = getProspectTimeZone(prospect.city);
+      const primaryType = prospect.primaryType || "";
       const referenceDate =
         prospect.scheduledSendAt.getTime() > now.getTime() ? prospect.scheduledSendAt : now;
       let recalculated =
         prospect.scheduledSendAt.getTime() > now.getTime() &&
-        isScheduledSendAligned(prospect.scheduledSendAt, timeZone)
+        isScheduledSendAligned(prospect.scheduledSendAt, timeZone, primaryType)
           ? prospect.scheduledSendAt
-          : normalizeScheduledSendAt(referenceDate, timeZone);
+          : normalizeScheduledSendAt(referenceDate, timeZone, primaryType);
 
       let slotKey = recalculated.toISOString();
       while ((assignedCounts.get(slotKey) || 0) >= MAX_PER_SCHEDULED_SLOT) {

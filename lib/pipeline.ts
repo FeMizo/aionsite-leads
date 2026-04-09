@@ -144,12 +144,6 @@ function selectFinalProspects(candidates: ProspectCandidate[]) {
     }
   }
 
-  if (selected.length < DESIRED_PROSPECT_COUNT) {
-    throw new Error(
-      `Despues del enriquecimiento solo quedaron ${selected.length} prospectos unicos con email.`
-    );
-  }
-
   return selected;
 }
 
@@ -217,6 +211,7 @@ function buildCreateProspectData(prospect: ProspectCandidate, runId: string) {
     createdAt: new Date(prospect.createdAt),
     lastCheckedAt: new Date(prospect.lastCheckedAt),
     businessStatus: prospect.businessStatus,
+    primaryType: prospect.primaryType || "",
     runId,
   };
 }
@@ -284,8 +279,8 @@ export async function runProspectSearch(source = "google-places") {
     const lowScoreDiscarded = enrichedCandidates.length - scoredCandidates.length;
 
     if (scoredCandidates.length < DESIRED_PROSPECT_COUNT) {
-      throw new Error(
-        `Se encontraron ${scoredCandidates.length} prospectos unicos con score >= ${MINIMUM_QUALIFIED_PROSPECT_SCORE}, pero se necesitan ${DESIRED_PROSPECT_COUNT}.`
+      console.warn(
+        `[prospect-run] Solo ${scoredCandidates.length} prospectos con score >= ${MINIMUM_QUALIFIED_PROSPECT_SCORE} (objetivo: ${DESIRED_PROSPECT_COUNT}). Se guardaran los disponibles.`
       );
     }
 
@@ -315,21 +310,18 @@ export async function runProspectSearch(source = "google-places") {
     }
 
     const finalProspects = selectFinalProspects(eligibleProspects);
-    ensureRequiredTypes(finalProspects);
 
     metrics.duplicatesFiltered = duplicates.length + enrichmentDuplicates;
     metrics.prospectsSaved = finalProspects.length;
 
+    console.log(`[prospect-run] Busquedas ejecutadas: ${metrics.searchesCount} (${SEARCHES.length} configuradas)`);
     console.log(`[prospect-run] Google Places requests: ${metrics.googlePlacesRequests}`);
     console.log(`[prospect-run] Website fetches: ${metrics.websiteFetches}`);
     console.log(`[prospect-run] Places encontrados: ${metrics.placesFound}`);
-    console.log(
-      `[prospect-run] Duplicados filtrados: ${metrics.duplicatesFiltered}`
-    );
-    console.log(
-      `[prospect-run] Prospectos descartados por score < ${MINIMUM_QUALIFIED_PROSPECT_SCORE}: ${lowScoreDiscarded}`
-    );
-    console.log(`[prospect-run] Prospectos sin email descartados: ${prospectsWithoutEmail}`);
+    console.log(`[prospect-run] Candidatos unicos: ${uniqueProspects.length} (${duplicates.length} duplicados vs BD)`);
+    console.log(`[prospect-run] Descartados por score < ${MINIMUM_QUALIFIED_PROSPECT_SCORE}: ${lowScoreDiscarded}`);
+    console.log(`[prospect-run] Descartados por duplicado post-enriquecimiento: ${enrichmentDuplicates}`);
+    console.log(`[prospect-run] Descartados por sin email: ${prospectsWithoutEmail}`);
     console.log(`[prospect-run] Prospectos finales guardados: ${metrics.prospectsSaved}`);
 
     const run = await prisma.$transaction(async (tx) => {

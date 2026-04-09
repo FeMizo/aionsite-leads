@@ -8,31 +8,19 @@ import {
 } from "@/lib/mexico-city-time";
 import { getProspectTimeZone } from "@/lib/prospect-timezone";
 import { getProspectScoreCard, type ProspectPriority } from "@/lib/prospect-scoring";
-
-export const SEND_WINDOWS = [
-  { startHour: 8, startMinute: 0, endHour: 10, endMinute: 0 },
-  { startHour: 12, startMinute: 30, endHour: 14, endMinute: 0 },
-] as const;
-
-export const SEND_WINDOW_SLOTS = [
-  { hour: 8, minute: 0 },
-  { hour: 8, minute: 30 },
-  { hour: 9, minute: 0 },
-  { hour: 9, minute: 30 },
-  { hour: 10, minute: 0 },
-  { hour: 12, minute: 30 },
-  { hour: 13, minute: 0 },
-  { hour: 13, minute: 30 },
-  { hour: 14, minute: 0 },
-] as const;
+import { getSendConfig, type SendConfig } from "@/lib/send-windows";
 
 export const MAX_PER_RUN = 10;
 export const MAX_PER_DAY = 30;
 export const MAX_PER_SCHEDULED_SLOT = 3;
 
+// Exportados para compatibilidad con el script de recalculo (usa default)
+export const SEND_WINDOWS = getSendConfig("").windows;
+export const SEND_WINDOW_SLOTS = getSendConfig("").slots;
+
 const ACTIVE_SCHEDULED_STATUSES = ["ready", "contacted"] as const;
 
-type SchedulableProspect = Pick<Prospect, "type" | "city" | "scheduledSendAt">;
+type SchedulableProspect = Pick<Prospect, "type" | "city" | "scheduledSendAt" | "primaryType">;
 
 type PrioritizedProspect = Pick<Prospect, "type" | "city" | "createdAt" | "scheduledSendAt"> & {
   score?: number;
@@ -53,24 +41,17 @@ function getReferenceMinutes(referenceDate: Date, timeZone: string) {
   return toMinutes(parts.hour, parts.minute);
 }
 
-function isWithinSendWindow(referenceDate: Date, timeZone: string) {
+function isWithinSendWindow(referenceDate: Date, timeZone: string, config: SendConfig) {
   const minutes = getReferenceMinutes(referenceDate, timeZone);
 
-  return SEND_WINDOWS.some((window) => {
+  return config.windows.some((window) => {
     const start = toMinutes(window.startHour, window.startMinute);
     const end = toMinutes(window.endHour, window.endMinute);
-
     return minutes >= start && minutes <= end;
   });
 }
 
-function isAvoidedSendWindow(referenceDate: Date, timeZone: string) {
-  const minutes = getReferenceMinutes(referenceDate, timeZone);
-
-  return minutes >= toMinutes(15, 0) && minutes <= toMinutes(18, 59);
-}
-
-function alignToNextDeliverySlot(referenceDate: Date, timeZone: string) {
+function alignToNextDeliverySlot(referenceDate: Date, timeZone: string, config: SendConfig) {
   for (let dayOffset = 0; dayOffset < 14; dayOffset += 1) {
     const baseDate = addTimeZoneDays(referenceDate, dayOffset, timeZone, {
       hour: 0,
@@ -78,7 +59,7 @@ function alignToNextDeliverySlot(referenceDate: Date, timeZone: string) {
       second: 0,
     });
 
-    for (const slot of SEND_WINDOW_SLOTS) {
+    for (const slot of config.slots) {
       const parts = getTimeZoneParts(baseDate, timeZone);
       const candidate = createTimeZoneDate({
         year: parts.year,
@@ -96,35 +77,38 @@ function alignToNextDeliverySlot(referenceDate: Date, timeZone: string) {
   }
 
   const fallback = addTimeZoneDays(referenceDate, 1, timeZone, {
-    hour: SEND_WINDOW_SLOTS[0].hour,
-    minute: SEND_WINDOW_SLOTS[0].minute,
+    hour: config.slots[0].hour,
+    minute: config.slots[0].minute,
     second: 0,
   });
 
   return fallback;
 }
 
-function isExactDeliverySlot(referenceDate: Date, timeZone: string) {
+function isExactDeliverySlot(referenceDate: Date, timeZone: string, config: SendConfig) {
   const parts = getTimeZoneParts(referenceDate, timeZone);
 
   if (parts.second !== 0) {
     return false;
   }
 
-  return SEND_WINDOW_SLOTS.some(
+  return config.slots.some(
     (slot) => slot.hour === parts.hour && slot.minute === parts.minute
   );
 }
 
 export function normalizeScheduledSendAt(
   referenceDate: Date,
-  timeZone = getProspectTimeZone()
+  timeZone = getProspectTimeZone(),
+  primaryType = ""
 ) {
   if (Number.isNaN(referenceDate.getTime())) {
     throw new Error("La fecha programada no es valida.");
   }
 
-  if (isExactDeliverySlot(referenceDate, timeZone)) {
+  const config = getSendConfig(primaryType);
+
+  if (isExactDeliverySlot(referenceDate, timeZone, config)) {
     const parts = getTimeZoneParts(referenceDate, timeZone);
 
     return createTimeZoneDate({
@@ -137,18 +121,19 @@ export function normalizeScheduledSendAt(
     }, timeZone);
   }
 
-  return alignToNextDeliverySlot(new Date(referenceDate.getTime() - 1000), timeZone);
+  return alignToNextDeliverySlot(new Date(referenceDate.getTime() - 1000), timeZone, config);
 }
 
 export function isScheduledSendAligned(
   referenceDate: Date,
-  timeZone = getProspectTimeZone()
+  timeZone = getProspectTimeZone(),
+  primaryType = ""
 ) {
   if (Number.isNaN(referenceDate.getTime())) {
     return false;
   }
 
-  return normalizeScheduledSendAt(referenceDate, timeZone).getTime() === referenceDate.getTime();
+  return normalizeScheduledSendAt(referenceDate, timeZone, primaryType).getTime() === referenceDate.getTime();
 }
 
 function normalizePriorityWeight(priority: ProspectPriority | undefined) {
@@ -206,21 +191,19 @@ export function sortProspectsForDelivery<T extends PrioritizedProspect>(prospect
 }
 
 export function isGoodTimeToSend(
-  prospect: Pick<SchedulableProspect, "type" | "city"> | { type: string; city?: string | null },
+  prospect: Pick<SchedulableProspect, "type" | "city"> & { primaryType?: string | null },
   referenceDate = new Date()
 ) {
   const timeZone = getProspectTimeZone(prospect.city);
+  const config = getSendConfig(prospect.primaryType || "");
   const minutes = getReferenceMinutes(referenceDate, timeZone);
 
-  if (minutes < toMinutes(8, 0)) {
+  // Nunca antes de las 7:00 (slot más temprano es school a las 7:00)
+  if (minutes < toMinutes(7, 0)) {
     return false;
   }
 
-  if (isAvoidedSendWindow(referenceDate, timeZone)) {
-    return false;
-  }
-
-  return isWithinSendWindow(referenceDate, timeZone);
+  return isWithinSendWindow(referenceDate, timeZone, config);
 }
 
 export function isScheduledSendDue(
@@ -235,11 +218,16 @@ export function isScheduledSendDue(
 }
 
 export function getNextRecommendedSendAt(
-  prospect: Pick<SchedulableProspect, "type" | "city"> | { type: string; city?: string | null },
+  prospect: Pick<SchedulableProspect, "type" | "city"> & { primaryType?: string | null },
   referenceDate = new Date()
 ) {
   const timeZone = getProspectTimeZone(prospect.city);
-  return normalizeScheduledSendAt(alignToNextDeliverySlot(referenceDate, timeZone), timeZone);
+  const config = getSendConfig(prospect.primaryType || "");
+  return normalizeScheduledSendAt(
+    alignToNextDeliverySlot(referenceDate, timeZone, config),
+    timeZone,
+    prospect.primaryType || ""
+  );
 }
 
 async function countScheduledProspectsForSlot(
@@ -268,14 +256,14 @@ async function countScheduledProspectsForSlot(
 }
 
 export async function getNextAvailableScheduledSendAt(
-  prospect: Pick<SchedulableProspect, "type" | "city"> | { type: string; city?: string | null },
+  prospect: Pick<SchedulableProspect, "type" | "city"> & { primaryType?: string | null },
   referenceDate = new Date(),
   options: {
     excludeProspectId?: string;
   } = {}
 ) {
   const timeZone = getProspectTimeZone(prospect.city);
-  let candidate = normalizeScheduledSendAt(referenceDate, timeZone);
+  let candidate = normalizeScheduledSendAt(referenceDate, timeZone, prospect.primaryType || "");
 
   for (let attempt = 0; attempt < 126; attempt += 1) {
     const scheduledCount = await countScheduledProspectsForSlot(candidate, options);
