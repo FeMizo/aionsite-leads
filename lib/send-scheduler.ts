@@ -26,8 +26,8 @@ export const SEND_WINDOW_SLOTS = [
   { hour: 14, minute: 0 },
 ] as const;
 
-export const MAX_PER_RUN = 3;
-export const MAX_PER_DAY = 15;
+export const MAX_PER_RUN = 10;
+export const MAX_PER_DAY = 30;
 export const MAX_PER_SCHEDULED_SLOT = 3;
 
 const ACTIVE_SCHEDULED_STATUSES = ["ready", "contacted"] as const;

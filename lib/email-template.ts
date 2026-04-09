@@ -6,7 +6,7 @@ const BRAND_LOGO_URL = "https://aionsite.com.mx/logo-aionsite.png";
 const BRAND_WHATSAPP_URL =
   "https://wa.me/5219381238531?text=Hola%20AionSite%2C%20quiero%20que%20me%20envien%20el%20video.";
 
-export type EmailVariant = "a" | "b";
+export type EmailVariant = "a" | "b" | "c" | "d";
 
 export type ProspectEmailModel = Pick<
   Prospect,
@@ -20,7 +20,11 @@ export type ProspectEmailModel = Pick<
   | "opportunity"
   | "recommendedSite"
   | "pitchAngle"
->;
+> & {
+  userRatingCount?: number | null;
+};
+
+// --- Helpers ---
 
 function escapeHtml(value: string) {
   return value
@@ -41,6 +45,56 @@ function toSentenceCase(value: string) {
   return normalized.charAt(0).toLowerCase() + normalized.slice(1);
 }
 
+// Mapea el typeLabel de Google Places a una descripcion en espanol para el email
+function getNicheLabel(type: string): string {
+  const map: Record<string, string> = {
+    dentist: "consultorios dentales",
+    doctor: "clinicas medicas",
+    lawyer: "despachos juridicos",
+    beauty_salon: "salones de belleza y esteticas",
+    car_repair: "talleres mecanicos",
+    restaurant: "restaurantes y fondas",
+    lodging: "hoteles y hospedajes",
+    gym: "gimnasios y centros deportivos",
+    real_estate_agency: "agencias inmobiliarias",
+    veterinary_care: "clinicas veterinarias",
+    school: "academias y escuelas",
+    accounting: "despachos contables",
+  };
+
+  return map[type] || "negocios locales";
+}
+
+// "en Ciudad" solo si la ciudad es conocida y no es generico
+function getCityPhrase(city: string): string {
+  const normalized = (city || "").trim();
+
+  if (!normalized || normalized.toLowerCase() === "mexico") {
+    return "en su zona";
+  }
+
+  return `en ${normalized}`;
+}
+
+// Frase de prueba social basada en reseñas
+function getSocialProofLine(userRatingCount: number | null | undefined): string {
+  const count = typeof userRatingCount === "number" && userRatingCount > 0 ? userRatingCount : 0;
+
+  if (count >= 100) {
+    return `Con mas de ${count} reseñas tienen una reputacion solida. El siguiente paso es convertir esa confianza en contactos directos.`;
+  }
+
+  if (count >= 30) {
+    return `Sus ${count} reseñas muestran que ya tienen clientes activos. Eso es exactamente el tipo de negocio que puede crecer mas rapido con la presencia digital correcta.`;
+  }
+
+  if (count >= 10) {
+    return `Ya tienen reseñas en Google, lo que dice mucho. El problema es que no todos los que los buscan terminan contactandolos.`;
+  }
+
+  return "";
+}
+
 function getSpecificProblem(prospect: ProspectEmailModel) {
   return (
     toSentenceCase(prospect.opportunity) ||
@@ -48,159 +102,209 @@ function getSpecificProblem(prospect: ProspectEmailModel) {
   );
 }
 
+// --- Variantes HTML base (reutilizable) ---
+
+function buildBaseHtml(params: {
+  greeting: string;
+  paragraphs: string[];
+  ctaText: string;
+  ctaButtonLabel: string;
+}) {
+  const pHtml = params.paragraphs
+    .map(
+      (p) =>
+        `<p style="margin:0 0 18px;color:#cbd5e1;font-size:16px;line-height:1.75;">${escapeHtml(p)}</p>`
+    )
+    .join("\n            ");
+
+  return `<!DOCTYPE html>
+<html lang="es">
+  <body style="margin:0;padding:0;background:#020617;font-family:Arial,sans-serif;color:#e2e8f0;">
+    <div style="padding:32px 16px;background:radial-gradient(circle at top,#2563eb 0%,#020617 42%);">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:680px;margin:0 auto;background:#0f172a;border:1px solid rgba(148,163,184,0.18);border-radius:24px;overflow:hidden;">
+        <tr>
+          <td style="padding:28px 28px 12px;">
+            <img src="${BRAND_LOGO_URL}" alt="${BRAND_NAME}" width="220" style="display:block;width:220px;max-width:100%;height:auto;" />
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:8px 28px 0;">
+            <p style="margin:0 0 18px;color:#e2e8f0;font-size:16px;line-height:1.75;">${escapeHtml(params.greeting)}</p>
+            ${pHtml}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 28px 8px;">
+            <div style="background:linear-gradient(135deg,rgba(37,99,235,0.18),rgba(15,23,42,0.88));border:1px solid rgba(96,165,250,0.24);border-radius:20px;padding:20px 22px;">
+              <p style="margin:0;color:#f8fafc;font-size:18px;font-weight:700;">${escapeHtml(params.ctaText)}</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:12px 28px 0;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="border-radius:999px;background:#2563eb;">
+                  <a href="${BRAND_WHATSAPP_URL}" style="display:inline-block;padding:14px 22px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">${escapeHtml(params.ctaButtonLabel)}</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px;color:#94a3b8;font-size:13px;line-height:1.7;">
+            <p style="margin:0 0 8px;color:#e2e8f0;">${BRAND_NAME}</p>
+            <p style="margin:0;">
+              <a href="mailto:${BRAND_EMAIL}" style="color:#93c5fd;text-decoration:none;">${BRAND_EMAIL}</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>`;
+}
+
+// --- Variante A: angulo directo "alguien los esta buscando" ---
 function buildVariantA(prospect: ProspectEmailModel) {
   const greeting = prospect.contactName
     ? `Hola ${prospect.contactName},`
     : `Hola equipo de ${prospect.name},`;
-  const businessType = "negocios como el suyo";
+  const nicheLabel = getNicheLabel(prospect.type);
+  const cityPhrase = getCityPhrase(prospect.city);
   const specificProblem = getSpecificProblem(prospect);
-  const subject = `${prospect.name}: vi algo importante`;
+  const socialProof = getSocialProofLine(prospect.userRatingCount);
+  const subject = `${prospect.name}: hay clientes que no estan llegando`;
+
+  const paragraphs = [
+    `Ahora mismo hay personas buscando ${nicheLabel} ${cityPhrase}... y no todos estan llegando a ustedes.`,
+    `En su caso es porque ${specificProblem}.`,
+    ...(socialProof ? [socialProof] : []),
+    `Esto normalmente hace que esos clientes terminen con la competencia.`,
+    `Si quieres, te grabo un video corto mostrandote exactamente que esta pasando y como solucionarlo.`,
+  ];
+
   const text = `${greeting}
 
-Hay algo importante:
-
-Ahora mismo hay personas buscando ${businessType} en su zona... y no todos estan llegando a ustedes.
-
-En su caso es porque ${specificProblem}.
-
-Esto normalmente hace que esos clientes terminen con la competencia.
-
-Si quieres, te grabo un video corto mostrandote exactamente que esta pasando y como solucionarlo.
+${paragraphs.join("\n\n")}
 
 Te lo mando?
 
 ${BRAND_NAME}`;
-  const html = `<!DOCTYPE html>
-<html lang="es">
-  <body style="margin:0;padding:0;background:#020617;font-family:Arial,sans-serif;color:#e2e8f0;">
-    <div style="padding:32px 16px;background:radial-gradient(circle at top,#2563eb 0%,#020617 42%);">
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:680px;margin:0 auto;background:#0f172a;border:1px solid rgba(148,163,184,0.18);border-radius:24px;overflow:hidden;">
-        <tr>
-          <td style="padding:28px 28px 12px;">
-            <img src="${BRAND_LOGO_URL}" alt="${BRAND_NAME}" width="220" style="display:block;width:220px;max-width:100%;height:auto;" />
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:8px 28px 0;">
-            <p style="margin:0 0 18px;color:#e2e8f0;font-size:16px;line-height:1.75;">${escapeHtml(
-              greeting
-            )}</p>
-            <p style="margin:0 0 18px;color:#f8fafc;font-size:22px;line-height:1.5;font-weight:700;">Hay algo importante:</p>
-            <p style="margin:0 0 18px;color:#cbd5e1;font-size:16px;line-height:1.75;">Ahora mismo hay personas buscando ${escapeHtml(
-              businessType
-            )} en su zona... y no todos estan llegando a ustedes.</p>
-            <p style="margin:0 0 18px;color:#cbd5e1;font-size:16px;line-height:1.75;">En su caso es porque ${escapeHtml(
-              specificProblem
-            )}.</p>
-            <p style="margin:0 0 18px;color:#cbd5e1;font-size:16px;line-height:1.75;">Esto normalmente hace que esos clientes terminen con la competencia.</p>
-            <p style="margin:0 0 24px;color:#cbd5e1;font-size:16px;line-height:1.75;">Si quieres, te grabo un video corto mostrandote exactamente que esta pasando y como solucionarlo.</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:0 28px 8px;">
-            <div style="background:linear-gradient(135deg,rgba(37,99,235,0.18),rgba(15,23,42,0.88));border:1px solid rgba(96,165,250,0.24);border-radius:20px;padding:20px 22px;">
-              <p style="margin:0;color:#f8fafc;font-size:18px;font-weight:700;">Te lo mando?</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:12px 28px 0;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-              <tr>
-                <td style="border-radius:999px;background:#2563eb;">
-                  <a href="${BRAND_WHATSAPP_URL}" style="display:inline-block;padding:14px 22px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">Si, mandalo</a>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:28px;color:#94a3b8;font-size:13px;line-height:1.7;">
-            <p style="margin:0 0 8px;color:#e2e8f0;">${BRAND_NAME}</p>
-            <p style="margin:0;">
-              <a href="mailto:${BRAND_EMAIL}" style="color:#93c5fd;text-decoration:none;">${BRAND_EMAIL}</a>
-            </p>
-          </td>
-        </tr>
-      </table>
-    </div>
-  </body>
-</html>`;
+
+  const html = buildBaseHtml({
+    greeting,
+    paragraphs,
+    ctaText: "Te lo mando?",
+    ctaButtonLabel: "Si, mandalo",
+  });
 
   return { subject, text, html };
 }
 
+// --- Variante B: angulo suave "note algo interesante" ---
 function buildVariantB(prospect: ProspectEmailModel) {
   const greeting = prospect.contactName
     ? `Hola ${prospect.contactName},`
     : `Hola equipo de ${prospect.name},`;
-  const subject = `${prospect.name}: vi algo interesante`;
+  const cityPhrase = getCityPhrase(prospect.city);
+  const socialProof = getSocialProofLine(prospect.userRatingCount);
+  const subject = `${prospect.name}: algo rapido que podria ayudarles`;
+
+  const paragraphs = [
+    `Estuve viendo ${prospect.name} y note algo que podria mejorar lo que ya tienen.`,
+    `Tienen potencial para atraer mas clientes ${cityPhrase} de los que estan llegando ahora mismo.`,
+    ...(socialProof ? [socialProof] : []),
+    `Vi un par de puntos rapidos que podrian mejorar eso sin necesidad de invertir en publicidad.`,
+    `Si quieres, te explico en un video de 2 minutos exactamente que cambiar.`,
+  ];
+
   const text = `${greeting}
 
-Estuve viendo ${prospect.name} y note algo interesante.
-
-Tienen potencial para atraer mas clientes de los que estan llegando ahora mismo.
-
-Vi un par de puntos rapidos que podrian mejorar eso sin necesidad de invertir en publicidad.
-
-Si quieres, te explico en un video de 2 minutos exactamente que cambiar.
+${paragraphs.join("\n\n")}
 
 Te lo envio?
 
 ${BRAND_NAME}`;
-  const html = `<!DOCTYPE html>
-<html lang="es">
-  <body style="margin:0;padding:0;background:#020617;font-family:Arial,sans-serif;color:#e2e8f0;">
-    <div style="padding:32px 16px;background:radial-gradient(circle at top,#2563eb 0%,#020617 42%);">
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:680px;margin:0 auto;background:#0f172a;border:1px solid rgba(148,163,184,0.18);border-radius:24px;overflow:hidden;">
-        <tr>
-          <td style="padding:28px 28px 12px;">
-            <img src="${BRAND_LOGO_URL}" alt="${BRAND_NAME}" width="220" style="display:block;width:220px;max-width:100%;height:auto;" />
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:8px 28px 0;">
-            <p style="margin:0 0 18px;color:#e2e8f0;font-size:16px;line-height:1.75;">${escapeHtml(
-              greeting
-            )}</p>
-            <p style="margin:0 0 18px;color:#cbd5e1;font-size:16px;line-height:1.75;">Estuve viendo ${escapeHtml(
-              prospect.name
-            )} y note algo interesante.</p>
-            <p style="margin:0 0 18px;color:#f8fafc;font-size:20px;line-height:1.55;font-weight:700;">Tienen potencial para atraer mas clientes de los que estan llegando ahora mismo.</p>
-            <p style="margin:0 0 18px;color:#cbd5e1;font-size:16px;line-height:1.75;">Vi un par de puntos rapidos que podrian mejorar eso sin necesidad de invertir en publicidad.</p>
-            <p style="margin:0 0 24px;color:#cbd5e1;font-size:16px;line-height:1.75;">Si quieres, te explico en un video de 2 minutos exactamente que cambiar.</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:0 28px 8px;">
-            <div style="background:linear-gradient(135deg,rgba(37,99,235,0.18),rgba(15,23,42,0.88));border:1px solid rgba(96,165,250,0.24);border-radius:20px;padding:20px 22px;">
-              <p style="margin:0;color:#f8fafc;font-size:18px;font-weight:700;">Te lo envio?</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:12px 28px 0;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-              <tr>
-                <td style="border-radius:999px;background:#2563eb;">
-                  <a href="${BRAND_WHATSAPP_URL}" style="display:inline-block;padding:14px 22px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">Si, envialo</a>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:28px;color:#94a3b8;font-size:13px;line-height:1.7;">
-            <p style="margin:0 0 8px;color:#e2e8f0;">${BRAND_NAME}</p>
-            <p style="margin:0;">
-              <a href="mailto:${BRAND_EMAIL}" style="color:#93c5fd;text-decoration:none;">${BRAND_EMAIL}</a>
-            </p>
-          </td>
-        </tr>
-      </table>
-    </div>
-  </body>
-</html>`;
+
+  const html = buildBaseHtml({
+    greeting,
+    paragraphs,
+    ctaText: "Te lo envio?",
+    ctaButtonLabel: "Si, envialo",
+  });
+
+  return { subject, text, html };
+}
+
+// --- Variante C: angulo de oportunidad especifica por nicho ---
+function buildVariantC(prospect: ProspectEmailModel) {
+  const greeting = prospect.contactName
+    ? `Hola ${prospect.contactName},`
+    : `Hola equipo de ${prospect.name},`;
+  const nicheLabel = getNicheLabel(prospect.type);
+  const cityPhrase = getCityPhrase(prospect.city);
+  const specificProblem = getSpecificProblem(prospect);
+  const subject = `${prospect.name}: oportunidad que vi en Google`;
+
+  const paragraphs = [
+    `Revise la presencia digital de varios ${nicheLabel} ${cityPhrase} y en su caso note algo especifico.`,
+    `El punto concreto: ${specificProblem}.`,
+    `Eso se puede resolver sin ads ni presupuesto grande. Solo hace falta ordenar bien un par de cosas.`,
+    `Si le interesa, le mando un video de 2 minutos mostrando exactamente lo que detecte y como atacarlo.`,
+  ];
+
+  const text = `${greeting}
+
+${paragraphs.join("\n\n")}
+
+Lo revisa?
+
+${BRAND_NAME}`;
+
+  const html = buildBaseHtml({
+    greeting,
+    paragraphs,
+    ctaText: "Lo revisa?",
+    ctaButtonLabel: "Si, mandame el video",
+  });
+
+  return { subject, text, html };
+}
+
+// --- Variante D: angulo de competencia y urgencia ---
+function buildVariantD(prospect: ProspectEmailModel) {
+  const greeting = prospect.contactName
+    ? `Hola ${prospect.contactName},`
+    : `Hola equipo de ${prospect.name},`;
+  const nicheLabel = getNicheLabel(prospect.type);
+  const cityPhrase = getCityPhrase(prospect.city);
+  const pitchAngle = toSentenceCase(prospect.pitchAngle) || "captar mas contactos directos";
+  const socialProof = getSocialProofLine(prospect.userRatingCount);
+  const subject = `${prospect.name}: lo que hace la competencia que ustedes no`;
+
+  const paragraphs = [
+    `Estuve revisando varios ${nicheLabel} ${cityPhrase}.`,
+    `Los que mas contactos reciben tienen algo en comun: estan mejor configurados para ${pitchAngle}.`,
+    ...(socialProof ? [socialProof] : []),
+    `En el caso de ${prospect.name}, hay un par de ajustes puntuales que podrian cambiar eso rapido.`,
+    `Le grabo un video corto mostrando exactamente que estan haciendo diferente y como replicarlo?`,
+  ];
+
+  const text = `${greeting}
+
+${paragraphs.join("\n\n")}
+
+Se lo mando?
+
+${BRAND_NAME}`;
+
+  const html = buildBaseHtml({
+    greeting,
+    paragraphs,
+    ctaText: "Se lo mando?",
+    ctaButtonLabel: "Si, lo quiero ver",
+  });
 
   return { subject, text, html };
 }
@@ -208,6 +312,14 @@ ${BRAND_NAME}`;
 export function buildEmail(prospect: ProspectEmailModel, variant: EmailVariant = "a") {
   if (variant === "b") {
     return buildVariantB(prospect);
+  }
+
+  if (variant === "c") {
+    return buildVariantC(prospect);
+  }
+
+  if (variant === "d") {
+    return buildVariantD(prospect);
   }
 
   return buildVariantA(prospect);

@@ -3,8 +3,8 @@ import { inferWebsiteSignal } from "@/lib/website-signals";
 
 export type ProspectPriority = "alto" | "medio" | "bajo";
 export type ProspectAutomationStatus = "approved" | "analyzed";
-export const MINIMUM_QUALIFIED_PROSPECT_SCORE = 60;
-export const AUTO_READY_PROSPECT_SCORE = 60;
+export const MINIMUM_QUALIFIED_PROSPECT_SCORE = 50;
+export const AUTO_READY_PROSPECT_SCORE = 75;
 
 type ProspectScoreInput = Pick<
   ProspectCandidate,
@@ -24,9 +24,21 @@ function parseRating(value: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export function hasRatingOpportunity(prospect: Pick<ProspectScoreInput, "rating">) {
+function parseReviewCount(value: number | null | undefined): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+// --- Señales individuales ---
+
+export function hasRatingOpportunity(prospect: Pick<ProspectScoreInput, "rating" | "userRatingCount">) {
   const rating = parseRating(prospect.rating || "");
-  return Boolean(rating && rating >= 3.5 && rating <= 4.5);
+  if (!rating) return false;
+  const count = parseReviewCount(prospect.userRatingCount);
+  // Negocio con reseñas y rating bajo = problema activo de reputacion digital
+  if (rating <= 4.4 && rating >= 2.5 && count >= 10) return true;
+  // Rating muy bajo sin reseñas minimas = señal de alarma igual
+  if (rating <= 4.0) return true;
+  return false;
 }
 
 export function hasPoorWebsite(
@@ -63,6 +75,8 @@ export function lacksContactCta(
   return !prospect.hasWhatsappCta && !prospect.hasContactCta;
 }
 
+// --- Señales agregadas ---
+
 export function getProspectSignalCounts(prospect: ProspectScoreInput) {
   const websiteSignal = inferWebsiteSignal(prospect);
   const noWebsite = websiteSignal === "missing";
@@ -77,6 +91,10 @@ export function getProspectSignalCounts(prospect: ProspectScoreInput) {
     parseRating(prospect.rating || "")! > 4.5 &&
     poorWebsite;
 
+  const reviewCount = parseReviewCount(prospect.userRatingCount);
+  const hasHighReviews = reviewCount >= 50;
+  const hasMediumReviews = reviewCount >= 15 && reviewCount < 50;
+
   return {
     noWebsite,
     poorWebsite,
@@ -85,32 +103,70 @@ export function getProspectSignalCounts(prospect: ProspectScoreInput) {
     oldWebsite,
     notMobileFriendly,
     goodReviewsBadPresence,
+    hasHighReviews,
+    hasMediumReviews,
     matchedSignals: [noWebsite, poorWebsite, ratingOpportunity, noCta].filter(Boolean).length,
   };
 }
 
-export function scoreProspect(prospect: ProspectScoreInput) {
-  const signals = getProspectSignalCounts(prospect);
+// --- Score principal ---
+
+export function scoreProspect(prospect: ProspectScoreInput): number {
+  const websiteSignal = inferWebsiteSignal(prospect);
+  const reviewCount = parseReviewCount(prospect.userRatingCount);
   let score = 0;
 
-  if (signals.noWebsite) {
+  // 1. ESTADO DEL SITIO WEB (señales mutuamente excluyentes, ordenadas por gravedad)
+  //    Captura el nivel de dolor digital del negocio.
+  if (websiteSignal === "missing") {
+    // Sin web: maxima oportunidad de venta directa
     score += 40;
-  }
-
-  if (signals.poorWebsite) {
+  } else if (websiteSignal === "social-only") {
+    // Solo redes sociales: no captan trafico organico ni leads directos
     score += 30;
-  }
-
-  if (signals.ratingOpportunity) {
+  } else if (websiteSignal === "basic") {
+    // Sitio basico (Wix/Google Sites): percepcion de negocio informal
+    score += 24;
+  } else if (prospect.websiteFetchFailed) {
+    // Sitio caido o inaccesible: pierde clientes en el primer click
     score += 20;
+  } else if (typeof prospect.websiteLoadTimeMs === "number") {
+    if (prospect.websiteLoadTimeMs >= 6000) {
+      // Muy lento (>6s): abandono casi seguro en movil
+      score += 16;
+    } else if (prospect.websiteLoadTimeMs >= 4500) {
+      // Lento (4.5-6s): friccion alta en conversion
+      score += 10;
+    }
   }
 
-  if (signals.noCta) {
+  // 2. SEÑALES DE CONVERSION (se acumulan sobre el estado del sitio)
+  //    Cuantifican cuanto dinero se pierde hoy por falta de UX.
+  if (lacksContactCta(prospect)) {
+    // Sin boton de contacto ni WhatsApp: visitas sin conversion
+    score += 12;
+  }
+  if (prospect.isMobileFriendly === false) {
+    // No responsive: la mayoria del trafico local es movil
     score += 10;
+  }
+
+  // 3. TRACCION DEL NEGOCIO (reseñas = tiene clientes, tiene caja, puede pagar)
+  if (reviewCount >= 50) {
+    score += 15;
+  } else if (reviewCount >= 15) {
+    score += 8;
+  }
+
+  // 4. SEÑAL DE RATING (problema de reputacion activo = urgencia de mejorar presencia)
+  if (hasRatingOpportunity(prospect)) {
+    score += 20;
   }
 
   return score;
 }
+
+// --- Clasificacion ---
 
 export function getPriority(score: number): ProspectPriority {
   if (score >= 80) {

@@ -692,18 +692,25 @@ export async function sendDueFollowupEmails(
 
     const scoring = getProspectScoreCard(record);
 
-    if (scoring.priority !== "alto") {
+    // "alto" (>=80): recibe los 3 follow-ups
+    // "medio" (>=50): recibe etapas 1 y 2 (recordatorio + nuevo angulo), no el cierre
+    // "bajo": sin follow-up automatico
+    const isEligibleForFollowup =
+      scoring.priority === "alto" ||
+      (scoring.priority === "medio" && plan.stage <= 2);
+
+    if (!isEligibleForFollowup) {
       summary.blocked += 1;
 
       await updateProspectWithEvent({
         prospectId: record.id,
         status: record.status,
         eventType: "followup_skipped",
-        lastError: "Skipped follow-up because priority is not alto",
+        lastError: `Skipped follow-up: priority ${scoring.priority} not eligible for stage ${plan.stage}`,
         metadata: {
           fromStatus: record.status,
           toStatus: record.status,
-          note: "Skipped follow-up because priority is not alto",
+          note: `Skipped follow-up: priority ${scoring.priority} not eligible for stage ${plan.stage}`,
           priority: scoring.priority,
           followupCount: record.followupCount,
           followupStage: record.followupStage,
