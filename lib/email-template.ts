@@ -22,6 +22,7 @@ export type ProspectEmailModel = Pick<
   | "pitchAngle"
 > & {
   userRatingCount?: number | null;
+  primaryType?: string | null;
 };
 
 // --- Helpers ---
@@ -76,9 +77,29 @@ function getCityPhrase(city: string): string {
   return `en ${normalized}`;
 }
 
-// Frase de prueba social basada en reseñas
-function getSocialProofLine(userRatingCount: number | null | undefined): string {
+// Frase de prueba social basada en reseñas y calificacion
+function getSocialProofLine(
+  userRatingCount: number | null | undefined,
+  rating?: string | null
+): string {
   const count = typeof userRatingCount === "number" && userRatingCount > 0 ? userRatingCount : 0;
+  const stars = parseFloat(rating || "0");
+  const hasHighRating = stars >= 4.5 && count >= 10;
+  const ratingPrefix = hasHighRating ? `Con ${stars} estrellas y ` : count > 0 ? "Con " : "";
+  const countSuffix =
+    count >= 100
+      ? `mas de ${count} reseñas`
+      : count >= 10
+        ? `${count} reseñas`
+        : "";
+
+  if (hasHighRating && count >= 100) {
+    return `${ratingPrefix}${countSuffix} tienen una reputacion destacada. El siguiente paso es convertir esa confianza en contactos directos desde su sitio.`;
+  }
+
+  if (hasHighRating && count >= 10) {
+    return `${ratingPrefix}${countSuffix} en Google ya tienen una ventaja de reputacion. Bien aprovechada, convierte mucho mejor.`;
+  }
 
   if (count >= 100) {
     return `Con mas de ${count} reseñas tienen una reputacion solida. El siguiente paso es convertir esa confianza en contactos directos.`;
@@ -170,11 +191,13 @@ function buildVariantA(prospect: ProspectEmailModel) {
   const greeting = prospect.contactName
     ? `Hola ${prospect.contactName},`
     : `Hola equipo de ${prospect.name},`;
-  const nicheLabel = getNicheLabel(prospect.type);
+  const nicheLabel = getNicheLabel(prospect.primaryType || "");
   const cityPhrase = getCityPhrase(prospect.city);
   const specificProblem = getSpecificProblem(prospect);
-  const socialProof = getSocialProofLine(prospect.userRatingCount);
-  const subject = `${prospect.name}: hay clientes que no estan llegando`;
+  const socialProof = getSocialProofLine(prospect.userRatingCount, prospect.rating);
+  const subject = prospect.contactName
+    ? `${prospect.contactName}, hay clientes que no estan llegando a ${prospect.name}`
+    : `${prospect.name}: hay clientes que no estan llegando`;
 
   const paragraphs = [
     `Ahora mismo hay personas buscando ${nicheLabel} ${cityPhrase}... y no todos estan llegando a ustedes.`,
@@ -208,30 +231,28 @@ function buildVariantB(prospect: ProspectEmailModel) {
     ? `Hola ${prospect.contactName},`
     : `Hola equipo de ${prospect.name},`;
   const cityPhrase = getCityPhrase(prospect.city);
-  const socialProof = getSocialProofLine(prospect.userRatingCount);
-  const subject = `${prospect.name}: algo rapido que podria ayudarles`;
+  const socialProof = getSocialProofLine(prospect.userRatingCount, prospect.rating);
+  const subject = `${prospect.name}: algo que vi y queria comentarles`;
 
   const paragraphs = [
-    `Estuve viendo ${prospect.name} y note algo que podria mejorar lo que ya tienen.`,
-    `Tienen potencial para atraer mas clientes ${cityPhrase} de los que estan llegando ahora mismo.`,
+    `Estuve revisando ${prospect.name} y encontre algo concreto que podria mejorar lo que ya tienen.`,
+    `Tienen potencial para captar mas clientes ${cityPhrase} — y no necesitan invertir en publicidad para lograrlo.`,
     ...(socialProof ? [socialProof] : []),
-    `Vi un par de puntos rapidos que podrian mejorar eso sin necesidad de invertir en publicidad.`,
-    `Si quieres, te explico en un video de 2 minutos exactamente que cambiar.`,
+    `Lo que vi se puede ajustar rapido. En un video de 2 minutos te lo muestro exactamente.`,
+    `Le echo un ojo?`,
   ];
 
   const text = `${greeting}
 
 ${paragraphs.join("\n\n")}
 
-Te lo envio?
-
 ${BRAND_NAME}`;
 
   const html = buildBaseHtml({
     greeting,
     paragraphs,
-    ctaText: "Te lo envio?",
-    ctaButtonLabel: "Si, envialo",
+    ctaText: "Le echo un ojo?",
+    ctaButtonLabel: "Si, lo quiero ver",
   });
 
   return { subject, text, html };
@@ -242,16 +263,16 @@ function buildVariantC(prospect: ProspectEmailModel) {
   const greeting = prospect.contactName
     ? `Hola ${prospect.contactName},`
     : `Hola equipo de ${prospect.name},`;
-  const nicheLabel = getNicheLabel(prospect.type);
+  const nicheLabel = getNicheLabel(prospect.primaryType || "");
   const cityPhrase = getCityPhrase(prospect.city);
   const specificProblem = getSpecificProblem(prospect);
-  const subject = `${prospect.name}: oportunidad que vi en Google`;
+  const subject = `${prospect.name}: lo que encontre al buscarlos en Google`;
 
   const paragraphs = [
-    `Revise la presencia digital de varios ${nicheLabel} ${cityPhrase} y en su caso note algo especifico.`,
-    `El punto concreto: ${specificProblem}.`,
-    `Eso se puede resolver sin ads ni presupuesto grande. Solo hace falta ordenar bien un par de cosas.`,
-    `Si le interesa, le mando un video de 2 minutos mostrando exactamente lo que detecte y como atacarlo.`,
+    `Estuve buscando ${nicheLabel} ${cityPhrase} y ${prospect.name} aparecio en los resultados.`,
+    `Al revisar su presencia encontre algo puntual: ${specificProblem}.`,
+    `Eso normalmente se resuelve sin ads ni presupuesto grande. Con los ajustes correctos, los que ya los encuentran terminan contactandolos.`,
+    `Le mando un video de 2 minutos mostrando exactamente lo que detecte y como atacarlo?`,
   ];
 
   const text = `${greeting}
@@ -279,8 +300,8 @@ function buildVariantD(prospect: ProspectEmailModel) {
     : `Hola equipo de ${prospect.name},`;
   const cityPhrase = getCityPhrase(prospect.city);
   const pitchAngle = toSentenceCase(prospect.pitchAngle) || "captar mas contactos directos";
-  const socialProof = getSocialProofLine(prospect.userRatingCount);
-  const subject = `${prospect.name}: hay potencial que todavia no esta trabajando`;
+  const socialProof = getSocialProofLine(prospect.userRatingCount, prospect.rating);
+  const subject = `${prospect.name}: su negocio tiene mas potencial del que esta aprovechando`;
 
   const paragraphs = [
     `Estuve revisando la presencia digital de ${prospect.name} ${cityPhrase}.`,

@@ -28,6 +28,7 @@ type OutreachProspect = {
   opportunity: string;
   recommendedSite: string;
   pitchAngle: string;
+  primaryType?: string | null;
 };
 
 const FIRST_CONTACT_VARIANTS = ["a", "b", "c", "d"] as const satisfies readonly OutreachScriptVariant[];
@@ -92,6 +93,7 @@ function buildFirstContactScript(prospect: OutreachProspect, variant: OutreachSc
       opportunity: context.opportunity,
       recommendedSite: context.recommendedSite,
       pitchAngle: context.pitchAngle,
+      primaryType: prospect.primaryType ?? null,
     },
     variant
   );
@@ -117,21 +119,21 @@ function buildFollowup1Draft(prospect: OutreachProspect) {
   const cityLine = prospect.city ? ` en ${prospect.city}` : "";
 
   return {
-    subject: `${prospect.name}: por si se perdio el mensaje anterior`,
+    subject: `${prospect.name}: queria asegurarme que llego el mensaje`,
     message: `Hola ${addressee},
 
-Solo retomo el mensaje anterior por si se perdio.
+Solo queria asegurarme de que llego el mensaje anterior.
 
-Lo que vi en ${prospect.name}${cityLine} es concreto: ${context.opportunity}.
+Lo que encontre en ${prospect.name}${cityLine} es algo puntual: ${context.opportunity}.
 
-Con una solucion enfocada en ${context.pitchAngle} se puede atacar eso sin complicar demasiado.
+No es una critica, es una oportunidad concreta. Con ${context.pitchAngle} se resuelve sin complicar.
 
-Si quiere lo platicamos rapido, le mando el video?
+Le grabo el video de 2 minutos?
 
 Saludos,
 AionSite`,
     html: null,
-    analysis: "Follow-up 1: recordatorio con ciudad y problema especifico para recuperar atencion.",
+    analysis: "Follow-up 1: recordatorio directo reenmarcando como oportunidad, no critica.",
     opportunity: context.opportunity,
   };
 }
@@ -139,27 +141,30 @@ AionSite`,
 function buildFollowup2Draft(prospect: OutreachProspect) {
   const context = getOpportunityContext(prospect);
   const addressee = getGreeting(prospect.name, prospect.contactName);
-  const reviewLine =
-    typeof prospect.userRatingCount === "number" && prospect.userRatingCount >= 10
-      ? `Con sus ${prospect.userRatingCount} reseñas ya tienen un activo real.`
-      : "Ya tienen clientes activos.";
+  const stars = parseFloat(prospect.rating || "0");
+  const hasRating = stars >= 4.0 && typeof prospect.userRatingCount === "number" && prospect.userRatingCount >= 10;
+  const reviewLine = hasRating
+    ? `${prospect.name} tiene ${stars} estrellas y ${prospect.userRatingCount} reseñas. Eso es un activo real que todavia no esta generando todo lo que podria.`
+    : typeof prospect.userRatingCount === "number" && prospect.userRatingCount >= 10
+      ? `Con ${prospect.userRatingCount} reseñas en Google ya tienen traccion. El problema suele ser que ese trafico no convierte.`
+      : "Ya tienen presencia en Google. El siguiente paso es que esa visibilidad se traduzca en contactos directos.";
 
   return {
-    subject: `${prospect.name}: le comparto un angulo distinto`,
+    subject: `${prospect.name}: un punto que no habia mencionado`,
     message: `Hola ${addressee},
 
 Le comparto un angulo diferente al del mensaje anterior.
 
-${reviewLine} El punto no es solo verse mejor sino ${context.pitchAngle}.
+${reviewLine}
 
-Si se resuelve eso bien, el trafico que ya reciben convierte mucho mejor sin necesidad de mas publicidad.
+La clave no es verse mejor, es que quien los encuentra los contacte. Eso es lo que ${context.pitchAngle} resuelve directamente.
 
-Le explico en 2 minutos como lo resolveria para ${prospect.name}?
+Le muestro como en 2 minutos?
 
 Saludos,
 AionSite`,
     html: null,
-    analysis: "Follow-up 2: nuevo angulo con reseñas como prueba social y enfoque en conversion.",
+    analysis: "Follow-up 2: nuevo angulo con rating y reseñas como prueba social, enfoque en conversion.",
     opportunity: context.opportunity,
   };
 }
@@ -169,19 +174,19 @@ function buildFollowup3Draft(prospect: OutreachProspect) {
   const addressee = getGreeting(prospect.name, prospect.contactName);
 
   return {
-    subject: `${prospect.name}: cierro este hilo por ahora`,
+    subject: `${prospect.name}: ultimo mensaje de mi parte`,
     message: `Hola ${addressee},
 
-Cierro este hilo para no insistir demasiado.
+No quiero seguir ocupando su bandeja, asi que este es mi ultimo mensaje.
 
-Antes de hacerlo le dejo la idea central: ${context.opportunity}. Normalmente se resuelve con ${context.recommendedSite} y una propuesta enfocada en ${context.pitchAngle}.
+Les dejo la idea en una linea: ${context.opportunity}. La solucion mas directa para ${prospect.name} seria ${context.recommendedSite}, enfocada en ${context.pitchAngle}.
 
-Si en algun momento quieren retomarlo, estamos.
+Si en algun momento les interesa retomarlo, aqui estamos.
 
-Saludos,
+Que les vaya bien,
 AionSite`,
     html: null,
-    analysis: "Follow-up 3: cierre elegante con idea central clara y puerta abierta.",
+    analysis: "Follow-up 3: cierre firme y elegante con solucion concreta y puerta abierta.",
     opportunity: context.opportunity,
   };
 }
