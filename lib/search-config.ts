@@ -1,7 +1,7 @@
 import type { SearchSpec } from "@/lib/types";
 import { SEARCH_CITIES, SEARCH_NICHES } from "@/lib/search-targets";
 
-export const DESIRED_PROSPECT_COUNT = 15;
+export const DESIRED_PROSPECT_COUNT = 20;
 export const REQUIRED_TYPES: string[] = [];
 export const REQUIRE_EMAIL_FOR_FINAL_PROSPECTS = true;
 
