@@ -6,23 +6,7 @@
     },
     {
       "path": "/api/send/scheduled",
-      "schedule": "0,30 14,15 * * *"
-    },
-    {
-      "path": "/api/send/scheduled",
-      "schedule": "0 16 * * *"
-    },
-    {
-      "path": "/api/send/scheduled",
-      "schedule": "30 18 * * *"
-    },
-    {
-      "path": "/api/send/scheduled",
-      "schedule": "0,30 19 * * *"
-    },
-    {
-      "path": "/api/send/scheduled",
-      "schedule": "0 20 * * *"
+      "schedule": "0,30 14-16,18-20 * * *"
     }
   ]
 }
