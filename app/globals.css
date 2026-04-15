@@ -205,6 +205,7 @@ code {
 
 .crm-card__value {
   font-size: 2rem;
+  font-weight: 700;
 }
 
 .crm-card__meta {
@@ -219,6 +220,11 @@ code {
 .panel--accent {
   border-color: #b7e7dd;
   background: var(--accent-soft);
+}
+
+.panel--flush {
+  padding: 0;
+  overflow: hidden;
 }
 
 .panel__header {
@@ -284,6 +290,7 @@ code {
 .crm-tab:hover {
   transform: translateY(-1px);
   border-color: #b7e7dd;
+  background: rgba(18, 32, 47, 0.04);
 }
 
 .crm-tab.is-active {
@@ -330,7 +337,7 @@ code {
 
 .crm-button:not(:disabled):hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
 }
 
 .crm-button--primary:not(:disabled):hover {
@@ -375,9 +382,19 @@ code {
   background: #fbfdff;
 }
 
+.crm-input:focus-visible {
+  border-color: var(--accent);
+  background: #ffffff;
+}
+
 .crm-search:hover {
   border-color: var(--border-strong);
   background: #fbfdff;
+}
+
+.crm-search:focus-visible {
+  border-color: var(--accent);
+  background: #ffffff;
 }
 
 .crm-error {
@@ -671,7 +688,7 @@ code {
 
 .settings-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
 }
 
@@ -1012,5 +1029,13 @@ code {
 
   .panel__header {
     flex-direction: column;
+  }
+
+  .detail-dl {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
   }
 }

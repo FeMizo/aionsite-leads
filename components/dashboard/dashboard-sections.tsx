@@ -182,7 +182,7 @@ export function DashboardActivitySummary({ data }: { data: DashboardData }) {
       : "Ultimo crawl";
 
   return (
-    <div className="panel">
+    <div className="panel panel--flush">
       <div className="stat-bar">
         <div className="stat-bar__item">
           <p className="stat-bar__label">{crawlLabel}</p>
