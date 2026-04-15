@@ -1,6 +1,6 @@
 {
   "name": "aionsite-leads",
-  "version": "1.10.32",
+  "version": "1.10.33",
   "description": "Prospecting dashboard for AionSite backed by Postgres and Vercel Functions",
   "private": true,
   "scripts": {
@@ -17,6 +17,7 @@
     "send:reschedule": "tsx scripts/recalculate-scheduled-sends.ts",
     "send:followups": "tsx scripts/send-followups.ts",
     "send:followups:preview": "tsx scripts/preview-followups.ts",
+    "schema:json": "tsx scripts/generate-schema-json.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "prisma": {
