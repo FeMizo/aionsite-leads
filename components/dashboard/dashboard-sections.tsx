@@ -182,48 +182,50 @@ export function DashboardActivitySummary({ data }: { data: DashboardData }) {
       : "Ultimo crawl";
 
   return (
-    <section className="settings-grid">
-      <article className="activity-card">
-        <h3>{crawlLabel}</h3>
-        <p className="activity-card__value">
-          {formatActivityDate(data.activeRun?.createdAt || data.lastCrawl?.at)}
-        </p>
-        <p>
-          {data.activeRun
-            ? "La busqueda actual sigue ejecutandose."
-            : data.lastCrawl
-              ? `${data.lastCrawl.source || "Pipeline"} · ${data.lastCrawl.status || "completed"}`
-              : "Todavia no hay busquedas registradas."}
-        </p>
-      </article>
-      <article className="activity-card">
-        <h3>Siguiente crawl automatico</h3>
-        <p className="activity-card__value">{formatActivityDate(data.nextCrawlAt)}</p>
-        <p>Cron `0 9 * * 1,3,5` en UTC. Corre lunes, miercoles y viernes; si cae fin de semana, pasa al lunes.</p>
-      </article>
-      <article className="activity-card">
-        <h3>Ultimo envio</h3>
-        <p className="activity-card__value">{formatActivityDate(data.lastSend?.at)}</p>
-        <p>
-          {data.lastSend
-            ? `${data.lastSend.prospectName || "Prospecto"}${
-                data.lastSend.email ? ` · ${data.lastSend.email}` : ""
-              }`
-            : "Todavia no se ha enviado ningun correo."}
-        </p>
-      </article>
-      <article className="activity-card">
-        <h3>Estado operativo</h3>
-        <p className="activity-card__value">
-          {data.crawlInProgress ? "Procesando" : "Disponible"}
-        </p>
-        <p>
-          {data.crawlInProgress
-            ? "El dashboard se refresca automaticamente mientras termina el crawl."
-            : "Puedes lanzar un crawl manual o continuar con envios y seguimiento."}
-        </p>
-      </article>
-    </section>
+    <div className="panel">
+      <div className="stat-bar">
+        <div className="stat-bar__item">
+          <p className="stat-bar__label">{crawlLabel}</p>
+          <p className="stat-bar__value">
+            {formatActivityDate(data.activeRun?.createdAt || data.lastCrawl?.at)}
+          </p>
+          <p className="stat-bar__sub">
+            {data.activeRun
+              ? "La busqueda actual sigue ejecutandose."
+              : data.lastCrawl
+                ? `${data.lastCrawl.source || "Pipeline"} · ${data.lastCrawl.status || "completed"}`
+                : "Todavia no hay busquedas registradas."}
+          </p>
+        </div>
+        <div className="stat-bar__item">
+          <p className="stat-bar__label">Siguiente crawl automatico</p>
+          <p className="stat-bar__value">{formatActivityDate(data.nextCrawlAt)}</p>
+          <p className="stat-bar__sub">Lun · Mie · Vie a las 9am UTC</p>
+        </div>
+        <div className="stat-bar__item">
+          <p className="stat-bar__label">Ultimo envio</p>
+          <p className="stat-bar__value">{formatActivityDate(data.lastSend?.at)}</p>
+          <p className="stat-bar__sub">
+            {data.lastSend
+              ? `${data.lastSend.prospectName || "Prospecto"}${
+                  data.lastSend.email ? ` · ${data.lastSend.email}` : ""
+                }`
+              : "Todavia no se ha enviado ningun correo."}
+          </p>
+        </div>
+        <div className="stat-bar__item">
+          <p className="stat-bar__label">Estado operativo</p>
+          <p className="stat-bar__value">
+            {data.crawlInProgress ? "Procesando" : "Disponible"}
+          </p>
+          <p className="stat-bar__sub">
+            {data.crawlInProgress
+              ? "El dashboard se refresca automaticamente."
+              : "Puedes lanzar un crawl manual o continuar con envios."}
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 

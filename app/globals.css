@@ -13,8 +13,18 @@
   --row-selected: #dff4ef;
   --danger: #b42318;
   --danger-soft: #fee4e2;
-  --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  --shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.06);
   --font-ui: "Segoe UI", "IBM Plex Sans", sans-serif;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
 }
 
 * {
@@ -25,7 +35,7 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: linear-gradient(180deg, #eef3f7 0%, #f9fbfc 100%);
+  background: var(--bg);
   color: var(--text);
   font-family: var(--font-ui);
 }
@@ -113,11 +123,7 @@ code {
 }
 
 .crm-nav__link.is-active {
-  background: linear-gradient(
-    135deg,
-    rgba(149, 213, 203, 0.22),
-    rgba(15, 118, 110, 0.35)
-  );
+  background: rgba(255, 255, 255, 0.14);
   color: #ffffff;
   box-shadow: inset 0 0 0 1px rgba(149, 213, 203, 0.24);
 }
@@ -129,7 +135,7 @@ code {
 .page-stack {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
 
 .page-header h1 {
@@ -187,7 +193,7 @@ code {
   color: var(--text);
   transform: translateY(-2px);
   border-color: #b7e7dd;
-  background: linear-gradient(180deg, #f8fcfb 0%, #eef8f5 100%);
+  background: var(--accent-soft);
 }
 
 .crm-card__label {
@@ -212,7 +218,7 @@ code {
 
 .panel--accent {
   border-color: #b7e7dd;
-  background: linear-gradient(180deg, #f7fcfb 0%, #eef9f6 100%);
+  background: var(--accent-soft);
 }
 
 .panel__header {
@@ -281,7 +287,7 @@ code {
 }
 
 .crm-tab.is-active {
-  background: linear-gradient(180deg, #edf9f6 0%, #e2f5f0 100%);
+  background: var(--accent-soft);
   border-color: #8fd8c9;
   box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.08);
 }
@@ -587,9 +593,6 @@ code {
   border-color: #fecdd3;
 }
 
-.status-pill:hover {
-  transform: translateY(-1px);
-}
 
 .priority-pill {
   display: inline-flex;
@@ -623,11 +626,13 @@ code {
 }
 
 .empty-state {
-  padding: 2rem 1rem;
+  padding: 2.5rem 1.5rem;
   text-align: center;
   color: var(--muted);
   border: 1px dashed var(--border);
   border-radius: 0.9rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
 }
 
 .run-status {
@@ -700,15 +705,41 @@ code {
   border: 1px solid var(--border);
 }
 
-.activity-card {
-  background: linear-gradient(180deg, #f8fbfd 0%, #eef4f8 100%) !important;
+.stat-bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.activity-card__value {
-  display: block;
-  margin: 0.35rem 0 0.45rem;
-  font-size: 1.2rem;
+.stat-bar__item {
+  padding: 1rem 1.25rem;
+  border-right: 1px solid var(--border);
+}
+
+.stat-bar__item:last-child {
+  border-right: none;
+}
+
+.stat-bar__label {
+  margin: 0 0 0.3rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.stat-bar__value {
+  margin: 0 0 0.2rem;
+  font-size: 0.95rem;
   font-weight: 700;
+  color: var(--text);
+}
+
+.stat-bar__sub {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.4;
 }
 
 .settings-grid h3 {
@@ -771,9 +802,11 @@ code {
 
 .detail-dl dt {
   color: var(--muted);
+  font-size: 0.74rem;
   font-weight: 600;
-  font-size: 0.86rem;
-  padding-top: 0.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-top: 0.3rem;
 }
 
 .detail-dl dd {
@@ -930,6 +963,19 @@ code {
   .crm-form-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .stat-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stat-bar__item:nth-child(2) {
+    border-right: none;
+  }
+
+  .stat-bar__item:nth-child(1),
+  .stat-bar__item:nth-child(2) {
+    border-bottom: 1px solid var(--border);
+  }
 }
 
 @media (max-width: 860px) {
@@ -949,6 +995,19 @@ code {
   .settings-grid,
   .crm-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .stat-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-bar__item {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-bar__item:last-child {
+    border-bottom: none;
   }
 
   .panel__header {
