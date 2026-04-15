@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { RunsTable } from "@/components/dashboard/runs-table";
 import {
   DashboardMetricCards,
@@ -9,6 +10,11 @@ import {
 import { PageHeader } from "@/components/crm/page-header";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Busquedas",
+  description: "Historial y metricas de cada ejecucion del pipeline automatizado.",
+};
 
 export default async function RunsPage() {
   const context = await getDashboardPageContext();

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { ProspectTable } from "@/components/dashboard/prospect-table";
 import {
   DashboardMetricCards,
@@ -9,6 +10,11 @@ import {
 import { PageHeader } from "@/components/crm/page-header";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Prospects",
+  description: "Prospectos aprobados pendientes de preparar mensaje antes del envio.",
+};
 
 export default async function ProspectsPage() {
   const context = await getDashboardPageContext();

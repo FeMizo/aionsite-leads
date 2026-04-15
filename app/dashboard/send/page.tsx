@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { ProspectTable } from "@/components/dashboard/prospect-table";
 import { ManualProspectPanel } from "@/components/dashboard/manual-prospect-panel";
 import {
@@ -10,6 +11,11 @@ import {
 import { PageHeader } from "@/components/crm/page-header";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Envios",
+  description: "Prospectos con draft listo para enviar o programados con fecha y hora especifica.",
+};
 
 export default async function SendPage() {
   const context = await getDashboardPageContext();

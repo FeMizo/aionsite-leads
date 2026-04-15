@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { ProspectTable } from "@/components/dashboard/prospect-table";
 import {
   DashboardMetricCards,
@@ -9,6 +10,11 @@ import {
 import { PageHeader } from "@/components/crm/page-header";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Generated",
+  description: "Prospectos nuevos capturados por el pipeline pendientes de revision, aprobacion o rechazo.",
+};
 
 export default async function GeneratedPage() {
   const context = await getDashboardPageContext();

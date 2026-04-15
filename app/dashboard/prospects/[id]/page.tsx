@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getProspectDetail } from "@/lib/prospects";
@@ -12,6 +13,19 @@ export const dynamic = "force-dynamic";
 type PageContext = {
   params: Promise<{ id: string }>;
 };
+
+export async function generateMetadata({ params }: PageContext): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const prospect = await getProspectDetail(id);
+    return {
+      title: prospect.name,
+      description: `${prospect.city} · ${prospect.type} · Score ${prospect.score}`,
+    };
+  } catch {
+    return { title: "Prospecto" };
+  }
+}
 
 export default async function ProspectDetailPage({ params }: PageContext) {
   const { id } = await params;

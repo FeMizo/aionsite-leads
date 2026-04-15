@@ -5,8 +5,12 @@ import "./globals.css";
 import { Navigation } from "@/components/crm/navigation";
 
 export const metadata: Metadata = {
-  title: "AionSite Prospecting Dashboard",
-  description: "Prospecting dashboard con Vercel Functions y Postgres",
+  title: {
+    default: "AionSite Prospecting",
+    template: "%s · AionSite",
+  },
+  description:
+    "Dashboard operativo de prospecting para AionSite — busquedas automatizadas, gestion de prospectos y envios SMTP desde Vercel.",
 };
 
 export default function RootLayout({
