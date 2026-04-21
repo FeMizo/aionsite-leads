@@ -216,7 +216,10 @@ function buildCreateProspectData(prospect: ProspectCandidate, runId: string) {
   };
 }
 
+const PIPELINE_DEADLINE_MS = Number(process.env.PIPELINE_DEADLINE_MS ?? 220_000);
+
 export async function runProspectSearch(source = "google-places") {
+  const pipelineStart = Date.now();
   const prisma = getPrismaClient();
   const metrics = {
     source,
@@ -258,6 +261,12 @@ export async function runProspectSearch(source = "google-places") {
 
     for (const prospect of uniqueProspects) {
       if (!shouldAuditProspect(prospect)) {
+        enrichedCandidates.push(prospect);
+        continue;
+      }
+
+      if (Date.now() - pipelineStart > PIPELINE_DEADLINE_MS) {
+        console.warn("[prospect-run] Presupuesto de tiempo agotado, saltando enrichment restante.");
         enrichedCandidates.push(prospect);
         continue;
       }

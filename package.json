@@ -1,6 +1,6 @@
 {
   "name": "aionsite-leads",
-  "version": "1.10.36",
+  "version": "1.10.37",
   "description": "Prospecting dashboard for AionSite backed by Postgres and Vercel Functions",
   "private": true,
   "scripts": {
@@ -18,7 +18,7 @@
     "send:followups": "tsx scripts/send-followups.ts",
     "send:followups:preview": "tsx scripts/preview-followups.ts",
     "schema:json": "tsx scripts/generate-schema-json.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -43,6 +43,7 @@
   "devDependencies": {
     "@types/nodemailer": "^7.0.3",
     "prisma": "^7.5.0",
-    "tsx": "^4.20.6"
+    "tsx": "^4.20.6",
+    "vitest": "4.1.4"
   }
 }
