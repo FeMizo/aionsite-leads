@@ -3,6 +3,7 @@ import { inferWebsiteSignal } from "@/lib/website-signals";
 
 export type ProspectPriority = "alto" | "medio" | "bajo";
 export type ProspectAutomationStatus = "approved" | "analyzed";
+export const MINIMUM_SAVE_SCORE = 35;
 export const MINIMUM_QUALIFIED_PROSPECT_SCORE = 50;
 export const AUTO_READY_PROSPECT_SCORE = 75;
 const INCOMPLETE_AUDIT_BASELINE_SCORE = 12;
@@ -150,7 +151,13 @@ export function scoreProspect(prospect: ProspectScoreInput): number {
     } else if (prospect.websiteLoadTimeMs >= 4500) {
       // Lento (4.5-6s): friccion alta en conversion
       score += 10;
+    } else if (hasStoredAuditSnapshot(prospect)) {
+      // Sitio funcional analizado: oportunidad de mejora (rediseño, SEO, CTA)
+      score += 10;
     }
+  } else if (websiteSignal === "existing" && hasStoredAuditSnapshot(prospect)) {
+    // Sitio funcional analizado: oportunidad de mejora (rediseño, SEO, CTA)
+    score += 10;
   }
 
   // 2. SEÑALES DE CONVERSION (se acumulan sobre el estado del sitio)

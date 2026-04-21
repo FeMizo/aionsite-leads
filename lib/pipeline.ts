@@ -15,6 +15,7 @@ import {
   SEARCHES,
 } from "@/lib/search-config";
 import {
+  MINIMUM_SAVE_SCORE,
   MINIMUM_QUALIFIED_PROSPECT_SCORE,
   getProspectAutomationStatus,
   hasRatingOpportunity,
@@ -282,14 +283,14 @@ export async function runProspectSearch(source = "google-places") {
         prospect,
         score: scoreProspect(prospect),
       }))
-      .filter((item) => item.score >= MINIMUM_QUALIFIED_PROSPECT_SCORE)
+      .filter((item) => item.score >= MINIMUM_SAVE_SCORE)
       .sort((left, right) => right.score - left.score);
 
     const lowScoreDiscarded = enrichedCandidates.length - scoredCandidates.length;
 
     if (scoredCandidates.length < DESIRED_PROSPECT_COUNT) {
       console.warn(
-        `[prospect-run] Solo ${scoredCandidates.length} prospectos con score >= ${MINIMUM_QUALIFIED_PROSPECT_SCORE} (objetivo: ${DESIRED_PROSPECT_COUNT}). Se guardaran los disponibles.`
+        `[prospect-run] Solo ${scoredCandidates.length} prospectos con score >= ${MINIMUM_SAVE_SCORE} (objetivo: ${DESIRED_PROSPECT_COUNT}). Se guardaran los disponibles.`
       );
     }
 
