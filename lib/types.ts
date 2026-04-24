@@ -92,6 +92,7 @@ export type DashboardProspect = {
   businessStatus: string;
   lastError: string;
   lastMessageId: string;
+  updatedAt: string;
   score: number;
   priority: ProspectPriority;
 };

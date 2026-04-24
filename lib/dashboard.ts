@@ -37,6 +37,7 @@ function serializeProspect(prospect: {
   businessStatus: string;
   lastError: string;
   lastMessageId: string;
+  updatedAt: Date;
 }): DashboardProspect {
   const scoring = getProspectScoreCard(prospect);
 
@@ -50,6 +51,7 @@ function serializeProspect(prospect: {
       : null,
     createdAt: prospect.createdAt.toISOString(),
     lastCheckedAt: prospect.lastCheckedAt.toISOString(),
+    updatedAt: prospect.updatedAt.toISOString(),
     score: scoring.score,
     priority: scoring.priority,
   };

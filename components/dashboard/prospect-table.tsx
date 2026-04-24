@@ -38,7 +38,8 @@ type ProspectSortKey =
   | "priority"
   | "status"
   | "scheduledSendAt"
-  | "lastCheckedAt";
+  | "lastContactedAt"
+  | "updatedAt";
 
 type ProspectColumn = {
   key: ProspectSortKey;
@@ -162,6 +163,7 @@ export function ProspectTable({
   const router = useRouter();
   const showScheduledColumn =
     endpoint === "/api/send" || records.some((record) => Boolean(record.scheduledSendAt));
+  const showLastContactedColumn = records.some((record) => Boolean(record.lastContactedAt));
   const showSendTabs = endpoint === "/api/send";
 
   const columns = useMemo<ProspectColumn[]>(
@@ -241,11 +243,18 @@ export function ProspectTable({
         getValue: (record) => record.scheduledSendAt,
       },
       {
-        key: "lastCheckedAt",
+        key: "lastContactedAt",
+        label: "Enviado",
+        type: "date",
+        defaultDirection: "desc",
+        getValue: (record) => record.lastContactedAt,
+      },
+      {
+        key: "updatedAt",
         label: "Actualizado",
         type: "date",
         defaultDirection: "desc",
-        getValue: (record) => record.lastCheckedAt,
+        getValue: (record) => record.updatedAt,
       },
     ],
     []
@@ -508,6 +517,7 @@ export function ProspectTable({
             </th>
             {columns
               .filter((column) => showScheduledColumn || column.key !== "scheduledSendAt")
+              .filter((column) => showLastContactedColumn || column.key !== "lastContactedAt")
               .map((column) => (
                 <th key={column.key}>
                   <button
@@ -604,7 +614,14 @@ export function ProspectTable({
                     </div>
                   </td>
                 ) : null}
-                <td>{formatDashboardDateTime(record.lastCheckedAt)}</td>
+                {showLastContactedColumn ? (
+                  <td>
+                    {record.lastContactedAt
+                      ? formatDashboardDateTime(record.lastContactedAt)
+                      : "—"}
+                  </td>
+                ) : null}
+                <td>{formatDashboardDateTime(record.updatedAt)}</td>
               </tr>
             );
           })}
