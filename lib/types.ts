@@ -41,6 +41,12 @@ export type ProspectCandidate = {
   createdAt: string;
   lastCheckedAt: string;
   businessStatus: string;
+  hasRecentPhotos?: boolean;
+  mostRecentPhotoDate?: string | null;
+  photoCount?: number;
+  hasCompleteHours?: boolean;
+  openingHours?: { weekdayText: string[]; isOpen: boolean | null } | null;
+  businessTypes?: string[];
   score?: number;
   priority?: ProspectPriority;
   placeId?: string;

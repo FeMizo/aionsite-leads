@@ -18,7 +18,27 @@ const DEFAULT_FIELD_MASK = [
   "places.primaryType",
   "places.googleMapsUri",
   "places.businessStatus",
+  "places.photos",
+  "places.openingHours",
+  "places.types",
+  "places.regularOpeningHours",
 ].join(",");
+
+type GooglePlacePhoto = {
+  name?: string;
+  heightPx?: number;
+  widthPx?: number;
+  authorAttributions?: Array<{
+    displayName?: string;
+    publishTime?: string;
+    date?: string;
+  }>;
+};
+
+type GooglePlaceOpeningHours = {
+  weekdayDescriptions?: string[];
+  isOpen?: boolean;
+};
 
 type GooglePlace = {
   id?: string;
@@ -31,7 +51,42 @@ type GooglePlace = {
   primaryType?: string;
   googleMapsUri?: string;
   businessStatus?: string;
+  photos?: GooglePlacePhoto[];
+  openingHours?: GooglePlaceOpeningHours;
+  regularOpeningHours?: GooglePlaceOpeningHours;
+  types?: string[];
 };
+
+function extractPhotoSignals(photos: GooglePlacePhoto[] = []) {
+  if (!photos.length) {
+    return { photoCount: 0, hasRecentPhotos: false, mostRecentPhotoDate: null };
+  }
+
+  const dates = photos
+    .flatMap((p) => p.authorAttributions || [])
+    .map((attr) => new Date(attr.publishTime || attr.date || ""))
+    .filter((d) => !isNaN(d.getTime()))
+    .sort((a, b) => b.getTime() - a.getTime());
+
+  const mostRecent = dates[0];
+  const daysSince = mostRecent
+    ? Math.floor((Date.now() - mostRecent.getTime()) / (1000 * 60 * 60 * 24))
+    : 999;
+
+  return {
+    photoCount: photos.length,
+    hasRecentPhotos: daysSince <= 90,
+    mostRecentPhotoDate: mostRecent?.toISOString() ?? null,
+  };
+}
+
+function extractHourSignals(openingHours: GooglePlaceOpeningHours | undefined) {
+  if (!openingHours) return null;
+  return {
+    weekdayText: openingHours.weekdayDescriptions || [],
+    isOpen: openingHours.isOpen ?? null,
+  };
+}
 
 function assertGooglePlacesConfig() {
   if (!getGooglePlacesApiKey()) {
@@ -43,6 +98,9 @@ function mapGooglePlaceToProspect(
   place: GooglePlace,
   search: SearchSpec
 ): ProspectCandidate {
+  const photoSignals = extractPhotoSignals(place.photos);
+  const hourSignals = extractHourSignals(place.openingHours ?? place.regularOpeningHours);
+
   return {
     name: place.displayName?.text || "",
     contactName: "",
@@ -65,6 +123,12 @@ function mapGooglePlaceToProspect(
     placeId: place.id || "",
     formattedAddress: place.formattedAddress || "",
     primaryType: place.primaryType || "",
+    hasRecentPhotos: photoSignals.hasRecentPhotos,
+    mostRecentPhotoDate: photoSignals.mostRecentPhotoDate,
+    photoCount: photoSignals.photoCount,
+    hasCompleteHours: hourSignals !== null && hourSignals.weekdayText.length > 0,
+    openingHours: hourSignals,
+    businessTypes: place.types || [],
   };
 }
 

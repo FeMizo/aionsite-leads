@@ -6,6 +6,7 @@ export type ProspectAutomationStatus = "approved" | "analyzed";
 export const MINIMUM_SAVE_SCORE = 35;
 export const MINIMUM_QUALIFIED_PROSPECT_SCORE = 50;
 export const AUTO_READY_PROSPECT_SCORE = 75;
+export const WHATSAPP_AUTO_SEND_SCORE = 80;
 const INCOMPLETE_AUDIT_BASELINE_SCORE = 12;
 
 type ProspectScoreInput = Pick<
@@ -19,7 +20,12 @@ type ProspectScoreInput = Pick<
   | "hasWhatsappCta"
   | "hasContactCta"
   | "isMobileFriendly"
->;
+> & {
+  businessStatus?: string;
+  hasRecentPhotos?: boolean;
+  photoCount?: number;
+  openingHours?: { weekdayText: string[]; isOpen: boolean | null } | null;
+};
 
 function parseRating(value: string) {
   const parsed = Number.parseFloat(String(value || "").trim());
@@ -122,6 +128,21 @@ export function getProspectSignalCounts(prospect: ProspectScoreInput) {
   };
 }
 
+// --- Actividad del negocio ---
+
+export function isBusinessActive(
+  prospect: Pick<ProspectScoreInput, "businessStatus" | "hasRecentPhotos" | "openingHours" | "userRatingCount">
+) {
+  return (
+    prospect.businessStatus === "OPERATIONAL" &&
+    (
+      prospect.hasRecentPhotos === true ||
+      parseReviewCount(prospect.userRatingCount) > 5 ||
+      Boolean(prospect.openingHours?.weekdayText?.length)
+    )
+  );
+}
+
 // --- Score principal ---
 
 export function scoreProspect(prospect: ProspectScoreInput): number {
@@ -181,6 +202,20 @@ export function scoreProspect(prospect: ProspectScoreInput): number {
   // 4. SEÑAL DE RATING (problema de reputacion activo = urgencia de mejorar presencia)
   if (hasRatingOpportunity(prospect)) {
     score += 20;
+  }
+
+  // 5. SEÑALES DE ACTIVIDAD DEL NEGOCIO (Maps data)
+  if (prospect.businessStatus === "OPERATIONAL") {
+    score += 5;
+  }
+  if (prospect.hasRecentPhotos) {
+    score += 15;
+  }
+  if (prospect.openingHours?.weekdayText && prospect.openingHours.weekdayText.length > 0) {
+    score += 5;
+  }
+  if ((prospect.photoCount ?? 0) === 0 && reviewCount < 10) {
+    score -= 10;
   }
 
   // Older records can lose review-count and audit fields after persistence.

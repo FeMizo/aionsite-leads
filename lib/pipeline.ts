@@ -83,6 +83,12 @@ function normalizeProspect(rawProspect: ProspectCandidate): ProspectCandidate {
     placeId: rawProspect.placeId || "",
     formattedAddress: rawProspect.formattedAddress || "",
     primaryType: rawProspect.primaryType || "",
+    hasRecentPhotos: rawProspect.hasRecentPhotos ?? false,
+    mostRecentPhotoDate: rawProspect.mostRecentPhotoDate ?? null,
+    photoCount: rawProspect.photoCount ?? 0,
+    hasCompleteHours: rawProspect.hasCompleteHours ?? false,
+    openingHours: rawProspect.openingHours ?? null,
+    businessTypes: rawProspect.businessTypes ?? [],
   };
 }
 
@@ -252,7 +258,14 @@ export async function runProspectSearch(source = "google-places") {
     metrics.googlePlacesRequests = googlePlacesResult.requestCount;
     metrics.placesFound = googlePlacesResult.candidates.length;
 
-    const rawCandidates = googlePlacesResult.candidates.map(normalizeProspect);
+    const activeCandidates = googlePlacesResult.candidates.filter((p) => {
+      if (p.businessStatus === "CLOSED_PERMANENTLY") return false;
+      if (p.businessStatus === "CLOSED_TEMPORARILY") {
+        console.warn(`[pipeline] ${p.name} cerrado temporalmente`);
+      }
+      return true;
+    });
+    const rawCandidates = activeCandidates.map(normalizeProspect);
     const { uniqueProspects, duplicates } = filterUniqueProspects(
       rawCandidates,
       existingProspects
