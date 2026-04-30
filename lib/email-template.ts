@@ -195,9 +195,11 @@ function buildVariantA(prospect: ProspectEmailModel) {
   const cityPhrase = getCityPhrase(prospect.city);
   const specificProblem = getSpecificProblem(prospect);
   const socialProof = getSocialProofLine(prospect.userRatingCount, prospect.rating);
+
+  // Mejorado: Agregar urgencia y especificidad
   const subject = prospect.contactName
-    ? `${prospect.contactName}, hay clientes que no estan llegando a ${prospect.name}`
-    : `${prospect.name}: hay clientes que no estan llegando`;
+    ? `⚡ ${prospect.contactName}, clientes buscando ${nicheLabel} en ${prospect.city} pero no te ven`
+    : `⚡ ${prospect.name}: clientes en ${prospect.city} buscando ${nicheLabel} no te encuentran`;
 
   const paragraphs = [
     `Ahora mismo hay personas buscando ${nicheLabel} ${cityPhrase}... y no todos estan llegando a ustedes.`,
@@ -232,7 +234,8 @@ function buildVariantB(prospect: ProspectEmailModel) {
     : `Hola equipo de ${prospect.name},`;
   const cityPhrase = getCityPhrase(prospect.city);
   const socialProof = getSocialProofLine(prospect.userRatingCount, prospect.rating);
-  const subject = `${prospect.name}: algo que vi y queria comentarles`;
+  // Mejorado: Más específico que "algo" - menciona que es corregible
+  const subject = `${prospect.name}: detecté un problema rápido de arreglar`;
 
   const paragraphs = [
     `Estuve revisando ${prospect.name} y encontre algo concreto que podria mejorar lo que ya tienen.`,
@@ -266,7 +269,8 @@ function buildVariantC(prospect: ProspectEmailModel) {
   const nicheLabel = getNicheLabel(prospect.primaryType || "");
   const cityPhrase = getCityPhrase(prospect.city);
   const specificProblem = getSpecificProblem(prospect);
-  const subject = `${prospect.name}: lo que encontre al buscarlos en Google`;
+  // Mejorado: Más específico - describe un hallazgo concreto
+  const subject = `${prospect.name}: mejora detectable en búsquedas Google de ${nicheLabel}`;
 
   const paragraphs = [
     `Estuve buscando ${nicheLabel} ${cityPhrase} y ${prospect.name} aparecio en los resultados.`,
@@ -301,7 +305,8 @@ function buildVariantD(prospect: ProspectEmailModel) {
   const cityPhrase = getCityPhrase(prospect.city);
   const pitchAngle = toSentenceCase(prospect.pitchAngle) || "captar mas contactos directos";
   const socialProof = getSocialProofLine(prospect.userRatingCount, prospect.rating);
-  const subject = `${prospect.name}: su negocio tiene mas potencial del que esta aprovechando`;
+  // Mejorado: Más específico en el potencial (sin detalles presuntuosos)
+  const subject = `${prospect.name}: tu negocio podría captar 2-3x más clientes desde Google`;
 
   const paragraphs = [
     `Estuve revisando la presencia digital de ${prospect.name} ${cityPhrase}.`,
