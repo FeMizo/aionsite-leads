@@ -26,6 +26,9 @@ type ProspectTableProps = {
   actions: ActionConfig[];
   endpoint: "/api/prospects" | "/api/send";
   emptyLabel: string;
+  page?: number;
+  pageSize?: number;
+  totalCount?: number;
 };
 
 type ProspectSortKey =
@@ -149,6 +152,9 @@ export function ProspectTable({
   actions,
   endpoint,
   emptyLabel,
+  page,
+  pageSize,
+  totalCount,
 }: ProspectTableProps) {
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -161,6 +167,9 @@ export function ProspectTable({
   } | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const hasPagination = page !== undefined && pageSize !== undefined && totalCount !== undefined;
+  const totalPages = hasPagination ? Math.ceil(totalCount / pageSize) : 1;
+  const currentPage = page ?? 1;
   const showScheduledColumn =
     endpoint === "/api/send" || records.some((record) => Boolean(record.scheduledSendAt));
   const showLastContactedColumn = records.some((record) => Boolean(record.lastContactedAt));
@@ -439,6 +448,12 @@ export function ProspectTable({
     return sortState.direction;
   }
 
+  function navigateToPage(nextPage: number) {
+    const params = new URLSearchParams(window.location.search);
+    params.set("page", String(nextPage));
+    router.push(`?${params.toString()}`);
+  }
+
   function getEmptyStateLabel() {
     if (!showSendTabs || activeTab === "all") {
       return emptyLabel;
@@ -627,6 +642,35 @@ export function ProspectTable({
           })}
         </tbody>
       </table>
+
+      {hasPagination && totalPages > 1 ? (
+        <div className="crm-pagination">
+          <button
+            type="button"
+            className="crm-pagination__btn"
+            disabled={currentPage <= 1}
+            onClick={() => navigateToPage(currentPage - 1)}
+          >
+            ← Anterior
+          </button>
+          <span className="crm-pagination__info">
+            Página {currentPage} de {totalPages}
+            <span className="crm-pagination__total"> · {totalCount} registros</span>
+          </span>
+          <button
+            type="button"
+            className="crm-pagination__btn"
+            disabled={currentPage >= totalPages}
+            onClick={() => navigateToPage(currentPage + 1)}
+          >
+            Siguiente →
+          </button>
+        </div>
+      ) : hasPagination && totalCount !== undefined ? (
+        <div className="crm-pagination">
+          <span className="crm-pagination__info">{totalCount} registros</span>
+        </div>
+      ) : null}
     </Table>
   );
 }

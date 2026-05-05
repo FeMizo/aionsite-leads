@@ -412,6 +412,45 @@ code {
   margin: 0;
 }
 
+.crm-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border-top: 1px solid var(--border);
+  margin-top: 0;
+}
+
+.crm-pagination__btn {
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.crm-pagination__btn:hover:not(:disabled) {
+  background: var(--surface-hover, #f1f5f9);
+}
+
+.crm-pagination__btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.crm-pagination__info {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.crm-pagination__total {
+  color: var(--muted);
+}
+
 .crm-table-wrap {
   overflow-x: auto;
 }

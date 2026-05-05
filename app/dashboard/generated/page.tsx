@@ -7,6 +7,7 @@ import {
   DashboardUnavailable,
   getDashboardPageContext,
 } from "@/components/dashboard/dashboard-sections";
+import { getPaginatedProspects } from "@/lib/dashboard";
 import { PageHeader } from "@/components/crm/page-header";
 
 export const dynamic = "force-dynamic";
@@ -16,12 +17,26 @@ export const metadata: Metadata = {
   description: "Prospectos nuevos capturados por el pipeline pendientes de revision, aprobacion o rechazo.",
 };
 
-export default async function GeneratedPage() {
+const PAGE_SIZE = 25;
+
+export default async function GeneratedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const params = await searchParams;
+  const page = Math.max(1, parseInt(params.page || "1", 10) || 1);
   const context = await getDashboardPageContext();
 
   if (context.kind !== "ready") {
     return <DashboardUnavailable context={context as DashboardPageContext} />;
   }
+
+  const { items, totalCount } = await getPaginatedProspects({
+    statuses: ["generated", "analyzed"],
+    page,
+    pageSize: PAGE_SIZE,
+  });
 
   return (
     <div className="page-stack">
@@ -37,13 +52,16 @@ export default async function GeneratedPage() {
       <ProspectTable
         title="Generated"
         description="Prospectos en generated o analyzed pendientes de aprobacion."
-        records={context.data.generated}
+        records={items}
         endpoint="/api/prospects"
         actions={[
           { action: "approveGenerated", label: "Aprobar", variant: "primary" },
           { action: "rejectRecords", label: "Rechazar", variant: "danger" },
         ]}
         emptyLabel="No hay registros pendientes de revision."
+        page={page}
+        pageSize={PAGE_SIZE}
+        totalCount={totalCount}
       />
     </div>
   );

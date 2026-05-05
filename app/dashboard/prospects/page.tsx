@@ -7,6 +7,7 @@ import {
   DashboardUnavailable,
   getDashboardPageContext,
 } from "@/components/dashboard/dashboard-sections";
+import { getPaginatedProspects } from "@/lib/dashboard";
 import { PageHeader } from "@/components/crm/page-header";
 
 export const dynamic = "force-dynamic";
@@ -16,12 +17,26 @@ export const metadata: Metadata = {
   description: "Prospectos aprobados pendientes de preparar mensaje antes del envio.",
 };
 
-export default async function ProspectsPage() {
+const PAGE_SIZE = 25;
+
+export default async function ProspectsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const params = await searchParams;
+  const page = Math.max(1, parseInt(params.page || "1", 10) || 1);
   const context = await getDashboardPageContext();
 
   if (context.kind !== "ready") {
     return <DashboardUnavailable context={context as DashboardPageContext} />;
   }
+
+  const { items, totalCount } = await getPaginatedProspects({
+    statuses: ["approved"],
+    page,
+    pageSize: PAGE_SIZE,
+  });
 
   return (
     <div className="page-stack">
@@ -37,13 +52,16 @@ export default async function ProspectsPage() {
       <ProspectTable
         title="Prospects"
         description="Aqui trabajas solo approved. Cuando preparas el mensaje, el prospecto pasa a ready y desaparece de esta vista para entrar en envios."
-        records={context.data.prospects}
+        records={items}
         endpoint="/api/prospects"
         actions={[
           { action: "generateDrafts", label: "Preparar mensaje", variant: "primary" },
           { action: "rejectRecords", label: "Rechazar", variant: "danger" },
         ]}
         emptyLabel="No hay prospectos approved pendientes."
+        page={page}
+        pageSize={PAGE_SIZE}
+        totalCount={totalCount}
       />
     </div>
   );

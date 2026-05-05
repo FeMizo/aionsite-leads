@@ -7,6 +7,7 @@ import {
   DashboardUnavailable,
   getDashboardPageContext,
 } from "@/components/dashboard/dashboard-sections";
+import { getPaginatedProspects } from "@/lib/dashboard";
 import { PageHeader } from "@/components/crm/page-header";
 
 export const dynamic = "force-dynamic";
@@ -16,12 +17,27 @@ export const metadata: Metadata = {
   description: "Seguimiento de prospectos ya contactados, respondidos o cerrados.",
 };
 
-export default async function ContactedPage() {
+const PAGE_SIZE = 25;
+
+export default async function ContactedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const params = await searchParams;
+  const page = Math.max(1, parseInt(params.page || "1", 10) || 1);
   const context = await getDashboardPageContext();
 
   if (context.kind !== "ready") {
     return <DashboardUnavailable context={context as DashboardPageContext} />;
   }
+
+  const { items, totalCount } = await getPaginatedProspects({
+    statuses: ["contacted", "replied", "closed"],
+    page,
+    pageSize: PAGE_SIZE,
+    orderBy: "lastCheckedAt",
+  });
 
   return (
     <div className="page-stack">
@@ -36,11 +52,14 @@ export default async function ContactedPage() {
 
       <ProspectTable
         title="Contactados"
-        description="Ultimos registros ya contactados o cerrados."
-        records={context.data.contacted}
+        description="Registros ya contactados o cerrados."
+        records={items}
         endpoint="/api/prospects"
         actions={[{ action: "markAsClient", label: "Marcar cliente", variant: "primary" }]}
         emptyLabel="Todavia no hay contactados."
+        page={page}
+        pageSize={PAGE_SIZE}
+        totalCount={totalCount}
       />
     </div>
   );

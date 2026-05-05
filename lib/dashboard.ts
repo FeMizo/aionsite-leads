@@ -1,6 +1,7 @@
 import { getPrismaClient } from "@/lib/db";
 import { getNextProspectingCrawlAt } from "@/lib/automation";
 import { getProspectScoreCard } from "@/lib/prospect-scoring";
+import type { ProspectStatus } from "@/generated/prisma";
 import type {
   DashboardActivityItem,
   DashboardData,
@@ -93,6 +94,31 @@ function serializeActivityItem(item: {
     prospectName: item.prospect?.name || "",
     email: item.prospect?.email || "",
   };
+}
+
+export async function getPaginatedProspects(options: {
+  statuses: string[];
+  page: number;
+  pageSize: number;
+  orderBy?: "createdAt" | "lastCheckedAt";
+}): Promise<{ items: DashboardProspect[]; totalCount: number }> {
+  const prisma = getPrismaClient();
+  const { statuses, page, pageSize, orderBy = "createdAt" } = options;
+  const skip = (page - 1) * pageSize;
+
+  const statusFilter = statuses as ProspectStatus[];
+
+  const [items, totalCount] = await Promise.all([
+    prisma.prospect.findMany({
+      where: { status: { in: statusFilter } },
+      orderBy: { [orderBy]: "desc" },
+      skip,
+      take: pageSize,
+    }),
+    prisma.prospect.count({ where: { status: { in: statusFilter } } }),
+  ]);
+
+  return { items: items.map(serializeProspect), totalCount };
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
