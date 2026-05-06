@@ -38,6 +38,8 @@
   ],
   "exclude": [
     "node_modules",
-    "CODIGO_MEJORADO.ts"
+    "CODIGO_MEJORADO.ts",
+    "scripts",
+    "services"
   ]
 }
