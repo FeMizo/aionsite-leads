@@ -8,7 +8,7 @@ import {
   DashboardUnavailable,
   getDashboardPageContext,
 } from "@/components/dashboard/dashboard-sections";
-import { getPaginatedProspects } from "@/lib/dashboard";
+import { getProspectsByStatuses } from "@/lib/dashboard";
 import { PageHeader } from "@/components/crm/page-header";
 
 export const dynamic = "force-dynamic";
@@ -33,10 +33,8 @@ export default async function SendPage({
     return <DashboardUnavailable context={context as DashboardPageContext} />;
   }
 
-  const { items, totalCount } = await getPaginatedProspects({
+  const { items, totalCount } = await getProspectsByStatuses({
     statuses: ["ready"],
-    page,
-    pageSize: PAGE_SIZE,
   });
 
   return (

@@ -168,8 +168,6 @@ export function ProspectTable({
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const hasPagination = page !== undefined && pageSize !== undefined && totalCount !== undefined;
-  const totalPages = hasPagination ? Math.ceil(totalCount / pageSize) : 1;
-  const currentPage = page ?? 1;
   const showScheduledColumn =
     endpoint === "/api/send" || records.some((record) => Boolean(record.scheduledSendAt));
   const showLastContactedColumn = records.some((record) => Boolean(record.lastContactedAt));
@@ -319,6 +317,14 @@ export function ProspectTable({
     );
   }, [activeTab, columns, query, records, showSendTabs, sortState]);
 
+  const totalVisibleCount = filteredRecords.length;
+  const totalPages = hasPagination ? Math.max(1, Math.ceil(totalVisibleCount / pageSize)) : 1;
+  const currentPage = page ?? 1;
+  const safeCurrentPage = hasPagination ? Math.min(currentPage, totalPages) : currentPage;
+  const paginatedRecords = hasPagination
+    ? filteredRecords.slice((safeCurrentPage - 1) * pageSize, safeCurrentPage * pageSize)
+    : filteredRecords;
+
   const tabCounts = useMemo(
     () => ({
       all: records.length,
@@ -341,6 +347,10 @@ export function ProspectTable({
       return next;
     });
   }, [filteredRecords]);
+
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [safeCurrentPage]);
 
   function getScheduledLabel(record: DashboardProspect) {
     if (!record.scheduledSendAt) {
@@ -370,10 +380,10 @@ export function ProspectTable({
     return endpoint === "/api/send" && getDisplayStatus(record) === "scheduled";
   }
 
-  const selectableRecords = filteredRecords.filter((record) => !isSendDisabled(record));
+  const selectableRecords = paginatedRecords.filter((record) => !isSendDisabled(record));
 
   function toggleSelection(recordId: string) {
-    const record = filteredRecords.find((item) => item.id === recordId);
+    const record = paginatedRecords.find((item) => item.id === recordId);
 
     if (record && isSendDisabled(record)) {
       return;
@@ -468,7 +478,7 @@ export function ProspectTable({
     <Table
       title={title}
       description={description}
-      hasRows={filteredRecords.length > 0}
+      hasRows={paginatedRecords.length > 0}
       actions={
         <input
           className="crm-search"
@@ -524,7 +534,7 @@ export function ProspectTable({
                 type="checkbox"
                 checked={
                   selectableRecords.length > 0 &&
-                  selectedIds.length === selectableRecords.length
+                  selectableRecords.every((record) => selectedIds.includes(record.id))
                 }
                 onChange={toggleAll}
                 disabled={selectableRecords.length === 0}
@@ -552,7 +562,7 @@ export function ProspectTable({
           </tr>
         </thead>
         <tbody>
-          {filteredRecords.map((record) => {
+          {paginatedRecords.map((record) => {
             const displayStatus = getDisplayStatus(record);
             const sendDisabled = isSendDisabled(record);
 
@@ -633,7 +643,7 @@ export function ProspectTable({
                   <td>
                     {record.lastContactedAt
                       ? formatDashboardDateTime(record.lastContactedAt)
-                      : "—"}
+                      : "-"}
                   </td>
                 ) : null}
                 <td>{formatDashboardDateTime(record.updatedAt)}</td>
@@ -643,32 +653,32 @@ export function ProspectTable({
         </tbody>
       </table>
 
-      {hasPagination && totalPages > 1 ? (
+      {hasPagination && totalVisibleCount > pageSize ? (
         <div className="crm-pagination">
           <button
             type="button"
             className="crm-pagination__btn"
-            disabled={currentPage <= 1}
-            onClick={() => navigateToPage(currentPage - 1)}
+            disabled={safeCurrentPage <= 1}
+            onClick={() => navigateToPage(safeCurrentPage - 1)}
           >
-            ← Anterior
+            Anterior
           </button>
           <span className="crm-pagination__info">
-            Página {currentPage} de {totalPages}
-            <span className="crm-pagination__total"> · {totalCount} registros</span>
+            Pagina {safeCurrentPage} de {totalPages}
+            <span className="crm-pagination__total"> - {totalVisibleCount} registros</span>
           </span>
           <button
             type="button"
             className="crm-pagination__btn"
-            disabled={currentPage >= totalPages}
-            onClick={() => navigateToPage(currentPage + 1)}
+            disabled={safeCurrentPage >= totalPages}
+            onClick={() => navigateToPage(safeCurrentPage + 1)}
           >
-            Siguiente →
+            Siguiente
           </button>
         </div>
       ) : hasPagination && totalCount !== undefined ? (
         <div className="crm-pagination">
-          <span className="crm-pagination__info">{totalCount} registros</span>
+          <span className="crm-pagination__info">{totalVisibleCount} registros</span>
         </div>
       ) : null}
     </Table>

@@ -121,6 +121,25 @@ export async function getPaginatedProspects(options: {
   return { items: items.map(serializeProspect), totalCount };
 }
 
+export async function getProspectsByStatuses(options: {
+  statuses: string[];
+  orderBy?: "createdAt" | "lastCheckedAt";
+}): Promise<{ items: DashboardProspect[]; totalCount: number }> {
+  const prisma = getPrismaClient();
+  const { statuses, orderBy = "createdAt" } = options;
+  const statusFilter = statuses as ProspectStatus[];
+
+  const [items, totalCount] = await Promise.all([
+    prisma.prospect.findMany({
+      where: { status: { in: statusFilter } },
+      orderBy: { [orderBy]: "desc" },
+    }),
+    prisma.prospect.count({ where: { status: { in: statusFilter } } }),
+  ]);
+
+  return { items: items.map(serializeProspect), totalCount };
+}
+
 export async function getDashboardData(): Promise<DashboardData> {
   const prisma = getPrismaClient();
   const nextCrawlAt = getNextProspectingCrawlAt();
