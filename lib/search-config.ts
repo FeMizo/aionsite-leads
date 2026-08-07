@@ -5,21 +5,36 @@ export const DESIRED_PROSPECT_COUNT = 20;
 export const REQUIRED_TYPES: string[] = [];
 export const REQUIRE_EMAIL_FOR_FINAL_PROSPECTS = true;
 
-function buildSearchSpec(
+function buildSearchSpecs(
   city: (typeof SEARCH_CITIES)[number],
   niche: (typeof SEARCH_NICHES)[number]
-): SearchSpec {
-  return {
-    id: `${niche.slug}-${city.slug}`,
+): SearchSpec[] {
+  const queries = Array.from(
+    new Set([
+      niche.textQuery,
+      ...(niche.queryVariants || []),
+    ])
+  );
+
+  return queries.map((query, index) => ({
+    id: `${niche.slug}-${city.slug}${queries.length > 1 ? `-${index + 1}` : ""}`,
     city: city.city,
-    label: `${niche.label} en ${city.city}`,
-    textQuery: `${niche.textQuery} en ${city.queryLocation}`,
+    state: city.state,
+    label: `${niche.label} en ${city.city}${queries.length > 1 ? ` (${index + 1})` : ""}`,
+    textQuery: `${query} en ${city.queryLocation}`,
+    queryVariant: query,
+    potentialScore: (city.priority ?? 50) + (niche.priority ?? 50),
     typeLabel: niche.typeLabel,
     includedType: niche.includedType,
-    pageSize: 20,
-  };
+    pageSize: niche.pageSize ?? 20,
+  }));
 }
 
 export const SEARCHES: SearchSpec[] = SEARCH_CITIES.flatMap((city) =>
-  SEARCH_NICHES.map((niche) => buildSearchSpec(city, niche))
-);
+  SEARCH_NICHES.flatMap((niche) => buildSearchSpecs(city, niche))
+).sort((left, right) => {
+  const leftScore = left.potentialScore ?? 0;
+  const rightScore = right.potentialScore ?? 0;
+
+  return rightScore - leftScore || left.id.localeCompare(right.id);
+});

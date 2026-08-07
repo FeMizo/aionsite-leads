@@ -62,8 +62,11 @@ export type ComparableProspect = Pick<
 export type SearchSpec = {
   id: string;
   city: string;
+  state?: string;
   label: string;
   textQuery: string;
+  queryVariant?: string;
+  potentialScore?: number;
   typeLabel?: string;
   includedType?: string;
   pageSize?: number;

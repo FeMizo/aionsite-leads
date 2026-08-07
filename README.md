@@ -23,6 +23,22 @@ Pipeline de prospecting para AionSite sobre `Next.js App Router`, `Vercel Functi
 - `ContactEvent`: historial de eventos por prospecto.
 - `Run`: metricas por busqueda, incluyendo requests a Google Places y fetches a websites.
 
+## Donde busca
+
+Los estados y ciudades objetivo estan en `lib/search-targets.ts`.
+
+Defaults actuales:
+
+- Yucatan: Merida
+- Oaxaca: Oaxaca
+- Chiapas: Tuxtla Gutierrez
+- Veracruz: Veracruz
+- Sinaloa: Culiacan
+- Nayarit: Tepic
+- Campeche: Campeche
+- Puebla: Puebla
+- Guanajuato: Leon
+
 ## Variables de entorno
 
 Usa `.env` basado en `.env.example`:
@@ -48,6 +64,38 @@ Dependencias por modulo:
 - `GOOGLE_MAPS_API_KEY`: obligatorio para `/api/cron`, `/api/runs/execute` y busquedas manuales.
 - `SMTP_*`: obligatorio para `/api/send` y `/api/prospects/{id}/send`.
 - `INTERNAL_API_KEY`: obligatorio para los endpoints protegidos que usara el GPT.
+- `SEARCH_CITIES_JSON`: override completo del catalogo de ciudades/estados.
+- `SEARCH_CITIES_EXTRA_JSON`: ciudades/estados extra sin reemplazar los defaults.
+- `SEARCH_NICHES_JSON`: override completo del catalogo de nichos.
+- `SEARCH_NICHES_EXTRA_JSON`: nichos extra sin reemplazar los defaults.
+
+Formato esperado:
+
+```json
+[
+  {
+    "slug": "monterrey",
+    "city": "Monterrey",
+    "state": "Nuevo Leon",
+    "queryLocation": "Monterrey, Nuevo Leon, Mexico",
+    "timeZone": "America/Monterrey",
+    "aliases": ["Monterrey NL"]
+  }
+]
+```
+
+```json
+[
+  {
+    "slug": "pet-groomers",
+    "label": "esteticas caninas",
+    "textQuery": "esteticas caninas",
+    "typeLabel": "pet_grooming",
+    "includedType": "pet_grooming",
+    "queryVariants": ["esteticas caninas", "peluqueria canina"]
+  }
+]
+```
 
 ## Correr en local
 

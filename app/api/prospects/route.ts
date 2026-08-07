@@ -195,10 +195,10 @@ async function handleLegacyDashboardAction(payload: ProspectActionPayload) {
       }
       case "markContacted": {
         const result = await transitionProspects(ids, {
-          fromStatuses: ["ready"],
+          fromStatuses: ["generated", "analyzed", "approved", "ready", "contacted"],
           nextStatus: "contacted",
           eventType: "marked_contacted",
-          note: "Record marked as contacted manually from ready state",
+          note: "Record marked as contacted manually from dashboard",
           clearError: true,
           data: {
             contacted: true,

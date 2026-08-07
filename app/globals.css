@@ -251,6 +251,16 @@ code {
   margin-bottom: 1rem;
 }
 
+.manual-contact-actions__wrap {
+  margin-top: 1rem;
+}
+
+.manual-contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .crm-tabs {
   display: flex;
   flex-wrap: wrap;

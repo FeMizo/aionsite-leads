@@ -1,4 +1,4 @@
-import { SEARCH_CITIES } from "@/lib/search-targets";
+import { getSearchCities } from "@/lib/search-targets";
 
 export const DEFAULT_PROSPECT_TIME_ZONE = "America/Mexico_City";
 
@@ -11,9 +11,27 @@ function normalizeLocationKey(value: string) {
     .trim();
 }
 
-const SEARCH_CITY_TIME_ZONES = new Map(
-  SEARCH_CITIES.map((target) => [normalizeLocationKey(target.city), target.timeZone])
-);
+function buildSearchCityTimeZones() {
+  const entries = new Map<string, string>();
+
+  for (const target of getSearchCities()) {
+    const keys = new Set([
+      target.city,
+      target.state,
+      target.queryLocation,
+      `${target.city} ${target.state}`,
+      ...(target.aliases || []),
+    ]);
+
+    for (const key of keys) {
+      entries.set(normalizeLocationKey(key), target.timeZone);
+    }
+  }
+
+  return entries;
+}
+
+const SEARCH_CITY_TIME_ZONES = buildSearchCityTimeZones();
 
 const EXTRA_CITY_TIME_ZONES = new Map<string, string>([
   ["merida", "America/Merida"],

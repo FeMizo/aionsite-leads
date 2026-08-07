@@ -7,6 +7,7 @@ import { getProspectDisplayStatus } from "@/lib/prospect-status";
 import { formatDashboardDateTime } from "@/lib/date-format";
 import { StatusPill } from "@/components/dashboard/status-pill";
 import { EmailPreview } from "./email-preview";
+import { ManualContactActions } from "./manual-contact-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -124,6 +125,17 @@ export default async function ProspectDetailPage({ params }: PageContext) {
                 </>
               )}
             </dl>
+
+            <div className="manual-contact-actions__wrap">
+              <ManualContactActions
+                prospectId={prospect.id}
+                email={prospect.email}
+                phone={prospect.phone}
+                subject={prospect.subject || draft.subject}
+                message={prospect.message || draft.message}
+                name={prospect.name}
+              />
+            </div>
           </div>
 
           <div className="panel">

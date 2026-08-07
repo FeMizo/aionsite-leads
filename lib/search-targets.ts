@@ -1,8 +1,15 @@
+import { getFirstEnvValue } from "@/lib/env";
+import { normalizeWhitespace } from "@/lib/normalizers";
+
 export type SearchCityTarget = {
   slug: string;
   city: string;
+  state: string;
   queryLocation: string;
   timeZone: string;
+  priority?: number;
+  aliases?: string[];
+  enabled?: boolean;
 };
 
 export type SearchNicheTarget = {
@@ -11,73 +18,119 @@ export type SearchNicheTarget = {
   textQuery: string;
   typeLabel?: string;
   includedType?: string;
+  priority?: number;
+  queryVariants?: string[];
+  pageSize?: number;
+  enabled?: boolean;
 };
 
-export const SEARCH_CITIES: SearchCityTarget[] = [
+const SEARCH_CITIES_OVERRIDE_ENV = "SEARCH_CITIES_JSON";
+const SEARCH_CITIES_EXTRA_ENV = "SEARCH_CITIES_EXTRA_JSON";
+const SEARCH_NICHES_OVERRIDE_ENV = "SEARCH_NICHES_JSON";
+const SEARCH_NICHES_EXTRA_ENV = "SEARCH_NICHES_EXTRA_JSON";
+
+export const DEFAULT_SEARCH_CITIES: SearchCityTarget[] = [
   {
     slug: "merida",
     city: "Merida",
+    state: "Yucatan",
     queryLocation: "Merida, Yucatan, Mexico",
     timeZone: "America/Merida",
+    priority: 95,
+    aliases: ["Merida Yucatan", "Mérida", "Mérida, Yucatán"],
   },
   {
     slug: "oaxaca",
     city: "Oaxaca",
+    state: "Oaxaca",
     queryLocation: "Oaxaca, Oaxaca, Mexico",
     timeZone: "America/Mexico_City",
+    priority: 85,
+    aliases: ["Oaxaca de Juarez", "Oaxaca de Juárez"],
   },
   {
     slug: "tuxtla-gutierrez",
     city: "Tuxtla Gutierrez",
+    state: "Chiapas",
     queryLocation: "Tuxtla Gutierrez, Chiapas, Mexico",
     timeZone: "America/Mexico_City",
+    priority: 78,
+    aliases: ["Tuxtla", "Tuxtla Gutiérrez"],
   },
   {
     slug: "veracruz",
     city: "Veracruz",
+    state: "Veracruz",
     queryLocation: "Veracruz, Veracruz, Mexico",
     timeZone: "America/Mexico_City",
+    priority: 82,
+    aliases: ["Veracruz puerto", "Veracruz Puerto"],
   },
   {
     slug: "culiacan",
     city: "Culiacan",
+    state: "Sinaloa",
     queryLocation: "Culiacan, Sinaloa, Mexico",
     timeZone: "America/Mexico_City",
+    priority: 80,
+    aliases: ["Culiacan Rosales", "Culiacán"],
   },
   {
     slug: "tepic",
     city: "Tepic",
+    state: "Nayarit",
     queryLocation: "Tepic, Nayarit, Mexico",
     timeZone: "America/Mexico_City",
+    priority: 74,
+    aliases: ["Tepic Nayarit"],
   },
   {
     slug: "campeche",
     city: "Campeche",
+    state: "Campeche",
     queryLocation: "Campeche, Campeche, Mexico",
     timeZone: "America/Mexico_City",
+    priority: 76,
+    aliases: ["San Francisco de Campeche"],
+  },
+  {
+    slug: "ciudad-del-carmen",
+    city: "Ciudad del Carmen",
+    state: "Campeche",
+    queryLocation: "Ciudad del Carmen, Campeche, Mexico",
+    timeZone: "America/Mexico_City",
+    priority: 79,
+    aliases: ["Cd. del Carmen", "Carmen"],
   },
   {
     slug: "puebla",
     city: "Puebla",
+    state: "Puebla",
     queryLocation: "Puebla, Puebla, Mexico",
     timeZone: "America/Mexico_City",
+    priority: 84,
+    aliases: ["Heroica Puebla de Zaragoza"],
   },
   {
     slug: "leon",
     city: "Leon",
+    state: "Guanajuato",
     queryLocation: "Leon, Guanajuato, Mexico",
     timeZone: "America/Mexico_City",
+    priority: 81,
+    aliases: ["León", "Leon de los Aldama"],
   },
 ];
 
-export const SEARCH_NICHES: SearchNicheTarget[] = [
-  // --- Originales de alto valor ---
+export const DEFAULT_SEARCH_NICHES: SearchNicheTarget[] = [
   {
     slug: "dentists",
     label: "dentistas",
     textQuery: "dentistas",
     typeLabel: "dentist",
     includedType: "dentist",
+    priority: 100,
+    queryVariants: ["dentistas", "clinica dental"],
   },
   {
     slug: "clinics",
@@ -85,6 +138,8 @@ export const SEARCH_NICHES: SearchNicheTarget[] = [
     textQuery: "clinicas medicas",
     typeLabel: "doctor",
     includedType: "doctor",
+    priority: 94,
+    queryVariants: ["clinicas medicas", "consultorio medico"],
   },
   {
     slug: "lawyers",
@@ -92,6 +147,8 @@ export const SEARCH_NICHES: SearchNicheTarget[] = [
     textQuery: "despachos de abogados",
     typeLabel: "lawyer",
     includedType: "lawyer",
+    priority: 92,
+    queryVariants: ["despachos de abogados", "bufete juridico"],
   },
   {
     slug: "beauty-salon",
@@ -99,6 +156,8 @@ export const SEARCH_NICHES: SearchNicheTarget[] = [
     textQuery: "salones de belleza y esteticas",
     typeLabel: "beauty_salon",
     includedType: "beauty_salon",
+    priority: 88,
+    queryVariants: ["salones de belleza", "estetica"],
   },
   {
     slug: "mechanic-shops",
@@ -106,21 +165,25 @@ export const SEARCH_NICHES: SearchNicheTarget[] = [
     textQuery: "talleres mecanicos",
     typeLabel: "car_repair",
     includedType: "car_repair",
+    priority: 90,
+    queryVariants: ["talleres mecanicos", "servicio automotriz"],
   },
   {
     slug: "small-restaurants",
     label: "restaurantes y fondas",
-    textQuery: "restaurantes pequeños y fondas",
+    textQuery: "restaurantes pequenos y fondas",
     typeLabel: "restaurant",
     includedType: "restaurant",
+    priority: 72,
+    queryVariants: ["restaurantes pequenos", "fondas"],
   },
-  // --- Servicios locales sin web típicamente ---
   {
     slug: "carpenters",
     label: "carpinteros y ebanistas",
     textQuery: "carpinteros ebanistas",
     typeLabel: "carpenter",
     includedType: "contractor",
+    priority: 86,
   },
   {
     slug: "plumbers",
@@ -128,6 +191,7 @@ export const SEARCH_NICHES: SearchNicheTarget[] = [
     textQuery: "plomeros gasistas fontaneros",
     typeLabel: "plumber",
     includedType: "contractor",
+    priority: 87,
   },
   {
     slug: "electricians",
@@ -135,6 +199,7 @@ export const SEARCH_NICHES: SearchNicheTarget[] = [
     textQuery: "electricistas residenciales",
     typeLabel: "electrician",
     includedType: "contractor",
+    priority: 89,
   },
   {
     slug: "painters",
@@ -142,13 +207,15 @@ export const SEARCH_NICHES: SearchNicheTarget[] = [
     textQuery: "pintores remodeladores acabados",
     typeLabel: "painter",
     includedType: "contractor",
+    priority: 83,
   },
   {
     slug: "event-halls",
     label: "salones de eventos y fiestas",
-    textQuery: "salones de eventos quinceañeras bodas",
+    textQuery: "salones de eventos quinceaneras bodas",
     typeLabel: "event_venue",
     includedType: "event_venue",
+    priority: 75,
   },
   {
     slug: "gyms",
@@ -156,6 +223,7 @@ export const SEARCH_NICHES: SearchNicheTarget[] = [
     textQuery: "gimnasios crossfit centros deportivos",
     typeLabel: "gym",
     includedType: "gym",
+    priority: 79,
   },
   {
     slug: "veterinarians",
@@ -163,6 +231,7 @@ export const SEARCH_NICHES: SearchNicheTarget[] = [
     textQuery: "veterinarias clinicas veterinarias mascotas",
     typeLabel: "veterinary_care",
     includedType: "veterinary_care",
+    priority: 91,
   },
   {
     slug: "accounting",
@@ -170,6 +239,7 @@ export const SEARCH_NICHES: SearchNicheTarget[] = [
     textQuery: "contadores despachos contables fiscalistas",
     typeLabel: "accounting",
     includedType: "accounting",
+    priority: 96,
   },
   {
     slug: "real-estate",
@@ -177,6 +247,7 @@ export const SEARCH_NICHES: SearchNicheTarget[] = [
     textQuery: "inmobiliarias agencias bienes raices",
     typeLabel: "real_estate_agency",
     includedType: "real_estate_agency",
+    priority: 93,
   },
   {
     slug: "bakeries",
@@ -184,5 +255,184 @@ export const SEARCH_NICHES: SearchNicheTarget[] = [
     textQuery: "panaderias pastelerias artesanales",
     typeLabel: "bakery",
     includedType: "bakery",
+    priority: 77,
   },
 ];
+
+function normalizeKey(value: string) {
+  return normalizeWhitespace(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function normalizeText(value: string) {
+  return normalizeWhitespace(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function parseJsonArrayEnv<T>(value: string, label: string) {
+  try {
+    const parsed = JSON.parse(value);
+
+    if (!Array.isArray(parsed)) {
+      throw new Error(`${label} debe ser un arreglo JSON.`);
+    }
+
+    return parsed as T[];
+  } catch (error) {
+    console.warn(
+      error instanceof Error
+        ? `[search-targets] Ignorando ${label}: ${error.message}`
+        : `[search-targets] Ignorando ${label} por un JSON invalido.`
+    );
+
+    return [];
+  }
+}
+
+function normalizeSearchCityTarget(entry: Partial<SearchCityTarget>): SearchCityTarget | null {
+  const slug = normalizeKey(String(entry.slug || ""));
+  const city = normalizeText(String(entry.city || ""));
+  const state = normalizeText(String(entry.state || ""));
+  const queryLocation = normalizeText(String(entry.queryLocation || ""));
+  const timeZone = normalizeWhitespace(String(entry.timeZone || ""));
+
+  if (!slug || !city || !state || !queryLocation || !timeZone) {
+    return null;
+  }
+
+  const aliases = Array.isArray(entry.aliases)
+    ? entry.aliases.map((alias) => normalizeText(String(alias))).filter(Boolean)
+    : [];
+
+  return {
+    slug,
+    city,
+    state,
+    queryLocation,
+    timeZone,
+    aliases: aliases.length ? aliases : undefined,
+    enabled: entry.enabled !== false,
+  };
+}
+
+function normalizeSearchNicheTarget(entry: Partial<SearchNicheTarget>): SearchNicheTarget | null {
+  const slug = normalizeKey(String(entry.slug || ""));
+  const label = normalizeText(String(entry.label || ""));
+  const textQuery = normalizeText(String(entry.textQuery || ""));
+
+  if (!slug || !label || !textQuery) {
+    return null;
+  }
+
+  const queryVariants = Array.isArray(entry.queryVariants)
+    ? entry.queryVariants
+        .map((variant) => normalizeText(String(variant)))
+        .filter(Boolean)
+    : [];
+
+  return {
+    slug,
+    label,
+    textQuery,
+    typeLabel: normalizeText(String(entry.typeLabel || "")) || undefined,
+    includedType: normalizeText(String(entry.includedType || "")) || undefined,
+    queryVariants: queryVariants.length ? Array.from(new Set(queryVariants)) : undefined,
+    pageSize: Number.isFinite(Number(entry.pageSize))
+      ? Math.min(Math.max(Math.trunc(Number(entry.pageSize)), 1), 50)
+      : undefined,
+    enabled: entry.enabled !== false,
+  };
+}
+
+function mergeSearchTargets<T extends { slug: string; enabled?: boolean }>(
+  defaults: T[],
+  overrides: T[],
+  extras: T[]
+) {
+  const merged = new Map<string, T>();
+
+  for (const entry of defaults) {
+    merged.set(entry.slug, entry);
+  }
+
+  for (const entry of overrides) {
+    merged.set(entry.slug, entry);
+  }
+
+  for (const entry of extras) {
+    if (merged.has(entry.slug)) {
+      merged.set(entry.slug, {
+        ...merged.get(entry.slug)!,
+        ...entry,
+      });
+      continue;
+    }
+
+    merged.set(entry.slug, entry);
+  }
+
+  return Array.from(merged.values()).filter((entry) => entry.enabled !== false);
+}
+
+function loadSearchCities() {
+  const overridesRaw = getFirstEnvValue([SEARCH_CITIES_OVERRIDE_ENV]);
+  const extrasRaw = getFirstEnvValue([SEARCH_CITIES_EXTRA_ENV]);
+
+  const overrides = overridesRaw
+    ? parseJsonArrayEnv<Partial<SearchCityTarget>>(overridesRaw, SEARCH_CITIES_OVERRIDE_ENV)
+        .map(normalizeSearchCityTarget)
+        .filter((target): target is SearchCityTarget => Boolean(target))
+    : [];
+
+  const extras = extrasRaw
+    ? parseJsonArrayEnv<Partial<SearchCityTarget>>(extrasRaw, SEARCH_CITIES_EXTRA_ENV)
+        .map(normalizeSearchCityTarget)
+        .filter((target): target is SearchCityTarget => Boolean(target))
+    : [];
+
+  const base = overrides.length ? overrides : DEFAULT_SEARCH_CITIES;
+  return mergeSearchTargets(base, [], extras);
+}
+
+function loadSearchNiches() {
+  const overridesRaw = getFirstEnvValue([SEARCH_NICHES_OVERRIDE_ENV]);
+  const extrasRaw = getFirstEnvValue([SEARCH_NICHES_EXTRA_ENV]);
+
+  const overrides = overridesRaw
+    ? parseJsonArrayEnv<Partial<SearchNicheTarget>>(overridesRaw, SEARCH_NICHES_OVERRIDE_ENV)
+        .map(normalizeSearchNicheTarget)
+        .filter((target): target is SearchNicheTarget => Boolean(target))
+    : [];
+
+  const extras = extrasRaw
+    ? parseJsonArrayEnv<Partial<SearchNicheTarget>>(extrasRaw, SEARCH_NICHES_EXTRA_ENV)
+        .map(normalizeSearchNicheTarget)
+        .filter((target): target is SearchNicheTarget => Boolean(target))
+    : [];
+
+  const base = overrides.length ? overrides : DEFAULT_SEARCH_NICHES;
+  return mergeSearchTargets(base, [], extras);
+}
+
+export const SEARCH_CITIES = loadSearchCities();
+export const SEARCH_NICHES = loadSearchNiches();
+
+export function getSearchCities() {
+  return SEARCH_CITIES;
+}
+
+export function getSearchNiches() {
+  return SEARCH_NICHES;
+}
+
+export function getSearchStates() {
+  return Array.from(new Set(SEARCH_CITIES.map((target) => target.state))).sort((left, right) =>
+    left.localeCompare(right, "es")
+  );
+}
