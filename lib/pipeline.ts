@@ -21,6 +21,7 @@ import {
   MINIMUM_QUALIFIED_PROSPECT_SCORE,
   getProspectAutomationStatus,
   hasRatingOpportunity,
+  hasDirectContactPath,
   scoreProspect,
 } from "@/lib/prospect-scoring";
 import type { ComparableProspect, ProspectCandidate } from "@/lib/types";
@@ -314,11 +315,11 @@ export async function runProspectSearch(source = "google-places") {
     const eligibleProspects: ProspectCandidate[] = [];
     const comparisonPool: ComparableProspect[] = [...existingProspects];
     let enrichmentDuplicates = 0;
-    let prospectsWithoutEmail = 0;
+    let prospectsWithoutContact = 0;
 
     for (const item of ordered) {
-      if (REQUIRE_EMAIL_FOR_FINAL_PROSPECTS && !normalizeEmail(item.prospect.email)) {
-        prospectsWithoutEmail += 1;
+      if (REQUIRE_EMAIL_FOR_FINAL_PROSPECTS && !hasDirectContactPath(item.prospect)) {
+        prospectsWithoutContact += 1;
         continue;
       }
 
@@ -340,7 +341,13 @@ export async function runProspectSearch(source = "google-places") {
         prospect,
         score: scoreProspect(prospect),
       }))
-      .sort((left, right) => right.score - left.score);
+      .sort((left, right) => {
+        const contactDiff =
+          Number(hasDirectContactPath(right.prospect)) -
+          Number(hasDirectContactPath(left.prospect));
+
+        return right.score - left.score || contactDiff;
+      });
 
     let finalProspects = selectFinalProspects(eligibleProspects);
 
@@ -367,7 +374,7 @@ export async function runProspectSearch(source = "google-places") {
           `[prospect-run] Se completara el lote hasta ${Math.min(
             MINIMUM_PROSPECTS_TO_SAVE,
             finalProspects.length
-          )} prospectos con respaldo de candidatos sin email o con score bajo.`
+          )} prospectos con respaldo de candidatos sin canal de contacto o con score bajo.`
         );
       }
     }
@@ -384,7 +391,7 @@ export async function runProspectSearch(source = "google-places") {
     console.log(`[prospect-run] Candidatos unicos: ${uniqueProspects.length} (${duplicates.length} duplicados vs BD)`);
     console.log(`[prospect-run] Descartados por score < ${MINIMUM_QUALIFIED_PROSPECT_SCORE}: ${lowScoreDiscarded}`);
     console.log(`[prospect-run] Descartados por duplicado post-enriquecimiento: ${enrichmentDuplicates}`);
-    console.log(`[prospect-run] Descartados por sin email: ${prospectsWithoutEmail}`);
+    console.log(`[prospect-run] Descartados por sin canal de contacto: ${prospectsWithoutContact}`);
     console.log(`[prospect-run] Prospectos finales guardados: ${metrics.prospectsSaved}`);
 
     const runStatus = finalProspects.length

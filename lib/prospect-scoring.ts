@@ -1,4 +1,5 @@
 import type { ProspectCandidate } from "@/lib/types";
+import { normalizeEmail, normalizePhone } from "@/lib/normalizers";
 import { inferWebsiteSignal } from "@/lib/website-signals";
 
 export type ProspectPriority = "alto" | "medio" | "bajo";
@@ -25,6 +26,8 @@ type ProspectScoreInput = Pick<
   hasRecentPhotos?: boolean;
   photoCount?: number;
   openingHours?: { weekdayText: string[]; isOpen: boolean | null } | null;
+  email?: string;
+  phone?: string;
 };
 
 function parseRating(value: string) {
@@ -47,15 +50,15 @@ function hasStoredAuditSnapshot(prospect: ProspectScoreInput): boolean {
   );
 }
 
-// --- Señales individuales ---
+// --- SeÃ±ales individuales ---
 
-export function hasRatingOpportunity(prospect: Pick<ProspectScoreInput, "rating" | "userRatingCount">) {
+export function hasRatingOpportunity(
+  prospect: Pick<ProspectScoreInput, "rating" | "userRatingCount">
+) {
   const rating = parseRating(prospect.rating || "");
   if (!rating) return false;
   const count = parseReviewCount(prospect.userRatingCount);
-  // Negocio con reseñas y rating bajo = problema activo de reputacion digital
   if (rating <= 4.4 && rating >= 2.5 && count >= 10) return true;
-  // Rating muy bajo sin reseñas minimas = señal de alarma igual
   if (rating <= 4.0) return true;
   return false;
 }
@@ -94,7 +97,18 @@ export function lacksContactCta(
   return !prospect.hasWhatsappCta && !prospect.hasContactCta;
 }
 
-// --- Señales agregadas ---
+export function hasDirectContactPath(
+  prospect: Pick<ProspectScoreInput, "email" | "phone" | "hasWhatsappCta" | "hasContactCta">
+) {
+  return Boolean(
+    normalizeEmail(prospect.email || "") ||
+      normalizePhone(prospect.phone || "") ||
+      prospect.hasWhatsappCta ||
+      prospect.hasContactCta
+  );
+}
+
+// --- SeÃ±ales agregadas ---
 
 export function getProspectSignalCounts(prospect: ProspectScoreInput) {
   const websiteSignal = inferWebsiteSignal(prospect);
@@ -113,6 +127,7 @@ export function getProspectSignalCounts(prospect: ProspectScoreInput) {
   const reviewCount = parseReviewCount(prospect.userRatingCount);
   const hasHighReviews = reviewCount >= 50;
   const hasMediumReviews = reviewCount >= 15 && reviewCount < 50;
+  const contactable = hasDirectContactPath(prospect);
 
   return {
     noWebsite,
@@ -124,6 +139,7 @@ export function getProspectSignalCounts(prospect: ProspectScoreInput) {
     goodReviewsBadPresence,
     hasHighReviews,
     hasMediumReviews,
+    contactable,
     matchedSignals: [noWebsite, poorWebsite, ratingOpportunity, noCta].filter(Boolean).length,
   };
 }
@@ -149,62 +165,72 @@ export function scoreProspect(prospect: ProspectScoreInput): number {
   const websiteSignal = inferWebsiteSignal(prospect);
   const reviewCount = parseReviewCount(prospect.userRatingCount);
   const rating = parseRating(prospect.rating || "");
+  const normalizedEmail = normalizeEmail(prospect.email || "");
+  const normalizedPhone = normalizePhone(prospect.phone || "");
   let score = 0;
 
-  // 1. ESTADO DEL SITIO WEB (señales mutuamente excluyentes, ordenadas por gravedad)
-  //    Captura el nivel de dolor digital del negocio.
+  // 1. ESTADO DEL SITIO WEB
   if (websiteSignal === "missing") {
-    // Sin web: maxima oportunidad de venta directa
     score += 40;
   } else if (websiteSignal === "social-only") {
-    // Solo redes sociales: no captan trafico organico ni leads directos
     score += 30;
   } else if (websiteSignal === "basic") {
-    // Sitio basico (Wix/Google Sites): percepcion de negocio informal
     score += 24;
   } else if (prospect.websiteFetchFailed) {
-    // Sitio caido o inaccesible: pierde clientes en el primer click
     score += 20;
   } else if (typeof prospect.websiteLoadTimeMs === "number") {
     if (prospect.websiteLoadTimeMs >= 6000) {
-      // Muy lento (>6s): abandono casi seguro en movil
       score += 16;
     } else if (prospect.websiteLoadTimeMs >= 4500) {
-      // Lento (4.5-6s): friccion alta en conversion
       score += 10;
     } else if (hasStoredAuditSnapshot(prospect)) {
-      // Sitio funcional analizado: oportunidad de mejora (rediseño, SEO, CTA)
       score += 10;
     }
   } else if (websiteSignal === "existing" && hasStoredAuditSnapshot(prospect)) {
-    // Sitio funcional analizado: oportunidad de mejora (rediseño, SEO, CTA)
     score += 10;
   }
 
-  // 2. SEÑALES DE CONVERSION (se acumulan sobre el estado del sitio)
-  //    Cuantifican cuanto dinero se pierde hoy por falta de UX.
+  // 2. CONVERSION SIGNALS
   if (lacksContactCta(prospect)) {
-    // Sin boton de contacto ni WhatsApp: visitas sin conversion
     score += 12;
   }
   if (prospect.isMobileFriendly === false) {
-    // No responsive: la mayoria del trafico local es movil
     score += 10;
   }
 
-  // 3. TRACCION DEL NEGOCIO (reseñas = tiene clientes, tiene caja, puede pagar)
+  // 2b. DIRECT CONTACTABILITY
+  if (normalizedPhone) {
+    score += 12;
+  }
+  if (normalizedEmail) {
+    score += 8;
+  }
+  if (prospect.hasWhatsappCta) {
+    score += 8;
+  }
+  if (prospect.hasContactCta) {
+    score += 6;
+  }
+  if (normalizedPhone && normalizedEmail) {
+    score += 4;
+  }
+  if (!hasDirectContactPath(prospect)) {
+    score -= 8;
+  }
+
+  // 3. TRACTION
   if (reviewCount >= 50) {
     score += 15;
   } else if (reviewCount >= 15) {
     score += 8;
   }
 
-  // 4. SEÑAL DE RATING (problema de reputacion activo = urgencia de mejorar presencia)
+  // 4. RATING URGENCY
   if (hasRatingOpportunity(prospect)) {
     score += 20;
   }
 
-  // 5. SEÑALES DE ACTIVIDAD DEL NEGOCIO (Maps data)
+  // 5. BUSINESS ACTIVITY
   if (prospect.businessStatus === "OPERATIONAL") {
     score += 5;
   }
@@ -218,9 +244,6 @@ export function scoreProspect(prospect: ProspectScoreInput): number {
     score -= 10;
   }
 
-  // Older records can lose review-count and audit fields after persistence.
-  // Give them a small baseline instead of rendering as 0 when we still know
-  // they have a website or rating, but keep them clearly below qualification.
   if (
     score === 0 &&
     !hasStoredAuditSnapshot(prospect) &&
@@ -230,6 +253,26 @@ export function scoreProspect(prospect: ProspectScoreInput): number {
   }
 
   return score;
+}
+
+export type ProspectScoreCard = {
+  score: number;
+  priority: ProspectPriority;
+  automationStatus: ProspectAutomationStatus;
+  signals: ReturnType<typeof getProspectSignalCounts>;
+};
+
+export function getProspectScoreCard(
+  prospect: ProspectScoreInput
+): ProspectScoreCard {
+  const score = scoreProspect(prospect);
+
+  return {
+    score,
+    priority: getPriority(score),
+    automationStatus: getProspectAutomationStatus(score),
+    signals: getProspectSignalCounts(prospect),
+  };
 }
 
 // --- Clasificacion ---
@@ -256,14 +299,4 @@ export function getProspectAutomationStatus(score: number): ProspectAutomationSt
 
 export function shouldAutoAdvanceProspect(score: number) {
   return score >= AUTO_READY_PROSPECT_SCORE;
-}
-
-export function getProspectScoreCard(prospect: ProspectScoreInput) {
-  const score = scoreProspect(prospect);
-
-  return {
-    score,
-    priority: getPriority(score),
-    automationStatus: getProspectAutomationStatus(score),
-  };
 }
