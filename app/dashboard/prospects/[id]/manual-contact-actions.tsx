@@ -82,6 +82,18 @@ async function openLinkAndMarkContacted(
   window.location.href = href;
 }
 
+async function openWhatsAppInNewWindowAndMarkContacted(prospectId: string, href: string) {
+  const popup = window.open("about:blank", "_blank", "noopener,noreferrer");
+
+  if (!popup) {
+    throw new Error("No se pudo abrir WhatsApp en una nueva ventana.");
+  }
+
+  await markAsContacted(prospectId);
+  popup.location.href = href;
+  popup.focus();
+}
+
 export function ManualContactActions({
   prospectId,
   email,
@@ -104,6 +116,11 @@ export function ManualContactActions({
     setBusy(kind);
 
     try {
+      if (kind === "whatsapp") {
+        await openWhatsAppInNewWindowAndMarkContacted(prospectId, href);
+        return;
+      }
+
       await openLinkAndMarkContacted(prospectId, href);
     } finally {
       setBusy(null);
@@ -116,6 +133,8 @@ export function ManualContactActions({
         <a
           href={whatsappUrl}
           className="crm-button crm-button--primary"
+          target="_blank"
+          rel="noreferrer noopener"
           onClick={(event) => {
             event.preventDefault();
             void handleAction("whatsapp");

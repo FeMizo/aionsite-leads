@@ -5,7 +5,7 @@ export type ProspectPriority = "alto" | "medio" | "bajo";
 export type ProspectAutomationStatus = "approved" | "analyzed";
 export const MINIMUM_SAVE_SCORE = 35;
 export const MINIMUM_QUALIFIED_PROSPECT_SCORE = 50;
-export const AUTO_READY_PROSPECT_SCORE = 75;
+export const AUTO_READY_PROSPECT_SCORE = 40;
 export const WHATSAPP_AUTO_SEND_SCORE = 80;
 const INCOMPLETE_AUDIT_BASELINE_SCORE = 12;
 
@@ -255,7 +255,7 @@ export function getProspectAutomationStatus(score: number): ProspectAutomationSt
 }
 
 export function shouldAutoAdvanceProspect(score: number) {
-  return score > AUTO_READY_PROSPECT_SCORE;
+  return score >= AUTO_READY_PROSPECT_SCORE;
 }
 
 export function getProspectScoreCard(prospect: ProspectScoreInput) {

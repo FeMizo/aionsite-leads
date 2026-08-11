@@ -10,8 +10,10 @@ import {
 import { buildOpportunity } from "@/lib/opportunity";
 import {
   DESIRED_PROSPECT_COUNT,
+  MAX_SEARCHES_PER_RUN,
   REQUIRED_TYPES,
   REQUIRE_EMAIL_FOR_FINAL_PROSPECTS,
+  SEARCHES_FOR_RUN,
   SEARCHES,
 } from "@/lib/search-config";
 import {
@@ -224,13 +226,14 @@ function buildCreateProspectData(prospect: ProspectCandidate, runId: string) {
 }
 
 const PIPELINE_DEADLINE_MS = Number(process.env.PIPELINE_DEADLINE_MS ?? 220_000);
+const MINIMUM_PROSPECTS_TO_SAVE = 15;
 
 export async function runProspectSearch(source = "google-places") {
   const pipelineStart = Date.now();
   const prisma = getPrismaClient();
   const metrics = {
     source,
-    searchesCount: SEARCHES.length,
+    searchesCount: SEARCHES_FOR_RUN.length,
     placesFound: 0,
     duplicatesFiltered: 0,
     emailsFound: 0,
@@ -254,7 +257,7 @@ export async function runProspectSearch(source = "google-places") {
       },
     });
 
-    const googlePlacesResult = await searchBusinesses(SEARCHES);
+    const googlePlacesResult = await searchBusinesses(SEARCHES_FOR_RUN);
     metrics.googlePlacesRequests = googlePlacesResult.requestCount;
     metrics.placesFound = googlePlacesResult.candidates.length;
 
@@ -332,12 +335,49 @@ export async function runProspectSearch(source = "google-places") {
       eligibleProspects.push(item.prospect);
     }
 
-    const finalProspects = selectFinalProspects(eligibleProspects);
+    const rankedFallbackCandidates = enrichedCandidates
+      .map((prospect) => ({
+        prospect,
+        score: scoreProspect(prospect),
+      }))
+      .sort((left, right) => right.score - left.score);
+
+    let finalProspects = selectFinalProspects(eligibleProspects);
+
+    if (finalProspects.length < MINIMUM_PROSPECTS_TO_SAVE) {
+      const selectedIds = new Set(finalProspects.map((item) => `${item.name}|${item.email}|${item.phone}`));
+
+      for (const item of rankedFallbackCandidates) {
+        const dedupeKey = `${item.prospect.name}|${item.prospect.email}|${item.prospect.phone}`;
+
+        if (selectedIds.has(dedupeKey)) {
+          continue;
+        }
+
+        finalProspects.push(item.prospect);
+        selectedIds.add(dedupeKey);
+
+        if (finalProspects.length >= MINIMUM_PROSPECTS_TO_SAVE) {
+          break;
+        }
+      }
+
+      if (finalProspects.length) {
+        console.warn(
+          `[prospect-run] Se completara el lote hasta ${Math.min(
+            MINIMUM_PROSPECTS_TO_SAVE,
+            finalProspects.length
+          )} prospectos con respaldo de candidatos sin email o con score bajo.`
+        );
+      }
+    }
 
     metrics.duplicatesFiltered = duplicates.length + enrichmentDuplicates;
     metrics.prospectsSaved = finalProspects.length;
 
-    console.log(`[prospect-run] Busquedas ejecutadas: ${metrics.searchesCount} (${SEARCHES.length} configuradas)`);
+    console.log(
+      `[prospect-run] Busquedas ejecutadas: ${metrics.searchesCount} de ${SEARCHES.length} configuradas (limite ${MAX_SEARCHES_PER_RUN}).`
+    );
     console.log(`[prospect-run] Google Places requests: ${metrics.googlePlacesRequests}`);
     console.log(`[prospect-run] Website fetches: ${metrics.websiteFetches}`);
     console.log(`[prospect-run] Places encontrados: ${metrics.placesFound}`);
@@ -346,6 +386,19 @@ export async function runProspectSearch(source = "google-places") {
     console.log(`[prospect-run] Descartados por duplicado post-enriquecimiento: ${enrichmentDuplicates}`);
     console.log(`[prospect-run] Descartados por sin email: ${prospectsWithoutEmail}`);
     console.log(`[prospect-run] Prospectos finales guardados: ${metrics.prospectsSaved}`);
+
+    const runStatus = finalProspects.length
+      ? googlePlacesResult.quotaExceeded
+        ? "completed_with_warnings"
+        : "completed"
+      : "failed";
+    const runError = finalProspects.length
+      ? googlePlacesResult.quotaExceeded
+        ? `Google Places alcanzo cuota tras ${metrics.googlePlacesRequests} requests.`
+        : null
+      : googlePlacesResult.quotaExceeded
+        ? `Google Places alcanzo cuota tras ${metrics.googlePlacesRequests} requests y no se guardaron prospectos.`
+        : "No se encontraron prospectos guardables.";
 
     const run = await prisma.$transaction(async (tx) => {
       for (const prospect of finalProspects) {
@@ -372,8 +425,8 @@ export async function runProspectSearch(source = "google-places") {
         where: { id: startedRun.id },
         data: {
           ...metrics,
-          status: "completed",
-          error: null,
+          status: runStatus,
+          error: runError,
         },
       });
     });

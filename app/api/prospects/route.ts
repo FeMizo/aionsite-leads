@@ -25,6 +25,8 @@ type CreateProspectPayload = ProspectActionPayload & {
   phone?: unknown;
   type?: unknown;
   website?: unknown;
+  rating?: unknown;
+  businessStatus?: unknown;
 };
 
 export async function GET(request: NextRequest) {
@@ -114,11 +116,31 @@ export async function POST(request: NextRequest) {
       phone: typeof payload.phone === "string" ? payload.phone : undefined,
       type: typeof payload.type === "string" ? payload.type : undefined,
       website: typeof payload.website === "string" ? payload.website : undefined,
+      rating: typeof payload.rating === "string" ? payload.rating : undefined,
+      businessStatus:
+        typeof payload.businessStatus === "string" ? payload.businessStatus : undefined,
     });
+
+    const draft =
+      prospect.email && !(prospect.subject && prospect.message)
+        ? await generateProspectDraft(prospect.id)
+        : null;
+    const item = draft?.item || prospect;
 
     return ok(
       {
-        item: prospect,
+        result: {
+          item,
+          draft: draft
+            ? {
+                subject: draft.subject,
+                message: draft.message,
+                analysis: draft.analysis,
+                opportunity: draft.opportunity,
+                scriptVariant: draft.scriptVariant ?? null,
+              }
+            : null,
+        },
       },
       { status: 201 }
     );

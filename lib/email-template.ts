@@ -110,7 +110,7 @@ function getSocialProofLine(
   }
 
   if (count >= 10) {
-    return `Ya tienen reseñas en Google, lo que dice mucho. El problema es que no todos los que los buscan terminan contactandolos.`;
+    return `Ya tienen reseñas en Google, lo que dice mucho. Con ajustes puntuales, ese interes puede convertirse en mas contactos.`;
   }
 
   return "";
@@ -119,7 +119,7 @@ function getSocialProofLine(
 function getSpecificProblem(prospect: ProspectEmailModel) {
   return (
     toSentenceCase(prospect.opportunity) ||
-    "su presencia digital actual no esta convirtiendo bien el trafico en contactos"
+    "hay margen para convertir mas visitas en contactos directos"
   );
 }
 
@@ -198,15 +198,15 @@ function buildVariantA(prospect: ProspectEmailModel) {
 
   // Mejorado: Agregar urgencia y especificidad
   const subject = prospect.contactName
-    ? `⚡ ${prospect.contactName}, clientes buscando ${nicheLabel} en ${prospect.city} pero no te ven`
-    : `⚡ ${prospect.name}: clientes en ${prospect.city} buscando ${nicheLabel} no te encuentran`;
+    ? `⚡ ${prospect.contactName}, hay una oportunidad para captar mas clientes en ${prospect.city}`
+    : `⚡ ${prospect.name}: oportunidad para captar mas clientes en ${prospect.city}`;
 
   const paragraphs = [
-    `Ahora mismo hay personas buscando ${nicheLabel} ${cityPhrase}... y no todos estan llegando a ustedes.`,
-    `En su caso es porque ${specificProblem}.`,
+    `Ahora mismo hay personas buscando ${nicheLabel} ${cityPhrase} y ahi hay una oportunidad clara.`,
+    `En su caso, ${specificProblem}.`,
     ...(socialProof ? [socialProof] : []),
-    `Esto normalmente hace que esos clientes terminen con la competencia.`,
-    `Si quieres, te grabo un video corto mostrandote exactamente que esta pasando y como solucionarlo.`,
+    `Con unos ajustes puntuales, esos clientes pueden llegar primero a ustedes.`,
+    `Si quieres, te grabo un video corto mostrandote exactamente que ajustaria para mejorar eso.`,
   ];
 
   const text = `${greeting}
@@ -235,10 +235,10 @@ function buildVariantB(prospect: ProspectEmailModel) {
   const cityPhrase = getCityPhrase(prospect.city);
   const socialProof = getSocialProofLine(prospect.userRatingCount, prospect.rating);
   // Mejorado: Más específico que "algo" - menciona que es corregible
-  const subject = `${prospect.name}: detecté un problema rápido de arreglar`;
+  const subject = `${prospect.name}: una mejora rapida que puede sumar mas clientes`;
 
   const paragraphs = [
-    `Estuve revisando ${prospect.name} y encontre algo concreto que podria mejorar lo que ya tienen.`,
+    `Estuve revisando ${prospect.name} y encontre una oportunidad concreta para mejorar lo que ya tienen.`,
     `Tienen potencial para captar mas clientes ${cityPhrase} — y no necesitan invertir en publicidad para lograrlo.`,
     ...(socialProof ? [socialProof] : []),
     `Lo que vi se puede ajustar rapido. En un video de 2 minutos te lo muestro exactamente.`,
@@ -270,13 +270,13 @@ function buildVariantC(prospect: ProspectEmailModel) {
   const cityPhrase = getCityPhrase(prospect.city);
   const specificProblem = getSpecificProblem(prospect);
   // Mejorado: Más específico - describe un hallazgo concreto
-  const subject = `${prospect.name}: mejora detectable en búsquedas Google de ${nicheLabel}`;
+  const subject = `${prospect.name}: oportunidad detectable en búsquedas Google de ${nicheLabel}`;
 
   const paragraphs = [
     `Estuve buscando ${nicheLabel} ${cityPhrase} y ${prospect.name} aparecio en los resultados.`,
     `Al revisar su presencia encontre algo puntual: ${specificProblem}.`,
-    `Eso normalmente se resuelve sin ads ni presupuesto grande. Con los ajustes correctos, los que ya los encuentran terminan contactandolos.`,
-    `Le mando un video de 2 minutos mostrando exactamente lo que detecte y como atacarlo?`,
+    `Eso normalmente se mejora sin ads ni presupuesto grande. Con los ajustes correctos, los que ya los encuentran terminan contactandolos.`,
+    `Le mando un video de 2 minutos mostrando exactamente lo que detecte y como lo mejoraria?`,
   ];
 
   const text = `${greeting}
@@ -306,11 +306,11 @@ function buildVariantD(prospect: ProspectEmailModel) {
   const pitchAngle = toSentenceCase(prospect.pitchAngle) || "captar mas contactos directos";
   const socialProof = getSocialProofLine(prospect.userRatingCount, prospect.rating);
   // Mejorado: Más específico en el potencial (sin detalles presuntuosos)
-  const subject = `${prospect.name}: tu negocio podría captar 2-3x más clientes desde Google`;
+  const subject = `${prospect.name}: tu negocio podria captar mas clientes desde Google`;
 
   const paragraphs = [
     `Estuve revisando la presencia digital de ${prospect.name} ${cityPhrase}.`,
-    `Tienen cosas buenas, pero hay potencial que todavia no esta trabajando: ${pitchAngle}.`,
+    `Tienen cosas buenas, y hay potencial que todavia no esta trabajando: ${pitchAngle}.`,
     ...(socialProof ? [socialProof] : []),
     `Con un par de ajustes puntuales eso cambia, sin necesidad de invertir en publicidad.`,
     `Le grabo un video corto mostrando exactamente que ajustaria y por que funcionaria para su negocio?`,

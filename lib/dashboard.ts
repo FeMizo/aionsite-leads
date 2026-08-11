@@ -100,7 +100,7 @@ export async function getPaginatedProspects(options: {
   statuses: string[];
   page: number;
   pageSize: number;
-  orderBy?: "createdAt" | "lastCheckedAt";
+  orderBy?: "createdAt" | "lastCheckedAt" | "lastContactedAt";
 }): Promise<{ items: DashboardProspect[]; totalCount: number }> {
   const prisma = getPrismaClient();
   const { statuses, page, pageSize, orderBy = "createdAt" } = options;
@@ -123,7 +123,7 @@ export async function getPaginatedProspects(options: {
 
 export async function getProspectsByStatuses(options: {
   statuses: string[];
-  orderBy?: "createdAt" | "lastCheckedAt";
+  orderBy?: "createdAt" | "lastCheckedAt" | "lastContactedAt";
 }): Promise<{ items: DashboardProspect[]; totalCount: number }> {
   const prisma = getPrismaClient();
   const { statuses, orderBy = "createdAt" } = options;

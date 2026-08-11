@@ -15,10 +15,45 @@ const DEFAULT_TEST_PROSPECT = {
   phone: "9381238531",
   type: LEAD_TYPES[0],
   website: "https://aionsite.com.mx/",
+  rating: "",
+  businessStatus: "OPERATIONAL",
 };
 
 type ManualProspectForm = typeof DEFAULT_TEST_PROSPECT;
 type ManualProspectMode = "manual" | "smtp";
+
+type ManualProspectDraftResult = {
+  subject: string;
+  message: string;
+  analysis: string;
+  opportunity: string;
+  scriptVariant: string | null;
+};
+
+type ManualProspectItem = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  city: string;
+  type: string;
+  website: string;
+  rating: string;
+  businessStatus: string;
+  score: number;
+  priority: "alto" | "medio" | "bajo";
+  status: string;
+  subject: string;
+  message: string;
+  opportunity: string;
+  recommendedSite: string;
+  pitchAngle: string;
+};
+
+type ManualProspectCreationResult = {
+  item: ManualProspectItem;
+  draft: ManualProspectDraftResult | null;
+};
 
 const MODE_COPY: Record<
   ManualProspectMode,
@@ -33,7 +68,7 @@ const MODE_COPY: Record<
     title: "Prospecto manual",
     description: "Captura un prospecto manualmente y agregalo a la cola activa del CRM.",
     actionLabel: "Guardar prospecto",
-    helperText: "Este flujo crea un registro en la base y lo deja disponible para el pipeline.",
+    helperText: "Este flujo crea el registro, calcula score y genera borrador si hay correo.",
   },
   smtp: {
     title: "Prueba SMTP",
@@ -60,12 +95,34 @@ async function postJson(url: string, payload: Record<string, unknown>) {
   return body;
 }
 
+function buildMailtoUrl(email: string, subject: string, message: string) {
+  const params = new URLSearchParams({
+    subject,
+    body: message,
+  });
+
+  return `mailto:${email}?${params.toString()}`;
+}
+
+function buildWhatsAppUrl(phone: string, message: string) {
+  const digits = phone.replace(/\D/g, "");
+
+  if (!digits) {
+    return "";
+  }
+
+  const normalizedPhone = digits.length === 10 ? `52${digits}` : digits;
+
+  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
+}
+
 export function ManualProspectPanel() {
   const [form, setForm] = useState<ManualProspectForm>(DEFAULT_TEST_PROSPECT);
   const [mode, setMode] = useState<ManualProspectMode>("manual");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [createdResult, setCreatedResult] = useState<ManualProspectCreationResult | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const activeModeCopy = MODE_COPY[mode];
@@ -98,6 +155,7 @@ export function ManualProspectPanel() {
     setMode(nextMode);
     setError("");
     setSuccess("");
+    setCreatedResult(null);
   }
 
   function saveProspect() {
@@ -107,10 +165,12 @@ export function ManualProspectPanel() {
         prospect: form,
       });
 
+      const result = payload.result as ManualProspectCreationResult | undefined;
+      setCreatedResult(result ?? null);
       setSuccess(
-        payload.result?.name
-          ? `Prospecto guardado en la cola activa: ${payload.result.name}.`
-          : "Prospecto guardado en la cola activa."
+        result?.item?.name
+          ? `Prospecto guardado y enriquecido: ${result.item.name}.`
+          : "Prospecto guardado y enriquecido."
       );
       router.refresh();
     });
@@ -131,6 +191,15 @@ export function ManualProspectPanel() {
     });
   }
 
+  const previewMessage = createdResult?.draft?.message || createdResult?.item.message || "";
+  const previewSubject = createdResult?.draft?.subject || createdResult?.item.subject || "";
+  const whatsappUrl =
+    createdResult?.item.phone ? buildWhatsAppUrl(createdResult.item.phone, previewMessage) : "";
+  const mailtoUrl =
+    createdResult?.item.email && previewSubject
+      ? buildMailtoUrl(createdResult.item.email, previewSubject, previewMessage)
+      : "";
+
   return (
     <Banner
       title="Prospecto manual y prueba SMTP"
@@ -146,7 +215,6 @@ export function ManualProspectPanel() {
         </Button>
       }
     >
-
       {isCollapsed ? (
         <p className="crm-muted">
           {activeModeCopy.title}: {activeModeCopy.description}
@@ -233,13 +301,31 @@ export function ManualProspectPanel() {
                 placeholder="Ciudad"
               />
             </label>
-            <label className="crm-field crm-field--full">
+            <label className="crm-field">
               <span>Website</span>
               <input
                 className="crm-input"
                 value={form.website}
                 onChange={(event) => updateField("website", event.target.value)}
                 placeholder="https://empresa.com"
+              />
+            </label>
+            <label className="crm-field">
+              <span>Rating</span>
+              <input
+                className="crm-input"
+                value={form.rating}
+                onChange={(event) => updateField("rating", event.target.value)}
+                placeholder="4.6"
+              />
+            </label>
+            <label className="crm-field">
+              <span>Estado del negocio</span>
+              <input
+                className="crm-input"
+                value={form.businessStatus}
+                onChange={(event) => updateField("businessStatus", event.target.value)}
+                placeholder="OPERATIONAL"
               />
             </label>
           </div>
@@ -258,6 +344,70 @@ export function ManualProspectPanel() {
           <p className="crm-muted">{activeModeCopy.helperText}</p>
         </>
       )}
+
+      {createdResult ? (
+        <div className="panel" style={{ marginTop: "1rem" }}>
+          <div className="panel__header">
+            <div>
+              <h2>Prospecto generado</h2>
+              <p>
+                Score {createdResult.item.score} · prioridad {createdResult.item.priority} ·{" "}
+                {createdResult.item.status}
+              </p>
+            </div>
+          </div>
+
+          <dl className="detail-dl">
+            <dt>Oportunidad</dt>
+            <dd>{createdResult.item.opportunity || "—"}</dd>
+            <dt>Angulo</dt>
+            <dd>{createdResult.item.pitchAngle || "—"}</dd>
+            <dt>Recomendado</dt>
+            <dd>{createdResult.item.recommendedSite || "—"}</dd>
+            <dt>Canales</dt>
+            <dd>
+              {createdResult.item.email ? "Correo habilitado" : "Sin correo"} ·{" "}
+              {createdResult.item.phone ? "WhatsApp habilitado" : "Sin WhatsApp"}
+            </dd>
+          </dl>
+
+          {mailtoUrl || whatsappUrl ? (
+            <div className="panel__actions">
+              {mailtoUrl ? (
+                <a
+                  className="crm-button crm-button--secondary"
+                  href={mailtoUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  Abrir correo
+                </a>
+              ) : null}
+              {whatsappUrl ? (
+                <a
+                  className="crm-button crm-button--primary"
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  Abrir WhatsApp
+                </a>
+              ) : null}
+            </div>
+          ) : null}
+
+          {createdResult.draft ? (
+            <pre className="detail-stored-message" style={{ whiteSpace: "pre-wrap" }}>
+              {`${createdResult.draft.subject}\n\n${createdResult.draft.message}`}
+            </pre>
+          ) : (
+            <p className="crm-muted">
+              Agrega correo para generar el borrador automaticamente.
+            </p>
+          )}
+        </div>
+      ) : null}
+
       {success ? <p className="crm-success">{success}</p> : null}
       {error ? <p className="crm-error">{error}</p> : null}
     </Banner>

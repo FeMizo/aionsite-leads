@@ -19,6 +19,8 @@ export type ManualProspectInput = {
   phone?: string;
   type?: string;
   website?: string;
+  rating?: string;
+  businessStatus?: string;
 };
 
 export type PreparedManualProspect = {
@@ -71,17 +73,19 @@ export function prepareManualProspect(input: ManualProspectInput = {}): Prepared
   const email = normalizeEmail(input.email || "");
   const phone = normalizePhone(input.phone || "");
   const website = normalizeWebsiteInput(input.website || "");
+  const rating = normalizeWhitespace(input.rating || "");
+  const businessStatus = normalizeWhitespace(input.businessStatus || "");
   const type =
     normalizeLeadType(input.type || "") ||
     inferLeadType({
       website,
-      rating: "",
+      rating,
       userRatingCount: null,
     });
   const derived = buildOpportunity({
     type,
     website,
-    rating: "",
+    rating,
     userRatingCount: null,
   });
 
@@ -93,13 +97,13 @@ export function prepareManualProspect(input: ManualProspectInput = {}): Prepared
     phone,
     type,
     website,
-    rating: "",
+    rating,
     mapsUrl: "",
     opportunity: derived.opportunity,
     recommendedSite: derived.recommendedSite,
     pitchAngle: derived.pitchAngle,
     source: "manual-entry",
-    businessStatus: "",
+    businessStatus,
   };
 }
 

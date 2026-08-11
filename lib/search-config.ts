@@ -4,6 +4,11 @@ import { SEARCH_CITIES, SEARCH_NICHES } from "@/lib/search-targets";
 export const DESIRED_PROSPECT_COUNT = 20;
 export const REQUIRED_TYPES: string[] = [];
 export const REQUIRE_EMAIL_FOR_FINAL_PROSPECTS = true;
+export const MAX_SEARCHES_PER_RUN = Number.isFinite(
+  Number(process.env.MAX_SEARCHES_PER_RUN)
+)
+  ? Math.max(1, Math.floor(Number(process.env.MAX_SEARCHES_PER_RUN)))
+  : 80;
 
 function buildSearchSpecs(
   city: (typeof SEARCH_CITIES)[number],
@@ -38,3 +43,5 @@ export const SEARCHES: SearchSpec[] = SEARCH_CITIES.flatMap((city) =>
 
   return rightScore - leftScore || left.id.localeCompare(right.id);
 });
+
+export const SEARCHES_FOR_RUN = SEARCHES.slice(0, MAX_SEARCHES_PER_RUN);

@@ -11,17 +11,27 @@ describe("search catalog", () => {
     const { SEARCHES } = await import("@/lib/search-config");
 
     expect(getSearchStates()).toEqual([
+      "Aguascalientes",
+      "Baja California",
       "Campeche",
       "Chiapas",
+      "Chihuahua",
+      "Ciudad de Mexico",
       "Guanajuato",
+      "Jalisco",
+      "Michoacan",
       "Nayarit",
+      "Nuevo Leon",
       "Oaxaca",
       "Puebla",
+      "Queretaro",
+      "Quintana Roo",
+      "San Luis Potosi",
       "Sinaloa",
       "Veracruz",
       "Yucatan",
     ]);
-    expect(SEARCH_CITIES).toHaveLength(10);
+    expect(SEARCH_CITIES).toHaveLength(20);
     expect(SEARCHES.some((spec) => spec.id === "dentists-merida-1")).toBe(true);
     expect(SEARCHES.some((spec) => spec.id === "dentists-merida-2")).toBe(true);
   });
@@ -62,5 +72,12 @@ describe("search catalog", () => {
     expect(SEARCH_NICHES.some((niche) => niche.slug === "pet-groomers")).toBe(true);
     expect(getSearchStates()).toContain("Nuevo Leon");
     expect(SEARCHES.some((spec) => spec.id.startsWith("pet-groomers-monterrey"))).toBe(true);
+  });
+
+  it("caps searches per run", async () => {
+    const { SEARCHES, SEARCHES_FOR_RUN, MAX_SEARCHES_PER_RUN } = await import("@/lib/search-config");
+
+    expect(SEARCHES_FOR_RUN.length).toBeLessThanOrEqual(MAX_SEARCHES_PER_RUN);
+    expect(SEARCHES_FOR_RUN.length).toBeLessThanOrEqual(SEARCHES.length);
   });
 });

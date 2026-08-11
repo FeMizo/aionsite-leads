@@ -56,8 +56,8 @@ function getOpportunityContext(prospect: OutreachProspect) {
     leadType === LEAD_TYPE_NO_WEBSITE
       ? "El prospecto no tiene sitio propio. El enfoque debe ir a presencia digital, confianza y captacion de contactos."
       : leadType === LEAD_TYPE_BAD_REVIEWS
-        ? "El prospecto ya tiene trafico y reputacion mejorable. El enfoque debe ir a confianza, pruebas sociales y conversion."
-        : "El prospecto ya tiene presencia digital, pero requiere rediseno, claridad de oferta y mejor conversion.";
+        ? "El prospecto ya tiene trafico y reputacion que se puede potenciar. El enfoque debe ir a confianza, pruebas sociales y conversion."
+        : "El prospecto ya tiene presencia digital, y hay margen para afinar oferta, claridad y conversion.";
 
   return {
     opportunity,
@@ -85,7 +85,7 @@ function buildFirstContactScript(prospect: OutreachProspect, variant: OutreachSc
     a: "angulo directo sobre trafico perdido por nicho y ciudad.",
     b: "angulo suave, centrado en potencial local sin hablar de ads.",
     c: "angulo de oportunidad especifica detectada en Google.",
-    d: "angulo de potencial propio sin explotar, sin mencionar competencia.",
+    d: "angulo de potencial propio sin explotar.",
   };
   const email = buildEmail(
     {
@@ -126,14 +126,14 @@ Solo queria asegurarme de que llego el mensaje anterior.
 
 Lo que encontre en ${prospect.name}${cityLine} es algo puntual: ${context.opportunity}.
 
-No es una critica, es una oportunidad concreta. Con ${context.pitchAngle} se resuelve sin complicar.
+Es una oportunidad concreta. Con ${context.pitchAngle} se mejora sin complicar.
 
 Le grabo el video de 2 minutos?
 
 Saludos,
 AionSite`,
     html: null,
-    analysis: "Follow-up 1: recordatorio directo reenmarcando como oportunidad, no critica.",
+    analysis: "Follow-up 1: recordatorio directo reenmarcando como oportunidad.",
     opportunity: context.opportunity,
   };
 }
@@ -146,7 +146,7 @@ function buildFollowup2Draft(prospect: OutreachProspect) {
   const reviewLine = hasRating
     ? `${prospect.name} tiene ${stars} estrellas y ${prospect.userRatingCount} reseñas. Eso es un activo real que todavia no esta generando todo lo que podria.`
     : typeof prospect.userRatingCount === "number" && prospect.userRatingCount >= 10
-      ? `Con ${prospect.userRatingCount} reseñas en Google ya tienen traccion. El problema suele ser que ese trafico no convierte.`
+      ? `Con ${prospect.userRatingCount} reseñas en Google ya tienen traccion. La oportunidad esta en convertir ese trafico en contactos.`
       : "Ya tienen presencia en Google. El siguiente paso es que esa visibilidad se traduzca en contactos directos.";
 
   return {
@@ -174,10 +174,10 @@ function buildFollowup3Draft(prospect: OutreachProspect) {
   const addressee = getGreeting(prospect.name, prospect.contactName);
 
   return {
-    subject: `${prospect.name}: ultimo mensaje de mi parte`,
+    subject: `${prospect.name}: una idea final para seguir creciendo`,
     message: `Hola ${addressee},
 
-No quiero seguir ocupando su bandeja, asi que este es mi ultimo mensaje.
+Le dejo una idea final por si les sirve.
 
 Les dejo la idea en una linea: ${context.opportunity}. La solucion mas directa para ${prospect.name} seria ${context.recommendedSite}, enfocada en ${context.pitchAngle}.
 

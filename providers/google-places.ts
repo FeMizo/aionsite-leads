@@ -94,6 +94,12 @@ function assertGooglePlacesConfig() {
   }
 }
 
+function isQuotaError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return /429|quota|rate limit|RESOURCE_EXHAUSTED|REQUEST_LIMIT_EXCEEDED/i.test(message);
+}
+
 function mapGooglePlaceToProspect(
   place: GooglePlace,
   search: SearchSpec
@@ -172,6 +178,7 @@ export async function searchBusinesses(searches: SearchSpec[]) {
 
   const allCandidates: ProspectCandidate[] = [];
   let requestCount = 0;
+  let quotaExceeded = false;
 
   for (const search of searches) {
     requestCount += 1;
@@ -187,11 +194,23 @@ export async function searchBusinesses(searches: SearchSpec[]) {
           ? error.message
           : `[google-places] Fallo en ${search.label}.`
       );
+
+      if (isQuotaError(error)) {
+        quotaExceeded = true;
+        break;
+      }
     }
+  }
+
+  if (!allCandidates.length) {
+    console.warn(
+      `[google-places] No se encontraron candidatos en ${requestCount} busquedas. Revisa cuota, API key y texto de consulta.`
+    );
   }
 
   return {
     candidates: allCandidates,
     requestCount,
+    quotaExceeded,
   };
 }

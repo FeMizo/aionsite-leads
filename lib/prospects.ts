@@ -10,6 +10,7 @@ import {
 } from "@/lib/outreach";
 import {
   getProspectScoreCard,
+  AUTO_READY_PROSPECT_SCORE,
   shouldAutoAdvanceProspect,
 } from "@/lib/prospect-scoring";
 import { getNextAvailableScheduledSendAt } from "@/lib/send-scheduler";
@@ -360,6 +361,8 @@ export async function createProspect(input: {
   phone?: string;
   type?: string;
   website?: string;
+  rating?: string;
+  businessStatus?: string;
 }) {
   const prisma = getPrismaClient();
   const prospect = await createManualProspect(input);
@@ -846,7 +849,21 @@ export async function storeProspectDraft(id: string, draft: { subject: string; m
     subject,
     message,
   };
-  const nextStatus = resolveStatusAfterDraft(nextSnapshot);
+  const scoreCard = getProspectScoreCard(nextSnapshot);
+  const shouldAutoSchedule = scoreCard.score >= AUTO_READY_PROSPECT_SCORE;
+  const scheduledSendAt = shouldAutoSchedule && !current.scheduledSendAt
+    ? await getNextAvailableScheduledSendAt(
+        {
+          type: current.type,
+          city: current.city,
+        },
+        new Date(),
+        {
+          excludeProspectId: current.id,
+        }
+      )
+    : current.scheduledSendAt;
+  const nextStatus = scheduledSendAt ? "ready" : resolveStatusAfterDraft(nextSnapshot);
   const timestamp = new Date();
 
   const updated = await prisma.$transaction(async (tx) => {
@@ -856,6 +873,7 @@ export async function storeProspectDraft(id: string, draft: { subject: string; m
         subject,
         message,
         status: nextStatus,
+        scheduledSendAt,
         lastCheckedAt: timestamp,
       },
       select: prospectListSelect,

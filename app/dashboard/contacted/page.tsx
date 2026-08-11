@@ -34,7 +34,7 @@ export default async function ContactedPage({
 
   const { items, totalCount } = await getProspectsByStatuses({
     statuses: ["contacted", "replied", "closed"],
-    orderBy: "lastCheckedAt",
+    orderBy: "lastContactedAt",
   });
 
   return (
