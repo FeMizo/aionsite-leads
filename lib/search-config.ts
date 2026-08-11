@@ -9,6 +9,11 @@ export const MAX_SEARCHES_PER_RUN = Number.isFinite(
 )
   ? Math.max(1, Math.floor(Number(process.env.MAX_SEARCHES_PER_RUN)))
   : 80;
+export const MAX_SOCIAL_SEARCHES_PER_RUN = Number.isFinite(
+  Number(process.env.MAX_SOCIAL_SEARCHES_PER_RUN)
+)
+  ? Math.max(1, Math.floor(Number(process.env.MAX_SOCIAL_SEARCHES_PER_RUN)))
+  : 12;
 
 function buildSearchSpecs(
   city: (typeof SEARCH_CITIES)[number],
@@ -45,3 +50,4 @@ export const SEARCHES: SearchSpec[] = SEARCH_CITIES.flatMap((city) =>
 });
 
 export const SEARCHES_FOR_RUN = SEARCHES.slice(0, MAX_SEARCHES_PER_RUN);
+export const SOCIAL_SEARCHES_FOR_RUN = SEARCHES.slice(0, MAX_SOCIAL_SEARCHES_PER_RUN);

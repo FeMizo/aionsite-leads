@@ -44,10 +44,12 @@ vi.mock("@/providers/email-finder", () => ({
 vi.mock("@/lib/search-config", () => ({
   SEARCHES: [{ id: "test-search" }],
   SEARCHES_FOR_RUN: [{ id: "test-search" }],
+  SOCIAL_SEARCHES_FOR_RUN: [{ id: "test-search" }],
   DESIRED_PROSPECT_COUNT: 5,
   REQUIRED_TYPES: [],
   REQUIRE_EMAIL_FOR_FINAL_PROSPECTS: false,
   MAX_SEARCHES_PER_RUN: 1,
+  MAX_SOCIAL_SEARCHES_PER_RUN: 1,
 }));
 
 import { runProspectSearch } from "@/lib/pipeline";

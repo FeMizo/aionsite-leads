@@ -11,6 +11,7 @@ import { buildOpportunity } from "@/lib/opportunity";
 import {
   DESIRED_PROSPECT_COUNT,
   MAX_SEARCHES_PER_RUN,
+  SOCIAL_SEARCHES_FOR_RUN,
   REQUIRED_TYPES,
   REQUIRE_EMAIL_FOR_FINAL_PROSPECTS,
   SEARCHES_FOR_RUN,
@@ -28,6 +29,7 @@ import type { ComparableProspect, ProspectCandidate } from "@/lib/types";
 import { inferWebsiteSignal } from "@/lib/website-signals";
 import { findEmailFromWebsite } from "@/providers/email-finder";
 import { searchBusinesses } from "@/providers/google-places";
+import { searchSocialBusinesses } from "@/providers/social-search";
 
 function nowIso() {
   return new Date().toISOString();
@@ -262,7 +264,27 @@ export async function runProspectSearch(source = "google-places") {
     metrics.googlePlacesRequests = googlePlacesResult.requestCount;
     metrics.placesFound = googlePlacesResult.candidates.length;
 
-    const activeCandidates = googlePlacesResult.candidates.filter((p) => {
+    let socialCandidates: ProspectCandidate[] = [];
+    if (
+      googlePlacesResult.quotaExceeded ||
+      googlePlacesResult.candidates.length < DESIRED_PROSPECT_COUNT
+    ) {
+      const socialResult = await searchSocialBusinesses(SOCIAL_SEARCHES_FOR_RUN);
+      socialCandidates = socialResult.candidates;
+      console.log(
+        `[prospect-run] Social search requests: ${socialResult.requestCount} (${SOCIAL_SEARCHES_FOR_RUN.length} search specs x 2 domains).`
+      );
+      console.log(
+        `[prospect-run] Social candidates encontrados: ${socialCandidates.length}.`
+      );
+    }
+
+    const mergedCandidates = [
+      ...googlePlacesResult.candidates,
+      ...socialCandidates,
+    ];
+
+    const activeCandidates = mergedCandidates.filter((p) => {
       if (p.businessStatus === "CLOSED_PERMANENTLY") return false;
       if (p.businessStatus === "CLOSED_TEMPORARILY") {
         console.warn(`[pipeline] ${p.name} cerrado temporalmente`);
