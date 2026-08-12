@@ -264,20 +264,14 @@ export async function runProspectSearch(source = "google-places") {
     metrics.googlePlacesRequests = googlePlacesResult.requestCount;
     metrics.placesFound = googlePlacesResult.candidates.length;
 
-    let socialCandidates: ProspectCandidate[] = [];
-    if (
-      googlePlacesResult.quotaExceeded ||
-      googlePlacesResult.candidates.length < DESIRED_PROSPECT_COUNT
-    ) {
-      const socialResult = await searchSocialBusinesses(SOCIAL_SEARCHES_FOR_RUN);
-      socialCandidates = socialResult.candidates;
-      console.log(
-        `[prospect-run] Social search requests: ${socialResult.requestCount} (${SOCIAL_SEARCHES_FOR_RUN.length} search specs x 2 domains).`
-      );
-      console.log(
-        `[prospect-run] Social candidates encontrados: ${socialCandidates.length}.`
-      );
-    }
+    const socialResult = await searchSocialBusinesses(SOCIAL_SEARCHES_FOR_RUN);
+    const socialCandidates = socialResult.candidates;
+    console.log(
+      `[prospect-run] Social search requests: ${socialResult.requestCount} (${SOCIAL_SEARCHES_FOR_RUN.length} search specs x 2 domains).`
+    );
+    console.log(
+      `[prospect-run] Social candidates encontrados: ${socialCandidates.length}.`
+    );
 
     const mergedCandidates = [
       ...googlePlacesResult.candidates,

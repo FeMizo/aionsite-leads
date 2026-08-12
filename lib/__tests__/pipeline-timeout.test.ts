@@ -12,6 +12,7 @@ const {
   mockProspectCreate,
   mockContactEventCreate,
   mockSearchBusinesses,
+  mockSocialSearchBusinesses,
   mockFindEmailFromWebsite,
 } = vi.hoisted(() => ({
   mockRunCreate: vi.fn(),
@@ -21,6 +22,7 @@ const {
   mockProspectCreate: vi.fn(),
   mockContactEventCreate: vi.fn(),
   mockSearchBusinesses: vi.fn(),
+  mockSocialSearchBusinesses: vi.fn(),
   mockFindEmailFromWebsite: vi.fn(),
 }));
 
@@ -35,6 +37,10 @@ vi.mock("@/lib/db", () => ({
 
 vi.mock("@/providers/google-places", () => ({
   searchBusinesses: mockSearchBusinesses,
+}));
+
+vi.mock("@/providers/social-search", () => ({
+  searchSocialBusinesses: mockSocialSearchBusinesses,
 }));
 
 vi.mock("@/providers/email-finder", () => ({
@@ -145,6 +151,10 @@ describe("pipeline time budget", () => {
         })
       ),
     });
+    mockSocialSearchBusinesses.mockResolvedValue({
+      requestCount: 2,
+      candidates: [],
+    });
 
     const start = Date.now();
     await runProspectSearch();
@@ -159,6 +169,10 @@ describe("pipeline time budget", () => {
 
   it("saves run as failed if searchBusinesses throws, never leaves it as running", async () => {
     mockSearchBusinesses.mockRejectedValue(new Error("Google Places timeout"));
+    mockSocialSearchBusinesses.mockResolvedValue({
+      requestCount: 2,
+      candidates: [],
+    });
 
     await expect(runProspectSearch()).rejects.toThrow("Google Places timeout");
 
@@ -174,6 +188,10 @@ describe("pipeline time budget", () => {
     mockSearchBusinesses.mockResolvedValue({
       requestCount: 1,
       candidates: [makeCandidate({ email: "ya@tiene.com" })],
+    });
+    mockSocialSearchBusinesses.mockResolvedValue({
+      requestCount: 2,
+      candidates: [],
     });
     mockFindEmailFromWebsite.mockResolvedValue({
       email: "test@example.com",
@@ -196,5 +214,31 @@ describe("pipeline time budget", () => {
         data: expect.objectContaining({ status: "failed" }),
       })
     );
+  }, 5_000);
+
+  it("always runs social search after google search", async () => {
+    mockSearchBusinesses.mockResolvedValue({
+      requestCount: 1,
+      candidates: [makeCandidate({ email: "ya@tiene.com" })],
+    });
+    mockSocialSearchBusinesses.mockResolvedValue({
+      requestCount: 2,
+      candidates: [makeCandidate({ source: "social-search", website: "https://facebook.com/test" })],
+    });
+    mockFindEmailFromWebsite.mockResolvedValue({
+      email: "test@example.com",
+      fetchCount: 0,
+      audit: {
+        fetchFailed: false,
+        loadTimeMs: 100,
+        hasWhatsappCta: false,
+        hasContactCta: false,
+        isMobileFriendly: true,
+      },
+    });
+
+    await runProspectSearch();
+
+    expect(mockSocialSearchBusinesses).toHaveBeenCalled();
   }, 5_000);
 });
