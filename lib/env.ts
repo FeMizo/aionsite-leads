@@ -12,6 +12,7 @@ export const GOOGLE_PLACES_ENV_KEYS = [
 ] as const;
 export const SMTP_ENV_KEYS = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS"] as const;
 const GOOGLE_PLACES_ENDPOINT_KEYS = ["GOOGLE_PLACES_ENDPOINT"] as const;
+const BRAVE_SEARCH_API_KEYS = ["BRAVE_SEARCH_API_KEY"] as const;
 const FROM_NAME_ENV_KEYS = ["FROM_NAME"] as const;
 const FROM_EMAIL_ENV_KEYS = ["FROM_EMAIL"] as const;
 const CRON_SECRET_ENV_KEYS = ["CRON_SECRET"] as const;
@@ -58,6 +59,10 @@ export function getGooglePlacesApiKey() {
 
 export function getGooglePlacesEndpoint(defaultValue: string) {
   return getFirstEnvValue(GOOGLE_PLACES_ENDPOINT_KEYS) || defaultValue;
+}
+
+export function getBraveSearchApiKey() {
+  return getFirstEnvValue(BRAVE_SEARCH_API_KEYS);
 }
 
 export function getSmtpHost() {

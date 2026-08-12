@@ -22,7 +22,6 @@ import {
   MINIMUM_QUALIFIED_PROSPECT_SCORE,
   getProspectAutomationStatus,
   hasRatingOpportunity,
-  hasDirectContactPath,
   scoreProspect,
 } from "@/lib/prospect-scoring";
 import type { ComparableProspect, ProspectCandidate } from "@/lib/types";
@@ -95,6 +94,15 @@ function normalizeProspect(rawProspect: ProspectCandidate): ProspectCandidate {
     openingHours: rawProspect.openingHours ?? null,
     businessTypes: rawProspect.businessTypes ?? [],
   };
+}
+
+function hasContactChannel(prospect: ProspectCandidate) {
+  return Boolean(
+    normalizeEmail(prospect.email || "") ||
+      normalizePhone(prospect.phone || "") ||
+      prospect.hasWhatsappCta ||
+      prospect.hasContactCta
+  );
 }
 
 function buildSelectedOrder(
@@ -334,7 +342,7 @@ export async function runProspectSearch(source = "google-places") {
     let prospectsWithoutContact = 0;
 
     for (const item of ordered) {
-      if (REQUIRE_EMAIL_FOR_FINAL_PROSPECTS && !hasDirectContactPath(item.prospect)) {
+      if (REQUIRE_EMAIL_FOR_FINAL_PROSPECTS && !hasContactChannel(item.prospect)) {
         prospectsWithoutContact += 1;
         continue;
       }
@@ -359,8 +367,8 @@ export async function runProspectSearch(source = "google-places") {
       }))
       .sort((left, right) => {
         const contactDiff =
-          Number(hasDirectContactPath(right.prospect)) -
-          Number(hasDirectContactPath(left.prospect));
+          Number(hasContactChannel(right.prospect)) -
+          Number(hasContactChannel(left.prospect));
 
         return right.score - left.score || contactDiff;
       });

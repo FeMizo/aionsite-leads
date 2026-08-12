@@ -1,7 +1,31 @@
 import type { ProspectCandidate, SearchSpec } from "@/lib/types";
+import { getBraveSearchApiKey } from "@/lib/env";
+import { normalizeWhitespace } from "@/lib/normalizers";
 
-const SOCIAL_SEARCH_ENDPOINT = "https://html.duckduckgo.com/html/";
+const BRAVE_SEARCH_ENDPOINT = "https://api.search.brave.com/res/v1/web/search";
 const SOCIAL_DOMAINS = ["facebook.com", "instagram.com"];
+
+type BraveWebResult = {
+  title?: string;
+  url?: string;
+  description?: string;
+  profile?: {
+    name?: string;
+    long_name?: string;
+    url?: string;
+  };
+};
+
+type BraveSearchResponse = {
+  web?: {
+    results?: BraveWebResult[];
+  };
+};
+
+function isSocialUrl(value: string) {
+  const normalized = String(value || "").toLowerCase();
+  return SOCIAL_DOMAINS.some((domain) => normalized.includes(domain));
+}
 
 function decodeHtml(value: string) {
   return String(value || "")
@@ -16,34 +40,17 @@ function stripHtml(value: string) {
   return decodeHtml(value.replace(/<[^>]*>/g, " "));
 }
 
-function decodeResultUrl(rawUrl: string) {
-  try {
-    const url = new URL(rawUrl, SOCIAL_SEARCH_ENDPOINT);
-    const uddg = url.searchParams.get("uddg");
-
-    if (uddg) {
-      return decodeURIComponent(uddg);
-    }
-
-    return url.toString();
-  } catch {
-    return rawUrl;
+function guessNameFromResult(result: BraveWebResult, url: string) {
+  const title = normalizeWhitespace(stripHtml(result.title || ""));
+  if (title) {
+    return title.replace(/\s*[-|]\s*(facebook|instagram)\s*$/i, "").trim();
   }
-}
 
-function isSocialUrl(value: string) {
-  const normalized = String(value || "").toLowerCase();
-  return SOCIAL_DOMAINS.some((domain) => normalized.includes(domain));
-}
-
-function guessNameFromResult(title: string, url: string) {
-  const cleanTitle = stripHtml(title)
-    .replace(/\s*[-|]\s*(facebook|instagram)\s*$/i, "")
-    .replace(/\s*[-|]\s*social\s*$/i, "")
-    .trim();
-
-  if (cleanTitle) {
-    return cleanTitle;
+  const profileName = normalizeWhitespace(
+    result.profile?.name || result.profile?.long_name || ""
+  );
+  if (profileName) {
+    return profileName;
   }
 
   try {
@@ -58,13 +65,15 @@ function guessNameFromResult(title: string, url: string) {
   }
 }
 
-function mapSocialResultToProspect(
-  title: string,
-  url: string,
-  search: SearchSpec
-): ProspectCandidate {
+function mapBraveResultToProspect(result: BraveWebResult, search: SearchSpec): ProspectCandidate | null {
+  const url = result.url ? result.url.trim() : "";
+
+  if (!url || !isSocialUrl(url)) {
+    return null;
+  }
+
   return {
-    name: guessNameFromResult(title, url),
+    name: guessNameFromResult(result, url),
     contactName: "",
     city: search.city,
     email: "",
@@ -94,22 +103,24 @@ function mapSocialResultToProspect(
   };
 }
 
-async function searchSocialPage(search: SearchSpec, domain: string) {
+async function searchBrave(search: SearchSpec, domain: string, apiKey: string) {
   const query = [
     `site:${domain}`,
     `"${search.queryVariant || search.textQuery}"`,
     `"${search.city}"`,
   ].join(" ");
 
-  const url = new URL(SOCIAL_SEARCH_ENDPOINT);
+  const url = new URL(BRAVE_SEARCH_ENDPOINT);
   url.searchParams.set("q", query);
-  url.searchParams.set("ia", "web");
+  url.searchParams.set("count", "10");
+  url.searchParams.set("country", "mx");
+  url.searchParams.set("search_lang", "es");
 
   const response = await fetch(url, {
     headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
-      "Accept-Language": "es-MX,es;q=0.9,en;q=0.8",
+      Accept: "application/json",
+      "Accept-Encoding": "gzip",
+      "X-Subscription-Token": apiKey,
     },
   });
 
@@ -119,32 +130,41 @@ async function searchSocialPage(search: SearchSpec, domain: string) {
     );
   }
 
-  const html = await response.text();
-  const results: ProspectCandidate[] = [];
-  const resultRegex =
-    /<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
-  let match: RegExpExecArray | null;
+  const payload = (await response.json()) as BraveSearchResponse;
+  const results = payload.web?.results || [];
+  const mapped: ProspectCandidate[] = [];
 
-  while ((match = resultRegex.exec(html))) {
-    const rawUrl = decodeHtml(match[1]);
-    const resolvedUrl = decodeResultUrl(rawUrl);
-    const title = match[2];
+  for (const result of results) {
+    const prospect = mapBraveResultToProspect(result, search);
 
-    if (!isSocialUrl(resolvedUrl)) {
+    if (!prospect) {
       continue;
     }
 
-    results.push(mapSocialResultToProspect(title, resolvedUrl, search));
+    mapped.push(prospect);
 
-    if (results.length >= 5) {
+    if (mapped.length >= 5) {
       break;
     }
   }
 
-  return results;
+  return mapped;
 }
 
 export async function searchSocialBusinesses(searches: SearchSpec[]) {
+  const apiKey = getBraveSearchApiKey();
+
+  if (!apiKey) {
+    console.warn(
+      "[social-search] Falta BRAVE_SEARCH_API_KEY; se omite el fallback social."
+    );
+
+    return {
+      candidates: [] as ProspectCandidate[],
+      requestCount: 0,
+    };
+  }
+
   const allCandidates: ProspectCandidate[] = [];
   let requestCount = 0;
 
@@ -154,7 +174,7 @@ export async function searchSocialBusinesses(searches: SearchSpec[]) {
 
       try {
         console.log(`[social-search] Buscando: ${search.label} @ ${domain}`);
-        const results = await searchSocialPage(search, domain);
+        const results = await searchBrave(search, domain, apiKey);
         console.log(
           `[social-search] ${search.label} @ ${domain}: ${results.length} resultados.`
         );
