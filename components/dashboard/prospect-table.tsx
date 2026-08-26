@@ -11,7 +11,6 @@ import { getProspectDisplayStatus, getProspectStatusLabel } from "@/lib/prospect
 import { compareSortValues, type SortDirection, type SortType } from "@/lib/table-sort";
 import { SortIndicator } from "@/components/dashboard/sort-indicator";
 import type { DashboardProspect } from "@/lib/types";
-import { StatusPill } from "@/components/dashboard/status-pill";
 
 type ActionConfig = {
   action: string;
@@ -36,6 +35,7 @@ type ProspectSortKey =
   | "type"
   | "city"
   | "email"
+  | "contact"
   | "website"
   | "score"
   | "priority"
@@ -54,17 +54,72 @@ type ProspectColumn = {
 
 type ProspectTab = "all" | "ready" | "scheduled";
 
+const EDITABLE_STATUSES = [
+  "generated",
+  "analyzed",
+  "approved",
+  "ready",
+  "contacted",
+  "replied",
+  "closed",
+  "rejected",
+] as const;
+
+function normalizeWhatsAppPhone(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+
+  if (!digits) {
+    return "";
+  }
+
+  if (digits.length === 10) {
+    return `52${digits}`;
+  }
+
+  return digits;
+}
+
+function buildMailtoUrl(record: DashboardProspect) {
+  if (!record.email) {
+    return "";
+  }
+
+  const params = new URLSearchParams({
+    subject: record.subject || `Oportunidad para ${record.name}`,
+    body:
+      record.message ||
+      `Hola, vi una oportunidad para que ${record.name} consiga mas clientes en ${record.city}.`,
+  });
+
+  return `mailto:${record.email}?${params.toString()}`;
+}
+
+function buildWhatsAppUrl(record: DashboardProspect) {
+  const phone = normalizeWhatsAppPhone(record.phone);
+
+  if (!phone) {
+    return "";
+  }
+
+  const message = `Hola, soy Felipe de AionSite. Vi una oportunidad para que ${record.name} consiga mas clientes desde Google. Te puedo mandar un video corto?`;
+
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+}
+
 async function postAction(
   endpoint: "/api/prospects" | "/api/send",
   action: string,
-  ids: string[]
+  ids: string[],
+  extraPayload: Record<string, unknown> = {}
 ) {
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(endpoint === "/api/send" ? { ids } : { action, ids }),
+    body: JSON.stringify(
+      endpoint === "/api/send" ? { ids, ...extraPayload } : { action, ids, ...extraPayload }
+    ),
   });
 
   if (!response.ok) {
@@ -73,6 +128,10 @@ async function postAction(
   }
 
   return response.json().catch(() => ({}));
+}
+
+async function markContacted(recordId: string) {
+  await postAction("/api/prospects", "markContacted", [recordId]);
 }
 
 function getActionSuccessMessage(
@@ -160,6 +219,8 @@ export function ProspectTable({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [busyContactId, setBusyContactId] = useState<string | null>(null);
+  const [busyStatusId, setBusyStatusId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ProspectTab>("all");
   const [sortState, setSortState] = useState<{
     key: ProspectSortKey;
@@ -202,6 +263,13 @@ export function ProspectTable({
         type: "string",
         defaultDirection: "asc",
         getValue: (record) => record.email,
+      },
+      {
+        key: "contact",
+        label: "Contacto",
+        type: "string",
+        defaultDirection: "desc",
+        getValue: (record) => `${record.email ? "email" : ""} ${record.phone ? "phone" : ""}`,
       },
       {
         key: "website",
@@ -430,6 +498,72 @@ export function ProspectTable({
     });
   }
 
+  async function openContactChannel(
+    record: DashboardProspect,
+    channel: "email" | "whatsapp",
+    href: string
+  ) {
+    if (!href || busyContactId) {
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setBusyContactId(`${record.id}:${channel}`);
+
+    const popup =
+      channel === "whatsapp"
+        ? window.open("about:blank", "_blank")
+        : null;
+
+    try {
+      if (popup) {
+        popup.location.assign(href);
+        popup.focus();
+      } else {
+        await markContacted(record.id);
+        window.location.href = href;
+      }
+
+      router.refresh();
+    } catch (requestError) {
+      if (popup) {
+        popup.close();
+      }
+
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "No se pudo marcar como contactado."
+      );
+    } finally {
+      setBusyContactId(null);
+    }
+  }
+
+  async function changeRecordStatus(record: DashboardProspect, status: string) {
+    if (status === record.status || busyStatusId) {
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setBusyStatusId(record.id);
+
+    try {
+      await postAction("/api/prospects", "changeStatus", [record.id], { status });
+      router.refresh();
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "No se pudo cambiar el estado."
+      );
+    } finally {
+      setBusyStatusId(null);
+    }
+  }
+
   function isSelected(recordId: string) {
     return selectedIds.includes(recordId);
   }
@@ -609,6 +743,39 @@ export function ProspectTable({
                 <td>{record.city}</td>
                 <td>{record.email || "Sin email"}</td>
                 <td>
+                  <div className="record-contact-actions">
+                    {buildMailtoUrl(record) ? (
+                      <button
+                        type="button"
+                        className="record-contact-actions__btn record-contact-actions__btn--email"
+                        disabled={busyContactId !== null}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void openContactChannel(record, "email", buildMailtoUrl(record));
+                        }}
+                      >
+                        {busyContactId === `${record.id}:email` ? "..." : "Email"}
+                      </button>
+                    ) : null}
+                    {buildWhatsAppUrl(record) ? (
+                      <button
+                        type="button"
+                        className="record-contact-actions__btn record-contact-actions__btn--whatsapp"
+                        disabled={busyContactId !== null}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void openContactChannel(record, "whatsapp", buildWhatsAppUrl(record));
+                        }}
+                      >
+                        {busyContactId === `${record.id}:whatsapp` ? "..." : "WhatsApp"}
+                      </button>
+                    ) : null}
+                    {!buildMailtoUrl(record) && !buildWhatsAppUrl(record) ? (
+                      <span className="record-contact-actions__empty">Sin contacto</span>
+                    ) : null}
+                  </div>
+                </td>
+                <td>
                   {record.website ? (
                     <a
                       href={record.website}
@@ -629,7 +796,25 @@ export function ProspectTable({
                   </span>
                 </td>
                 <td>
-                  <StatusPill status={displayStatus} />
+                  <select
+                    className="status-select"
+                    value={record.status}
+                    disabled={busyStatusId === record.id}
+                    onClick={(event) => event.stopPropagation()}
+                    onChange={(event) => {
+                      event.stopPropagation();
+                      void changeRecordStatus(record, event.target.value);
+                    }}
+                    aria-label={`Cambiar estado de ${record.name}`}
+                  >
+                    {EDITABLE_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {displayStatus === "scheduled" && status === "ready"
+                          ? "programado"
+                          : getProspectStatusLabel(status)}
+                      </option>
+                    ))}
+                  </select>
                 </td>
                 {showScheduledColumn ? (
                   <td>

@@ -19,7 +19,6 @@ const DEFAULT_FIELD_MASK = [
   "places.googleMapsUri",
   "places.businessStatus",
   "places.photos",
-  "places.openingHours",
   "places.types",
   "places.regularOpeningHours",
 ].join(",");

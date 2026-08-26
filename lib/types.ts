@@ -6,6 +6,7 @@ export type ProspectAction =
   | "generateDrafts"
   | "rejectRecords"
   | "markContacted"
+  | "changeStatus"
   | "markAsClient";
 
 export type ProspectCandidate = {

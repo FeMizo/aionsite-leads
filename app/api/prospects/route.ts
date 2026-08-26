@@ -27,6 +27,7 @@ type CreateProspectPayload = ProspectActionPayload & {
   website?: unknown;
   rating?: unknown;
   businessStatus?: unknown;
+  status?: unknown;
 };
 
 export async function GET(request: NextRequest) {
@@ -226,6 +227,31 @@ async function handleLegacyDashboardAction(payload: ProspectActionPayload) {
             contacted: true,
             lastContactedAt: new Date(),
             followupStage: 1,
+          },
+        });
+
+        return ok({ result });
+      }
+      case "changeStatus": {
+        const nextStatus =
+          typeof payload.status === "string" ? parseProspectStatus(payload.status) : null;
+
+        if (!nextStatus) {
+          return fail("INVALID_STATUS", "Estado no valido.", 400);
+        }
+
+        const now = new Date();
+        const isContactedStatus = ["contacted", "replied", "closed"].includes(nextStatus);
+        const result = await transitionProspects(ids, {
+          nextStatus,
+          eventType: "status_changed_manual",
+          note: "Record status changed manually from dashboard",
+          clearError: true,
+          data: {
+            contacted: isContactedStatus,
+            lastContactedAt: isContactedStatus ? now : null,
+            followupStage: isContactedStatus ? 1 : 0,
+            ...(nextStatus === "ready" ? {} : { scheduledSendAt: null }),
           },
         });
 

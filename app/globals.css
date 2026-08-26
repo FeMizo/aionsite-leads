@@ -599,6 +599,54 @@ code {
   font-size: 0.84rem;
 }
 
+.record-contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-width: 9rem;
+}
+
+.record-contact-actions__btn {
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  padding: 0.42rem 0.6rem;
+  background: #f8fafc;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    transform 0.16s ease;
+}
+
+.record-contact-actions__btn:not(:disabled):hover {
+  transform: translateY(-1px);
+  border-color: #9fcfc6;
+}
+
+.record-contact-actions__btn:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.record-contact-actions__btn--email {
+  background: #eef6ff;
+  color: #164e63;
+}
+
+.record-contact-actions__btn--whatsapp {
+  background: #ecfdf5;
+  color: #166534;
+}
+
+.record-contact-actions__empty {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -659,6 +707,28 @@ code {
   border-color: #fecdd3;
 }
 
+.status-select {
+  min-width: 9.5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #f8fafc;
+  color: var(--text);
+  padding: 0.38rem 0.75rem;
+  font: inherit;
+  font-size: 0.84rem;
+  text-transform: capitalize;
+  cursor: pointer;
+}
+
+.status-select:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.status-select:focus {
+  outline: 2px solid rgba(15, 118, 110, 0.22);
+  outline-offset: 2px;
+}
 
 .priority-pill {
   display: inline-flex;

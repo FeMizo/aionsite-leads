@@ -104,7 +104,7 @@ function buildMailtoUrl(email: string, subject: string, message: string) {
   return `mailto:${email}?${params.toString()}`;
 }
 
-function buildWhatsAppUrl(phone: string, message: string) {
+function buildWhatsAppUrl(phone: string, businessName: string) {
   const digits = phone.replace(/\D/g, "");
 
   if (!digits) {
@@ -112,6 +112,7 @@ function buildWhatsAppUrl(phone: string, message: string) {
   }
 
   const normalizedPhone = digits.length === 10 ? `52${digits}` : digits;
+  const message = `Hola, soy Felipe de AionSite. Vi una oportunidad para que ${businessName} consiga mas clientes desde Google. Te puedo mandar un video corto?`;
 
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
 }
@@ -194,7 +195,7 @@ export function ManualProspectPanel() {
   const previewMessage = createdResult?.draft?.message || createdResult?.item.message || "";
   const previewSubject = createdResult?.draft?.subject || createdResult?.item.subject || "";
   const whatsappUrl =
-    createdResult?.item.phone ? buildWhatsAppUrl(createdResult.item.phone, previewMessage) : "";
+    createdResult?.item.phone ? buildWhatsAppUrl(createdResult.item.phone, createdResult.item.name) : "";
   const mailtoUrl =
     createdResult?.item.email && previewSubject
       ? buildMailtoUrl(createdResult.item.email, previewSubject, previewMessage)

@@ -32,6 +32,8 @@ const PROSPECT_STATUSES = [
   "rejected",
 ] as const satisfies readonly ProspectStatus[];
 
+export const EDITABLE_PROSPECT_STATUSES = PROSPECT_STATUSES;
+
 const prospectListSelect = {
   id: true,
   name: true,
@@ -103,6 +105,7 @@ type ProspectDetailRecord = Prisma.ProspectGetPayload<{
 export type ProspectActionPayload = {
   action?: string;
   ids?: string[];
+  status?: string;
   prospect?: {
     name?: string;
     contactName?: string;

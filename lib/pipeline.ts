@@ -431,39 +431,47 @@ export async function runProspectSearch(source = "google-places") {
         ? `Google Places alcanzo cuota tras ${metrics.googlePlacesRequests} requests y no se guardaron prospectos.`
         : "No se encontraron prospectos guardables.";
 
-    const run = await prisma.$transaction(async (tx) => {
-      for (const prospect of finalProspects) {
-        const createdProspect = await tx.prospect.create({
-          data: buildCreateProspectData(prospect, startedRun.id),
-        });
+    const run = await prisma.$transaction(
+      async (tx) => {
+        for (const prospect of finalProspects) {
+          const createdProspect = await tx.prospect.create({
+            data: buildCreateProspectData(prospect, startedRun.id),
+          });
 
-        await tx.contactEvent.create({
+          await tx.contactEvent.create({
+            data: {
+              prospectId: createdProspect.id,
+              eventType: "generated",
+              metadata: {
+                source: createdProspect.source,
+                status: createdProspect.status,
+                city: createdProspect.city,
+                type: createdProspect.type,
+              } as Prisma.InputJsonObject,
+              createdAt: createdProspect.createdAt,
+            },
+          });
+        }
+
+        return tx.run.update({
+          where: { id: startedRun.id },
           data: {
-            prospectId: createdProspect.id,
-            eventType: "generated",
-            metadata: {
-              source: createdProspect.source,
-              status: createdProspect.status,
-              city: createdProspect.city,
-              type: createdProspect.type,
-            } as Prisma.InputJsonObject,
-            createdAt: createdProspect.createdAt,
+            ...metrics,
+            status: runStatus,
+            error: runError,
           },
         });
+      },
+      {
+        maxWait: 15_000,
+        timeout: 30_000,
       }
-
-      return tx.run.update({
-        where: { id: startedRun.id },
-        data: {
-          ...metrics,
-          status: runStatus,
-          error: runError,
-        },
-      });
-    });
+    );
 
     return {
       runId: run.id,
+      status: run.status,
+      error: run.error,
       ...metrics,
     };
   } catch (error) {

@@ -36,14 +36,16 @@ function buildMailtoUrl(email: string, subject: string, message: string) {
   return `mailto:${email}?${params.toString()}`;
 }
 
-function buildWhatsAppUrl(phone: string, message: string) {
+function buildWhatsAppUrl(phone: string, name: string) {
   const normalizedPhone = normalizeWhatsAppPhone(phone);
 
   if (!normalizedPhone) {
     return "";
   }
 
-  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
+  const shortMessage = `Hola, soy Felipe de AionSite. Vi una oportunidad para que ${name} consiga mas clientes desde Google. Te puedo mandar un video corto?`;
+
+  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(shortMessage)}`;
 }
 
 async function markAsContacted(prospectId: string) {
@@ -82,15 +84,14 @@ async function openLinkAndMarkContacted(
   window.location.href = href;
 }
 
-async function openWhatsAppInNewWindowAndMarkContacted(prospectId: string, href: string) {
-  const popup = window.open("about:blank", "_blank", "noopener,noreferrer");
+function openWhatsAppInNewWindow(href: string) {
+  const popup = window.open("about:blank", "_blank");
 
   if (!popup) {
     throw new Error("No se pudo abrir WhatsApp en una nueva ventana.");
   }
 
-  await markAsContacted(prospectId);
-  popup.location.href = href;
+  popup.location.assign(href);
   popup.focus();
 }
 
@@ -103,7 +104,7 @@ export function ManualContactActions({
   name,
 }: ManualContactActionsProps) {
   const [busy, setBusy] = useState<"whatsapp" | "email" | null>(null);
-  const whatsappUrl = phone ? buildWhatsAppUrl(phone, message) : "";
+  const whatsappUrl = phone ? buildWhatsAppUrl(phone, name) : "";
   const mailtoUrl = email ? buildMailtoUrl(email, subject, message) : "";
 
   async function handleAction(kind: "whatsapp" | "email") {
@@ -117,7 +118,7 @@ export function ManualContactActions({
 
     try {
       if (kind === "whatsapp") {
-        await openWhatsAppInNewWindowAndMarkContacted(prospectId, href);
+        openWhatsAppInNewWindow(href);
         return;
       }
 
@@ -130,18 +131,16 @@ export function ManualContactActions({
   return (
     <div className="manual-contact-actions">
       {whatsappUrl ? (
-        <a
-          href={whatsappUrl}
+        <button
+          type="button"
           className="crm-button crm-button--primary"
-          target="_blank"
-          rel="noreferrer noopener"
           onClick={(event) => {
             event.preventDefault();
             void handleAction("whatsapp");
           }}
         >
           {busy === "whatsapp" ? "Abriendo WhatsApp..." : `WhatsApp a ${name}`}
-        </a>
+        </button>
       ) : null}
 
       {mailtoUrl ? (
