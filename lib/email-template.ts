@@ -4,7 +4,7 @@ const BRAND_NAME = "AionSite";
 const BRAND_EMAIL = "contacto@aionsite.com.mx";
 const BRAND_LOGO_URL = "https://aionsite.com.mx/logo-aionsite.png";
 const BRAND_WHATSAPP_URL =
-  "https://wa.me/5219381238531?text=Hola%20AionSite%2C%20quiero%20que%20me%20envien%20el%20video.";
+  "https://wa.me/5219381238531?text=Hola%20AionSite%2C%20quiero%20que%20me%20envien%20la%20propuesta.";
 
 export type EmailVariant = "a" | "b" | "c" | "d";
 
@@ -58,6 +58,9 @@ function getNicheLabel(type: string): string {
     veterinary_care: "clinicas veterinarias",
     school: "academias y escuelas",
     accounting: "despachos contables",
+    water_purification: "purificadoras de agua",
+    clothing_store: "tiendas de ropa",
+    store: "tiendas locales",
   };
 
   return map[type] || "negocios locales";
@@ -199,10 +202,11 @@ function buildVariantA(prospect: ProspectEmailModel) {
     ? `${prospect.contactName}, idea breve para captar mas clientes`
     : `${prospect.name}: idea breve para captar mas clientes`;
   const paragraphs = [
+    "Soy Felipe, desarrollador web en AionSite. Trabajo con negocios locales para mejorar su presencia digital y convertir mas visitas en contactos.",
     `Vi una oportunidad para que ${prospect.name} capte mas contactos de personas que buscan ${nicheLabel} ${cityPhrase}.`,
     `Puntualmente: ${getSpecificOpportunity(prospect)}.`,
     ...(socialProof ? [socialProof] : []),
-    "Si te sirve, te mando un video corto con 2 o 3 ajustes concretos.",
+    "Si te sirve, te mando una propuesta con 2 o 3 ajustes concretos.",
   ];
 
   return buildMessage({
@@ -221,9 +225,10 @@ function buildVariantB(prospect: ProspectEmailModel) {
   const cityPhrase = getCityPhrase(prospect.city);
   const subject = `${prospect.name}: mejora rapida para captar mas clientes`;
   const paragraphs = [
+    "Soy Felipe, desarrollador web en AionSite. Te escribo con respeto porque estuve viendo su presencia digital.",
     `Estuve revisando ${prospect.name} y vi una mejora sencilla para captar mas clientes ${cityPhrase}.`,
     "No es algo complicado ni requiere empezar con publicidad.",
-    "Si quieres, te mando un video corto con lo que ajustaria.",
+    "Si quieres, te mando una propuesta con lo que ajustaria.",
   ];
 
   return buildMessage({
@@ -243,9 +248,10 @@ function buildVariantC(prospect: ProspectEmailModel) {
   const cityPhrase = getCityPhrase(prospect.city);
   const subject = `${prospect.name}: oportunidad en busquedas de Google`;
   const paragraphs = [
+    "Soy Felipe, desarrollador web en AionSite. Estaba revisando negocios locales y me llamo la atencion su caso.",
     `Buscando ${nicheLabel} ${cityPhrase}, vi a ${prospect.name} y encontre una oportunidad puntual.`,
     `${getSpecificOpportunity(prospect)}.`,
-    "Te puedo mandar un video corto con la mejora que haria primero?",
+    "Te puedo mandar una propuesta con la mejora que haria primero?",
   ];
 
   return buildMessage({
@@ -253,7 +259,7 @@ function buildVariantC(prospect: ProspectEmailModel) {
     greeting,
     paragraphs,
     ctaText: "Lo revisa?",
-    ctaButtonLabel: "Si, mandame el video",
+    ctaButtonLabel: "Si, mandamela",
   });
 }
 
@@ -266,10 +272,11 @@ function buildVariantD(prospect: ProspectEmailModel) {
   const socialProof = getSocialProofLine(prospect.userRatingCount, prospect.rating);
   const subject = `${prospect.name}: captar mas clientes desde Google`;
   const paragraphs = [
+    "Soy Felipe, desarrollador web en AionSite. Vi su negocio y quise escribirles con una idea concreta.",
     `Estuve revisando la presencia digital de ${prospect.name} ${cityPhrase}.`,
     `Vi potencial para mejorar ${pitchAngle}.`,
     ...(socialProof ? [socialProof] : []),
-    "Si te interesa, te mando un video breve con los ajustes que haria primero.",
+    "Si te interesa, te mando una propuesta con los ajustes que haria primero.",
   ];
 
   return buildMessage({

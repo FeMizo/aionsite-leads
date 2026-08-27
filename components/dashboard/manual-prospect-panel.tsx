@@ -112,7 +112,7 @@ function buildWhatsAppUrl(phone: string, businessName: string) {
   }
 
   const normalizedPhone = digits.length === 10 ? `52${digits}` : digits;
-  const message = `Hola, soy Felipe de AionSite. Vi una oportunidad para que ${businessName} consiga mas clientes desde Google. Te puedo mandar un video corto?`;
+  const message = `Hola, soy Felipe, desarrollador web en AionSite. Estuve viendo ${businessName} y creo que hay una oportunidad para conseguir mas clientes desde Google. Te puedo mandar una propuesta?`;
 
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
 }
@@ -120,7 +120,7 @@ function buildWhatsAppUrl(phone: string, businessName: string) {
 export function ManualProspectPanel() {
   const [form, setForm] = useState<ManualProspectForm>(DEFAULT_TEST_PROSPECT);
   const [mode, setMode] = useState<ManualProspectMode>("manual");
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [createdResult, setCreatedResult] = useState<ManualProspectCreationResult | null>(null);

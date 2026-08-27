@@ -7,6 +7,7 @@ import { getApiErrorMessage } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Table } from "@/components/ui/table";
 import { formatDashboardDateTime } from "@/lib/date-format";
+import { getLeadTypeLabel } from "@/lib/lead-types";
 import { getProspectDisplayStatus, getProspectStatusLabel } from "@/lib/prospect-status";
 import { compareSortValues, type SortDirection, type SortType } from "@/lib/table-sort";
 import { SortIndicator } from "@/components/dashboard/sort-indicator";
@@ -88,7 +89,7 @@ function buildMailtoUrl(record: DashboardProspect) {
     subject: record.subject || `Oportunidad para ${record.name}`,
     body:
       record.message ||
-      `Hola, vi una oportunidad para que ${record.name} consiga mas clientes en ${record.city}.`,
+      `Hola, soy Felipe, desarrollador web en AionSite. Estuve viendo ${record.name} y creo que hay una oportunidad para conseguir mas clientes en ${record.city}.`,
   });
 
   return `mailto:${record.email}?${params.toString()}`;
@@ -101,7 +102,7 @@ function buildWhatsAppUrl(record: DashboardProspect) {
     return "";
   }
 
-  const message = `Hola, soy Felipe de AionSite. Vi una oportunidad para que ${record.name} consiga mas clientes desde Google. Te puedo mandar un video corto?`;
+  const message = `Hola, soy Felipe, desarrollador web en AionSite. Estuve viendo ${record.name} y creo que hay una oportunidad para conseguir mas clientes desde Google. Te puedo mandar una propuesta?`;
 
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
@@ -739,7 +740,7 @@ export function ProspectTable({
                     {record.phone ? <span>{record.phone}</span> : null}
                   </div>
                 </td>
-                <td>{record.type}</td>
+                <td>{getLeadTypeLabel(record.type)}</td>
                 <td>{record.city}</td>
                 <td>{record.email || "Sin email"}</td>
                 <td>

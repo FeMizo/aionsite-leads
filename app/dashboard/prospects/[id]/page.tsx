@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getProspectDetail } from "@/lib/prospects";
 import { buildProspectOutreachDraft } from "@/lib/outreach";
+import { getLeadTypeLabel } from "@/lib/lead-types";
 import { getProspectDisplayStatus } from "@/lib/prospect-status";
 import { formatDashboardDateTime } from "@/lib/date-format";
 import { StatusPill } from "@/components/dashboard/status-pill";
@@ -21,7 +22,7 @@ export async function generateMetadata({ params }: PageContext): Promise<Metadat
     const prospect = await getProspectDetail(id);
     return {
       title: prospect.name,
-      description: `${prospect.city} · ${prospect.type} · Score ${prospect.score}`,
+      description: `${prospect.city} · ${getLeadTypeLabel(prospect.type)} · Score ${prospect.score}`,
     };
   } catch {
     return { title: "Prospecto" };
@@ -41,6 +42,7 @@ export default async function ProspectDetailPage({ params }: PageContext) {
 
   const draft = buildProspectOutreachDraft(prospect, "first_contact");
   const displayStatus = getProspectDisplayStatus(prospect.status, prospect.scheduledSendAt);
+  const typeLabel = getLeadTypeLabel(prospect.type);
 
   return (
     <div className="page-stack">
@@ -62,7 +64,7 @@ export default async function ProspectDetailPage({ params }: PageContext) {
           </div>
         </div>
         <p>
-          {[prospect.city, prospect.type, `Score ${prospect.score}`]
+          {[prospect.city, typeLabel, `Score ${prospect.score}`]
             .filter(Boolean)
             .join(" · ")}
         </p>

@@ -123,9 +123,11 @@ function buildFollowup1Draft(prospect: OutreachProspect) {
 
 Solo queria confirmar si viste mi mensaje anterior.
 
+Soy Felipe, desarrollador web en AionSite.
+
 Vi una oportunidad puntual para ${prospect.name}${cityLine}: ${context.opportunity}.
 
-Te mando un video corto con la idea?
+Te mando una propuesta con la idea?
 
 Saludos,
 AionSite`,
@@ -155,7 +157,7 @@ function buildFollowup2Draft(prospect: OutreachProspect) {
 
 ${reviewLine}
 
-Te muestro en un video corto que ajustaria primero?
+Te mando una propuesta con lo que ajustaria primero?
 
 Saludos,
 AionSite`,

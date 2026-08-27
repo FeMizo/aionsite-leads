@@ -43,7 +43,7 @@ function buildWhatsAppUrl(phone: string, name: string) {
     return "";
   }
 
-  const shortMessage = `Hola, soy Felipe de AionSite. Vi una oportunidad para que ${name} consiga mas clientes desde Google. Te puedo mandar un video corto?`;
+  const shortMessage = `Hola, soy Felipe, desarrollador web en AionSite. Estuve viendo ${name} y creo que hay una oportunidad para conseguir mas clientes desde Google. Te puedo mandar una propuesta?`;
 
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(shortMessage)}`;
 }

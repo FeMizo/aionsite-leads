@@ -13,6 +13,12 @@ export const LEAD_TYPES = [
 
 export type LeadType = (typeof LEAD_TYPES)[number];
 
+const LEAD_TYPE_DISPLAY_LABELS: Record<string, string> = {
+  water_purification: "Purificadora de agua",
+  clothing_store: "Tienda de ropa",
+  store: "Tienda",
+};
+
 type LeadTypeInput = {
   type?: string;
   website?: string;
@@ -107,4 +113,14 @@ export function resolveLeadType(input: LeadTypeInput) {
   }
 
   return inferLeadType(input);
+}
+
+export function getLeadTypeLabel(value: string) {
+  const raw = String(value || "").trim();
+
+  if (!raw) {
+    return "";
+  }
+
+  return LEAD_TYPE_DISPLAY_LABELS[raw] || raw.replaceAll("_", " ");
 }
