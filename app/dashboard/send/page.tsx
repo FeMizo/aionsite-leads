@@ -35,6 +35,7 @@ export default async function SendPage({
 
   const { items, totalCount } = await getProspectsByStatuses({
     statuses: ["ready"],
+    unscheduledOnly: true,
   });
 
   return (

@@ -125,13 +125,15 @@ export async function getProspectsByStatuses(options: {
   statuses: string[];
   orderBy?: "createdAt" | "lastCheckedAt" | "lastContactedAt";
   scheduledOnly?: boolean;
+  unscheduledOnly?: boolean;
 }): Promise<{ items: DashboardProspect[]; totalCount: number }> {
   const prisma = getPrismaClient();
-  const { statuses, orderBy = "createdAt", scheduledOnly = false } = options;
+  const { statuses, orderBy = "createdAt", scheduledOnly = false, unscheduledOnly = false } = options;
   const statusFilter = statuses as ProspectStatus[];
   const where = {
     status: { in: statusFilter },
     ...(scheduledOnly ? { scheduledSendAt: { gt: new Date() } } : {}),
+    ...(unscheduledOnly ? { scheduledSendAt: null } : {}),
   };
 
   const [items, totalCount] = await Promise.all([
