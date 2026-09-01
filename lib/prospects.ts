@@ -28,8 +28,10 @@ const PROSPECT_STATUSES = [
   "ready",
   "contacted",
   "replied",
+  "followup",
   "closed",
   "rejected",
+  "uncontactable",
 ] as const satisfies readonly ProspectStatus[];
 
 export const EDITABLE_PROSPECT_STATUSES = PROSPECT_STATUSES;
@@ -234,9 +236,11 @@ function resolveStatusAfterApproval(record: ProspectListRecord): ProspectStatus 
 function resolveStatusAfterDraft(record: ProspectListRecord): ProspectStatus {
   if (
     record.status === "contacted" ||
+    record.status === "followup" ||
     record.status === "replied" ||
     record.status === "closed" ||
     record.status === "rejected"
+    || record.status === "uncontactable"
   ) {
     return record.status;
   }
@@ -938,7 +942,7 @@ export async function markProspectReplied(
     throw new Error("Prospecto no encontrado.");
   }
 
-  if (current.status === "closed" || current.status === "rejected") {
+  if (current.status === "closed" || current.status === "rejected" || current.status === "uncontactable") {
     throw new Error("El prospecto no puede marcarse como replied desde su estado actual.");
   }
 

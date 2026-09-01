@@ -62,8 +62,10 @@ const EDITABLE_STATUSES = [
   "ready",
   "contacted",
   "replied",
+  "followup",
   "closed",
   "rejected",
+  "uncontactable",
 ] as const;
 
 function normalizeWhatsAppPhone(phone: string) {
@@ -606,7 +608,7 @@ export function ProspectTable({
 
     return activeTab === "scheduled"
       ? "No hay prospectos programados para envio."
-      : "No hay prospectos ready para enviar.";
+      : "No hay prospectos listos para enviar.";
   }
 
   return (
@@ -629,8 +631,7 @@ export function ProspectTable({
         <div className="crm-tabs" aria-label="Filtros de envios">
           {[
             { key: "all" as const, label: "Todos", count: tabCounts.all },
-            { key: "ready" as const, label: "Ready", count: tabCounts.ready },
-            { key: "scheduled" as const, label: "Programados", count: tabCounts.scheduled },
+            { key: "ready" as const, label: "Listos", count: tabCounts.ready },
           ].map((tab) => (
             <button
               key={tab.key}

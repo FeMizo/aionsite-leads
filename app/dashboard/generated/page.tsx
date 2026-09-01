@@ -13,7 +13,7 @@ import { PageHeader } from "@/components/crm/page-header";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Generated",
+  title: "Generados",
   description: "Prospectos nuevos capturados por el pipeline pendientes de revision, aprobacion o rechazo.",
 };
 
@@ -39,7 +39,7 @@ export default async function GeneratedPage({
   return (
     <div className="page-stack">
       <PageHeader
-        eyebrow="Generated"
+        eyebrow="Generados"
         title="Prospectos por revisar"
         description="Revisa los registros encontrados por el pipeline, analiza prioridad y decide si se aprueban o rechazan."
       />
@@ -48,8 +48,8 @@ export default async function GeneratedPage({
       <DashboardSetupPanel setup={context.setup} />
 
       <ProspectTable
-        title="Generated"
-        description="Prospectos en generated o analyzed pendientes de aprobacion."
+        title="Generados"
+        description="Prospectos generados o analizados pendientes de aprobación."
         records={items}
         endpoint="/api/prospects"
         actions={[

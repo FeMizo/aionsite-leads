@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { LEAD_TYPES } from "@/lib/lead-types";
+import { getProspectStatusLabel } from "@/lib/prospect-status";
 import { Button } from "@/components/ui/button";
 import { Banner } from "@/components/ui/banner";
 
@@ -353,7 +354,7 @@ export function ManualProspectPanel() {
               <h2>Prospecto generado</h2>
               <p>
                 Score {createdResult.item.score} · prioridad {createdResult.item.priority} ·{" "}
-                {createdResult.item.status}
+                {getProspectStatusLabel(createdResult.item.status)}
               </p>
             </div>
           </div>

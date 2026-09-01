@@ -48,12 +48,12 @@ export default async function ProspectDetailPage({ params }: PageContext) {
     <div className="page-stack">
       <div>
         <Link href="/dashboard/prospects" className="detail-back">
-          ← Volver a Prospects
+          ← Volver a Prospectos
         </Link>
       </div>
 
       <header className="page-header">
-        <span className="page-header__eyebrow">Prospects</span>
+        <span className="page-header__eyebrow">Prospectos</span>
         <div className="detail-title-row">
           <h1>{prospect.name}</h1>
           <div className="detail-badges">

@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Contactados",
-  description: "Seguimiento de prospectos ya contactados, respondidos o cerrados.",
+  description: "Prospectos cuyo estado actual es contactado.",
 };
 
 const PAGE_SIZE = 25;
@@ -33,7 +33,7 @@ export default async function ContactedPage({
   }
 
   const { items, totalCount } = await getProspectsByStatuses({
-    statuses: ["contacted", "replied", "closed"],
+    statuses: ["contacted"],
     orderBy: "lastContactedAt",
   });
 
@@ -42,7 +42,7 @@ export default async function ContactedPage({
       <PageHeader
         eyebrow="Contactados"
         title="Seguimiento comercial"
-        description="Consulta los registros ya contactados, respondidos o cerrados desde una sola vista."
+        description="Consulta únicamente los registros con estado contactado."
       />
 
       <DashboardMetricCards data={context.data} />
@@ -50,7 +50,7 @@ export default async function ContactedPage({
 
       <ProspectTable
         title="Contactados"
-        description="Registros ya contactados o cerrados."
+        description="Registros con estado contactado."
         records={items}
         endpoint="/api/prospects"
         actions={[{ action: "markAsClient", label: "Marcar cliente", variant: "primary" }]}

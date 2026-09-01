@@ -13,13 +13,11 @@ import { PageHeader } from "@/components/crm/page-header";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Prospectos",
-  description: "Prospectos aprobados pendientes de preparar mensaje antes del envio.",
+  title: "Respondidos",
+  description: "Prospectos que respondieron al contacto.",
 };
 
-const PAGE_SIZE = 25;
-
-export default async function ProspectsPage({
+export default async function RepliedPage({
   searchParams,
 }: {
   searchParams: Promise<{ page?: string }>;
@@ -33,32 +31,28 @@ export default async function ProspectsPage({
   }
 
   const { items, totalCount } = await getProspectsByStatuses({
-    statuses: ["approved"],
+    statuses: ["replied"],
+    orderBy: "lastCheckedAt",
   });
 
   return (
     <div className="page-stack">
       <PageHeader
-        eyebrow="Prospectos"
-        title="Cola activa"
-        description="Administra prospectos aprobados antes del envío. Los listos viven en la sección de envíos."
+        eyebrow="Respondidos"
+        title="Prospectos que respondieron"
+        description="Consulta únicamente los prospectos que ya respondieron al contacto."
       />
-
       <DashboardMetricCards data={context.data} />
       <DashboardSetupPanel setup={context.setup} />
-
       <ProspectTable
-        title="Prospectos"
-        description="Aquí trabajas los aprobados. Cuando preparas el mensaje, pasan a listos y aparecen en envíos."
+        title="Respondidos"
+        description="Registros con respuesta recibida."
         records={items}
         endpoint="/api/prospects"
-        actions={[
-          { action: "generateDrafts", label: "Preparar mensaje", variant: "primary" },
-          { action: "rejectRecords", label: "Rechazar", variant: "danger" },
-        ]}
-        emptyLabel="No hay prospectos aprobados pendientes."
+        actions={[]}
+        emptyLabel="No hay prospectos respondidos."
         page={page}
-        pageSize={PAGE_SIZE}
+        pageSize={25}
         totalCount={totalCount}
       />
     </div>

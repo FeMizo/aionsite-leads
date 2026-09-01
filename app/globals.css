@@ -694,6 +694,7 @@ code {
 }
 
 .status-pill--contacted,
+.status-pill--followup,
 .status-pill--replied,
 .status-pill--closed {
   background: #e0e7ff;
@@ -705,6 +706,12 @@ code {
   background: #fff1f2;
   color: #be123c;
   border-color: #fecdd3;
+}
+
+.status-pill--uncontactable {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #d1d5db;
 }
 
 .status-select {

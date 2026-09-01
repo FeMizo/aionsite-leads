@@ -31,8 +31,8 @@ import {
   sortProspectsForDelivery,
 } from "@/lib/send-scheduler";
 
-const TERMINAL_STATUSES: ProspectStatus[] = ["replied", "closed", "rejected"];
-const CONTACTED_STATUSES: ProspectStatus[] = ["contacted", "replied", "closed"];
+const TERMINAL_STATUSES: ProspectStatus[] = ["replied", "closed", "rejected", "uncontactable"];
+const CONTACTED_STATUSES: ProspectStatus[] = ["contacted", "followup", "replied", "closed"];
 
 type FollowupPlan = {
   stage: number;
@@ -251,7 +251,7 @@ function findPreviouslyContacted(record: Prospect, records: Prospect[]) {
 }
 
 function getDueFollowupPlan(record: Prospect) {
-  if (record.status !== "contacted" || !record.contacted) {
+  if (!["contacted", "followup"].includes(record.status) || !record.contacted) {
     return null;
   }
 

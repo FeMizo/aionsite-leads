@@ -35,20 +35,20 @@ export type DashboardPageContext =
 const sectionCards = [
   {
     href: "/dashboard/generated",
-    label: "Generated",
+    label: "Generados",
     description: "Prospectos nuevos o analizados pendientes de decision.",
     metricKey: "generated",
   },
   {
     href: "/dashboard/prospects",
-    label: "Prospects",
-    description: "Prospectos approved pendientes de preparar mensaje.",
+    label: "Prospectos",
+    description: "Prospectos aprobados pendientes de preparar mensaje.",
     metricKey: "prospects",
   },
   {
     href: "/dashboard/send",
-    label: "Envios",
-    description: "Prospectos en estado ready con draft y prioridad alta.",
+    label: "Enviar",
+    description: "Prospectos listos con mensaje y prioridad alta.",
     metricKey: "ready",
   },
   {
@@ -274,7 +274,7 @@ export function DashboardOverview({
       <PageHeader
         eyebrow="Dashboard"
         title="Prospecting pipeline en Vercel + Postgres"
-        description="Usa el lateral para navegar por generated, activos, envios, contactados y busquedas sin cargar todo en la misma pantalla."
+        description="Usa el lateral para navegar por generados, prospectos, envíos, contactados y búsquedas."
       />
 
       <DashboardMetricCards data={data} />
@@ -292,12 +292,12 @@ export function DashboardOverview({
       >
         <div className="settings-grid">
           <article>
-            <h3>Generated</h3>
+            <h3>Generados</h3>
             <p>Analiza, aprueba o rechaza los prospectos capturados por la ultima busqueda.</p>
           </article>
           <article>
-            <h3>Prospects y Envios</h3>
-            <p>Trabaja approved en Prospects y deja que los ready vivan solo en Envios para evitar duplicados visuales.</p>
+            <h3>Prospectos y envíos</h3>
+            <p>Trabaja los aprobados y deja que los listos vivan solo en Envíos para evitar duplicados visuales.</p>
           </article>
           <article>
             <h3>Contactados y Busquedas</h3>

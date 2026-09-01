@@ -14,8 +14,10 @@ enum ProspectStatus {
   ready
   contacted
   replied
+  followup
   closed
   rejected
+  uncontactable
 }
 
 model Prospect {

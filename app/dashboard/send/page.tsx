@@ -14,7 +14,7 @@ import { PageHeader } from "@/components/crm/page-header";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Envios",
+  title: "Enviar",
   description: "Prospectos con draft listo para enviar o programados con fecha y hora especifica.",
 };
 

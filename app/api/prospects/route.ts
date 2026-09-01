@@ -59,9 +59,11 @@ export async function GET(request: NextRequest) {
         "approved",
         "ready",
         "contacted",
+        "followup",
         "replied",
         "closed",
         "rejected",
+        "uncontactable",
       ],
     });
   }
@@ -241,7 +243,7 @@ async function handleLegacyDashboardAction(payload: ProspectActionPayload) {
         }
 
         const now = new Date();
-        const isContactedStatus = ["contacted", "replied", "closed"].includes(nextStatus);
+          const isContactedStatus = ["contacted", "followup", "replied", "closed"].includes(nextStatus);
         const result = await transitionProspects(ids, {
           nextStatus,
           eventType: "status_changed_manual",

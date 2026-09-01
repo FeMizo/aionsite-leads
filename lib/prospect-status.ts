@@ -17,13 +17,19 @@ export function getProspectDisplayStatus(
 }
 
 export function getProspectStatusLabel(status: string) {
-  if (status === "closed") {
-    return "cliente";
-  }
+  const labels: Record<string, string> = {
+    generated: "generado",
+    analyzed: "analizado",
+    approved: "aprobado",
+    ready: "listo para enviar",
+    scheduled: "programado",
+    contacted: "contactado",
+    followup: "seguimiento",
+    replied: "respondió",
+    closed: "cliente",
+    rejected: "rechazado",
+    uncontactable: "sin poder contactar",
+  };
 
-  if (status === "scheduled") {
-    return "programado";
-  }
-
-  return status;
+  return labels[status] || status;
 }
