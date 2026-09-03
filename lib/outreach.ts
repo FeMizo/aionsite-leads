@@ -6,6 +6,12 @@ import {
 } from "@/lib/lead-types";
 import { buildOpportunity } from "@/lib/opportunity";
 
+const SERVICES_CANVA_URL = "https://canva.link/uk8xoudaah19yry";
+
+function withServicesLink(message: string) {
+  return `${message}\n\nPuedes ver nuestros servicios de forma visual aqui: ${SERVICES_CANVA_URL}`;
+}
+
 export type OutreachMessageType =
   | "first_contact"
   | "followup"
@@ -119,7 +125,7 @@ function buildFollowup1Draft(prospect: OutreachProspect) {
 
   return {
     subject: `${prospect.name}: viste mi mensaje?`,
-    message: `Hola ${addressee},
+    message: withServicesLink(`Hola ${addressee},
 
 Solo queria confirmar si viste mi mensaje anterior.
 
@@ -130,7 +136,7 @@ Vi una oportunidad puntual para ${prospect.name}${cityLine}: ${context.opportuni
 Te mando una propuesta con la idea?
 
 Saludos,
-AionSite`,
+AionSite`),
     html: null,
     analysis: "Follow-up 1: recordatorio breve y amable.",
     opportunity: context.opportunity,
@@ -153,14 +159,14 @@ function buildFollowup2Draft(prospect: OutreachProspect) {
 
   return {
     subject: `${prospect.name}: otro punto breve`,
-    message: `Hola ${addressee},
+    message: withServicesLink(`Hola ${addressee},
 
 ${reviewLine}
 
 Te mando una propuesta con lo que ajustaria primero?
 
 Saludos,
-AionSite`,
+AionSite`),
     html: null,
     analysis: "Follow-up 2: angulo breve con prueba social.",
     opportunity: context.opportunity,
@@ -173,7 +179,7 @@ function buildFollowup3Draft(prospect: OutreachProspect) {
 
   return {
     subject: `${prospect.name}: idea final`,
-    message: `Hola ${addressee},
+    message: withServicesLink(`Hola ${addressee},
 
 Te dejo una idea final por si sirve.
 
@@ -182,7 +188,7 @@ En una linea: ${context.opportunity}. La mejora mas directa seria ${context.reco
 Si en algun momento te interesa verlo, aqui estoy.
 
 Que les vaya bien,
-AionSite`,
+AionSite`),
     html: null,
     analysis: "Follow-up 3: cierre breve y amable.",
     opportunity: context.opportunity,

@@ -5,6 +5,7 @@ const BRAND_EMAIL = "contacto@aionsite.com.mx";
 const BRAND_LOGO_URL = "https://aionsite.com.mx/logo-aionsite.png";
 const BRAND_WHATSAPP_URL =
   "https://wa.me/5219381238531?text=Hola%20AionSite%2C%20quiero%20que%20me%20envien%20la%20propuesta.";
+const SERVICES_CANVA_URL = "https://canva.link/uk8xoudaah19yry";
 
 export type EmailVariant = "a" | "b" | "c" | "d";
 
@@ -138,6 +139,7 @@ function buildBaseHtml(params: {
           <td style="padding:8px 26px 0;">
             <p style="margin:0 0 16px;color:#e2e8f0;font-size:16px;line-height:1.65;">${escapeHtml(params.greeting)}</p>
             ${pHtml}
+            <p style="margin:0 0 16px;color:#cbd5e1;font-size:16px;line-height:1.65;">Puedes ver nuestros servicios de forma visual aqui: <a href="${SERVICES_CANVA_URL}" style="color:#93c5fd;text-decoration:underline;">${SERVICES_CANVA_URL}</a></p>
           </td>
         </tr>
         <tr>
@@ -182,6 +184,8 @@ function buildMessage(params: {
   const text = `${params.greeting}
 
 ${params.paragraphs.join("\n\n")}
+
+Puedes ver nuestros servicios de forma visual aqui: ${SERVICES_CANVA_URL}
 
 ${params.ctaText}
 
