@@ -34,7 +34,19 @@ export default function RootLayout({
             </div>
             <Navigation />
           </aside>
-          <main className="app-main">{children}</main>
+          <main className="app-main">
+            <div className="app-topbar">
+              <div>
+                <span className="app-topbar__eyebrow">Espacio de trabajo</span>
+                <strong>AionSite CRM</strong>
+              </div>
+              <div className="app-topbar__status">
+                <span className="app-topbar__status-dot" aria-hidden="true" />
+                Operación activa
+              </div>
+            </div>
+            {children}
+          </main>
         </div>
       </body>
     </html>

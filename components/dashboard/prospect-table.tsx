@@ -12,6 +12,7 @@ import { getProspectDisplayStatus, getProspectStatusLabel } from "@/lib/prospect
 import { compareSortValues, type SortDirection, type SortType } from "@/lib/table-sort";
 import { SortIndicator } from "@/components/dashboard/sort-indicator";
 import type { DashboardProspect } from "@/lib/types";
+import { ProspectStatusControl } from "@/components/dashboard/prospect-status-control";
 
 type ActionConfig = {
   action: string;
@@ -52,8 +53,6 @@ type ProspectColumn = {
   defaultDirection: SortDirection;
   getValue: (record: DashboardProspect) => unknown;
 };
-
-type ProspectTab = "all" | "ready" | "scheduled";
 
 const EDITABLE_STATUSES = [
   "generated",
@@ -224,7 +223,7 @@ export function ProspectTable({
   const [success, setSuccess] = useState("");
   const [busyContactId, setBusyContactId] = useState<string | null>(null);
   const [busyStatusId, setBusyStatusId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<ProspectTab>("all");
+  const [detailRecord, setDetailRecord] = useState<DashboardProspect | null>(null);
   const [sortState, setSortState] = useState<{
     key: ProspectSortKey;
     direction: SortDirection;
@@ -235,7 +234,6 @@ export function ProspectTable({
   const showScheduledColumn =
     endpoint === "/api/send" || records.some((record) => Boolean(record.scheduledSendAt));
   const showLastContactedColumn = records.some((record) => Boolean(record.lastContactedAt));
-  const showSendTabs = endpoint === "/api/send";
 
   const columns = useMemo<ProspectColumn[]>(
     () => [
@@ -343,10 +341,6 @@ export function ProspectTable({
 
     let nextRecords = records;
 
-    if (showSendTabs && activeTab !== "all") {
-      nextRecords = nextRecords.filter((record) => getDisplayStatus(record) === activeTab);
-    }
-
     if (normalizedQuery) {
       nextRecords = nextRecords.filter((record) =>
         [
@@ -358,6 +352,7 @@ export function ProspectTable({
             record.type,
             record.city,
             record.email,
+            record.phone,
             record.website,
             record.source,
             record.status,
@@ -386,7 +381,7 @@ export function ProspectTable({
         sortState.direction
       )
     );
-  }, [activeTab, columns, query, records, showSendTabs, sortState]);
+  }, [columns, query, records, sortState]);
 
   const totalVisibleCount = filteredRecords.length;
   const totalPages = hasPagination ? Math.max(1, Math.ceil(totalVisibleCount / pageSize)) : 1;
@@ -395,15 +390,6 @@ export function ProspectTable({
   const paginatedRecords = hasPagination
     ? filteredRecords.slice((safeCurrentPage - 1) * pageSize, safeCurrentPage * pageSize)
     : filteredRecords;
-
-  const tabCounts = useMemo(
-    () => ({
-      all: records.length,
-      ready: records.filter((record) => getDisplayStatus(record) === "ready").length,
-      scheduled: records.filter((record) => getDisplayStatus(record) === "scheduled").length,
-    }),
-    [records]
-  );
 
   useEffect(() => {
     const visibleIds = new Set(filteredRecords.map((record) => record.id));
@@ -422,6 +408,21 @@ export function ProspectTable({
   useEffect(() => {
     setSelectedIds([]);
   }, [safeCurrentPage]);
+
+  useEffect(() => {
+    if (!detailRecord) {
+      return;
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setDetailRecord(null);
+      }
+    }
+
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [detailRecord]);
 
   function getScheduledLabel(record: DashboardProspect) {
     if (!record.scheduledSendAt) {
@@ -601,16 +602,6 @@ export function ProspectTable({
     router.push(`?${params.toString()}`);
   }
 
-  function getEmptyStateLabel() {
-    if (!showSendTabs || activeTab === "all") {
-      return emptyLabel;
-    }
-
-    return activeTab === "scheduled"
-      ? "No hay prospectos programados para envio."
-      : "No hay prospectos listos para enviar.";
-  }
-
   return (
     <Table
       title={title}
@@ -624,28 +615,8 @@ export function ProspectTable({
           onChange={(event) => setQuery(event.target.value)}
         />
       }
-      emptyState={<div className="empty-state">{getEmptyStateLabel()}</div>}
+      emptyState={<div className="empty-state">{emptyLabel}</div>}
     >
-
-      {showSendTabs ? (
-        <div className="crm-tabs" aria-label="Filtros de envios">
-          {[
-            { key: "all" as const, label: "Todos", count: tabCounts.all },
-            { key: "ready" as const, label: "Listos", count: tabCounts.ready },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              className={activeTab === tab.key ? "crm-tab is-active" : "crm-tab"}
-              onClick={() => setActiveTab(tab.key)}
-            >
-              <span>{tab.label}</span>
-              <strong>{tab.count}</strong>
-            </button>
-          ))}
-        </div>
-      ) : null}
-
       <div className="panel__actions">
         {actions.map((action) => (
           <Button
@@ -731,13 +702,16 @@ export function ProspectTable({
                 </td>
                 <td>
                   <div className="record-primary">
-                    <Link
-                      href={`/dashboard/prospects/${record.id}`}
-                      className="record-primary__link"
-                      onClick={(event) => event.stopPropagation()}
+                    <button
+                      type="button"
+                      className="record-primary__link record-primary__button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setDetailRecord(record);
+                      }}
                     >
                       {record.name}
-                    </Link>
+                    </button>
                     {record.phone ? <span>{record.phone}</span> : null}
                   </div>
                 </td>
@@ -866,6 +840,83 @@ export function ProspectTable({
       ) : hasPagination && totalCount !== undefined ? (
         <div className="crm-pagination">
           <span className="crm-pagination__info">{totalVisibleCount} registros</span>
+        </div>
+      ) : null}
+
+      {detailRecord ? (
+        <div className="crm-drawer-layer" role="presentation" onMouseDown={() => setDetailRecord(null)}>
+          <aside
+            className="crm-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="prospect-drawer-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="crm-drawer__header">
+              <div>
+                <span className="page-header__eyebrow">Vista rápida</span>
+                <h2 id="prospect-drawer-title">{detailRecord.name}</h2>
+                <p>{[detailRecord.city, getLeadTypeLabel(detailRecord.type)].filter(Boolean).join(" · ")}</p>
+              </div>
+              <button
+                type="button"
+                className="crm-drawer__close"
+                aria-label="Cerrar detalles"
+                onClick={() => setDetailRecord(null)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="crm-drawer__body">
+              <div className="crm-drawer__badges">
+                <span className={`priority-pill priority-pill--${detailRecord.priority}`}>
+                  {detailRecord.priority}
+                </span>
+                <ProspectStatusControl
+                  prospectId={detailRecord.id}
+                  status={detailRecord.status}
+                  className="crm-drawer__status-control"
+                />
+                <strong className="crm-drawer__score">Score {detailRecord.score}</strong>
+              </div>
+
+              <dl className="crm-drawer__facts">
+                <div><dt>Email</dt><dd>{detailRecord.email || "Sin email"}</dd></div>
+                <div><dt>Teléfono</dt><dd>{detailRecord.phone || "Sin teléfono"}</dd></div>
+                <div><dt>Envío</dt><dd>{getScheduledLabel(detailRecord)}</dd></div>
+              </dl>
+
+              <section className="crm-drawer__section">
+                <h3>Oportunidad</h3>
+                <p>{detailRecord.opportunity || "Sin oportunidad registrada."}</p>
+              </section>
+
+              {detailRecord.subject || detailRecord.message ? (
+                <section className="crm-drawer__section">
+                  <h3>Borrador</h3>
+                  {detailRecord.subject ? <strong>{detailRecord.subject}</strong> : null}
+                  {detailRecord.message ? <p className="crm-drawer__message">{detailRecord.message}</p> : null}
+                </section>
+              ) : null}
+            </div>
+
+            <div className="crm-drawer__footer">
+              <Link href={`/dashboard/prospects/${detailRecord.id}`} className="crm-button crm-button--secondary">
+                Ver todos los detalles
+              </Link>
+              {buildMailtoUrl(detailRecord) ? (
+                <button
+                  type="button"
+                  className="crm-button crm-button--primary"
+                  disabled={busyContactId !== null}
+                  onClick={() => void openContactChannel(detailRecord, "email", buildMailtoUrl(detailRecord))}
+                >
+                  {busyContactId === `${detailRecord.id}:email` ? "Enviando..." : "Enviar correo"}
+                </button>
+              ) : null}
+            </div>
+          </aside>
         </div>
       ) : null}
     </Table>

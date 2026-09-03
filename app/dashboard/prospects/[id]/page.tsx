@@ -9,6 +9,7 @@ import { formatDashboardDateTime } from "@/lib/date-format";
 import { StatusPill } from "@/components/dashboard/status-pill";
 import { EmailPreview } from "./email-preview";
 import { ManualContactActions } from "./manual-contact-actions";
+import { ProspectStatusControl } from "@/components/dashboard/prospect-status-control";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,7 @@ export default async function ProspectDetailPage({ params }: PageContext) {
             .filter(Boolean)
             .join(" · ")}
         </p>
+        <ProspectStatusControl prospectId={prospect.id} status={prospect.status} />
       </header>
 
       <div className="detail-grid">

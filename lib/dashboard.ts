@@ -147,6 +147,13 @@ export async function getProspectsByStatuses(options: {
   return { items: items.map(serializeProspect), totalCount };
 }
 
+export async function getAllDashboardProspects(): Promise<DashboardProspect[]> {
+  const result = await getProspectsByStatuses({
+    statuses: ["generated", "analyzed", "approved", "ready", "contacted", "followup", "replied", "closed", "rejected", "uncontactable"],
+  });
+  return result.items;
+}
+
 export async function getDashboardData(): Promise<DashboardData> {
   const prisma = getPrismaClient();
   const nextCrawlAt = getNextProspectingCrawlAt();

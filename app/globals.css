@@ -61,18 +61,22 @@ code {
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: 240px minmax(0, 1fr);
 }
 
 .app-sidebar {
-  padding: 2rem 1.25rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 1.5rem 1rem;
   background: #12202f;
   color: #f4f8fb;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
+  overflow-y: auto;
 }
 
 .brand-block {
-  padding-bottom: 1.5rem;
+  padding: 0.35rem 0.5rem 1.25rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   margin-bottom: 1.5rem;
 }
@@ -94,20 +98,40 @@ code {
 }
 
 .brand-block p {
+  margin-bottom: 0;
   color: #bfd2df;
+  font-size: 0.88rem;
   line-height: 1.5;
 }
 
 .crm-nav {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1.25rem;
+}
+
+.crm-nav__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.crm-nav__group-label {
+  padding: 0 0.75rem 0.4rem;
+  color: #95d5cb;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
 }
 
 .crm-nav__link {
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   color: #dbe8f0;
-  padding: 0.8rem 0.95rem;
+  padding: 0.65rem 0.75rem;
   border-radius: 0.85rem;
   transition:
     background 0.18s ease,
@@ -128,8 +152,54 @@ code {
   box-shadow: inset 0 0 0 1px rgba(149, 213, 203, 0.24);
 }
 
+.crm-nav__shortcut {
+  color: #95d5cb;
+  font-size: 0.65rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
 .app-main {
-  padding: 2rem;
+  min-width: 0;
+  padding: 0 2rem 2rem;
+}
+
+.app-topbar {
+  min-height: 4.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 -2rem 2rem;
+  padding: 0.85rem 2rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-topbar > div:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+}
+
+.app-topbar__eyebrow {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.app-topbar__status {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.app-topbar__status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
 .page-stack {
@@ -249,6 +319,14 @@ code {
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-bottom: 1rem;
+}
+
+.page-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  padding-bottom: 0.25rem;
 }
 
 .manual-contact-actions__wrap {
@@ -1043,6 +1121,241 @@ code {
   color: var(--accent);
 }
 
+.crm-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.crm-workspace__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.crm-workspace__filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--panel);
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.crm-workspace__filter strong {
+  color: var(--text);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-workspace__filter:hover,
+.crm-workspace__filter.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.record-primary__button {
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.crm-drawer-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(18, 32, 47, 0.38);
+}
+
+.crm-drawer {
+  width: min(100%, 30rem);
+  max-width: 30rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  box-shadow: -12px 0 32px rgba(15, 23, 42, 0.14);
+  animation: crm-drawer-in 0.2s ease-out;
+}
+
+.crm-drawer__header,
+.crm-drawer__footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.crm-drawer__header h2 {
+  margin: 0.35rem 0;
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+
+.crm-drawer__header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.crm-drawer__close {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.crm-drawer__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.crm-drawer__badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.crm-drawer__status {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  min-height: 1.8rem;
+  padding: 0.2rem 0.6rem;
+  cursor: default;
+}
+
+.prospect-status-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.prospect-status-control__feedback,
+.prospect-status-control__error {
+  font-size: 0.78rem;
+}
+
+.prospect-status-control__feedback {
+  color: var(--accent-strong);
+}
+
+.prospect-status-control__error {
+  color: var(--danger);
+}
+
+.crm-drawer__status-control {
+  margin-right: auto;
+}
+
+.crm-drawer__status-control .status-select {
+  width: auto;
+  min-height: 1.8rem;
+  padding: 0.2rem 1.8rem 0.2rem 0.6rem;
+}
+
+.crm-drawer__score {
+  margin-left: auto;
+  color: var(--accent-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-drawer__facts {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.crm-drawer__facts div {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.crm-drawer__facts dt {
+  margin-bottom: 0.2rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.crm-drawer__facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.crm-drawer__section {
+  margin-top: 1.5rem;
+}
+
+.crm-drawer__section h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.95rem;
+}
+
+.crm-drawer__section p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.crm-drawer__message {
+  max-height: 10rem;
+  margin-top: 0.65rem !important;
+  overflow-y: auto;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: #f7fafc;
+  white-space: pre-wrap;
+}
+
+.crm-drawer__footer {
+  align-items: center;
+  border-top: 1px solid var(--border);
+  border-bottom: 0;
+}
+
+.crm-drawer__footer .crm-button,
+.crm-drawer__footer .crm-button:visited {
+  flex: 1;
+  text-align: center;
+}
+
+@keyframes crm-drawer-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crm-drawer {
+    animation: none;
+  }
+}
+
 /* --- Email preview component --- */
 
 .email-preview {
@@ -1127,11 +1440,23 @@ code {
   }
 
   .app-sidebar {
+    position: static;
+    height: auto;
     padding: 1.25rem;
   }
 
   .app-main {
-    padding: 1rem;
+    padding: 0 1rem 1rem;
+  }
+
+  .app-topbar {
+    min-height: 3.75rem;
+    margin: 0 -1rem 1.25rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .app-topbar__eyebrow {
+    display: none;
   }
 
   .crm-cards,

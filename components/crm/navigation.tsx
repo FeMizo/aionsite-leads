@@ -3,17 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const items = [
-  { href: "/dashboard", label: "Resumen" },
-  { href: "/dashboard/generated", label: "Generados" },
-  { href: "/dashboard/prospects", label: "Prospectos" },
-  { href: "/dashboard/send", label: "Enviar" },
-  { href: "/dashboard/scheduled", label: "Programados" },
-  { href: "/dashboard/contacted", label: "Contactados" },
-  { href: "/dashboard/replied", label: "Respondidos" },
-  { href: "/dashboard/followup", label: "Seguimiento" },
-  { href: "/dashboard/uncontactable", label: "Sin contactar" },
-  { href: "/dashboard/runs", label: "Busquedas" },
+const groups = [
+  {
+    label: "Espacio de trabajo",
+    items: [{ href: "/dashboard", label: "CRM" }],
+  },
+  {
+    label: "Operación",
+    items: [{ href: "/dashboard/runs", label: "Búsquedas" }],
+  },
 ];
 
 export function Navigation() {
@@ -29,15 +27,21 @@ export function Navigation() {
 
   return (
     <nav className="crm-nav">
-      {items.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={`crm-nav__link ${isActive(item.href) ? "is-active" : ""}`.trim()}
-          aria-current={isActive(item.href) ? "page" : undefined}
-        >
-          {item.label}
-        </Link>
+      {groups.map((group) => (
+        <div key={group.label} className="crm-nav__group">
+          <span className="crm-nav__group-label">{group.label}</span>
+          {group.items.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`crm-nav__link ${isActive(item.href) ? "is-active" : ""}`.trim()}
+              aria-current={isActive(item.href) ? "page" : undefined}
+            >
+              <span>{item.label}</span>
+              {item.href === "/dashboard/send" ? <span className="crm-nav__shortcut">Prioridad</span> : null}
+            </Link>
+          ))}
+        </div>
       ))}
     </nav>
   );

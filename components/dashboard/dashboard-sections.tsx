@@ -7,6 +7,7 @@ import { formatDashboardDateTime } from "@/lib/date-format";
 import { getDashboardData } from "@/lib/dashboard";
 import { getAppSetupState } from "@/lib/env";
 import type { DashboardData } from "@/lib/types";
+import type { ReactNode } from "react";
 
 type DashboardSetupState = ReturnType<typeof getAppSetupState>;
 
@@ -265,16 +266,18 @@ export function DashboardSetupPanel({ setup }: { setup: DashboardSetupState }) {
 export function DashboardOverview({
   data,
   setup,
+  children,
 }: {
   data: DashboardData;
   setup: DashboardSetupState;
+  children?: ReactNode;
 }) {
   return (
     <div className="page-stack">
       <PageHeader
         eyebrow="Dashboard"
         title="Prospecting pipeline en Vercel + Postgres"
-        description="Usa el lateral para navegar por generados, prospectos, envíos, contactados y búsquedas."
+        description="Gestiona todo el pipeline desde una sola vista. Filtra por etapa, ejecuta acciones y actualiza estados sin cambiar de pantalla."
       />
 
       <DashboardMetricCards data={data} />
@@ -286,25 +289,8 @@ export function DashboardOverview({
         activeRunCreatedAt={data.activeRun?.createdAt || null}
       />
 
-      <Section
-        title="Secciones del CRM"
-        description="Cada vista concentra una parte del flujo operativo para reducir ruido y trabajar por etapa."
-      >
-        <div className="settings-grid">
-          <article>
-            <h3>Generados</h3>
-            <p>Analiza, aprueba o rechaza los prospectos capturados por la ultima busqueda.</p>
-          </article>
-          <article>
-            <h3>Prospectos y envíos</h3>
-            <p>Trabaja los aprobados y deja que los listos vivan solo en Envíos para evitar duplicados visuales.</p>
-          </article>
-          <article>
-            <h3>Contactados y Busquedas</h3>
-            <p>Consulta seguimiento comercial y la salud operativa del pipeline.</p>
-          </article>
-        </div>
-      </Section>
+      {children}
+
     </div>
   );
 }
