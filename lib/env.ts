@@ -11,6 +11,7 @@ export const GOOGLE_PLACES_ENV_KEYS = [
   "GOOGLE_PLACES_API_KEY",
 ] as const;
 export const SMTP_ENV_KEYS = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS"] as const;
+export const IMAP_ENV_KEYS = ["IMAP_HOST", "IMAP_PORT", "IMAP_USER", "IMAP_PASS"] as const;
 const GOOGLE_PLACES_ENDPOINT_KEYS = ["GOOGLE_PLACES_ENDPOINT"] as const;
 const BRAVE_SEARCH_API_KEYS = ["BRAVE_SEARCH_API_KEY"] as const;
 const FROM_NAME_ENV_KEYS = ["FROM_NAME"] as const;
@@ -49,6 +50,13 @@ export function isSmtpConfigured() {
   return getMissingEnvVars(SMTP_ENV_KEYS).length === 0;
 }
 
+export function isImapConfigured() {
+  return Boolean(
+    (getFirstEnvValue(IMAP_ENV_KEYS) || getSmtpUser()) &&
+    (getFirstEnvValue(["IMAP_PASS"]) || getSmtpPass())
+  );
+}
+
 export function getDatabaseUrl() {
   return getFirstEnvValue(DATABASE_ENV_KEYS);
 }
@@ -84,6 +92,12 @@ export function getSmtpUser() {
 export function getSmtpPass() {
   return getFirstEnvValue(["SMTP_PASS"]);
 }
+
+export function getImapHost() { return getFirstEnvValue(["IMAP_HOST"]) || "imap.hostinger.com"; }
+export function getImapPort() { return getFirstEnvValue(["IMAP_PORT"]) || "993"; }
+export function getImapSecure() { return getFirstEnvValue(["IMAP_SECURE"]) !== "false"; }
+export function getImapUser() { return getFirstEnvValue(["IMAP_USER"]) || getSmtpUser(); }
+export function getImapPass() { return getFirstEnvValue(["IMAP_PASS"]) || getSmtpPass(); }
 
 export function getFromName() {
   return getFirstEnvValue(FROM_NAME_ENV_KEYS) || "Aionsite";

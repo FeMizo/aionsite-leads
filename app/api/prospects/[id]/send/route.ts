@@ -7,6 +7,7 @@ import {
   formatMissingEnvError,
 } from "@/lib/env";
 import { sendProspectEmailById } from "@/lib/mailer";
+import { scanMailboxForBounces } from "@/lib/mail-bounces";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -52,8 +53,9 @@ export async function POST(request: NextRequest, context: ProspectRouteContext) 
       subject: payload.subject,
       message: payload.message,
     });
+    const bounceScan = await scanMailboxForBounces();
 
-    return ok({ result });
+    return ok({ result, bounceScan });
   } catch (error) {
     return fail(
       "PROSPECT_SEND_FAILED",

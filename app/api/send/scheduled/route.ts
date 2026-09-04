@@ -7,6 +7,7 @@ import {
   getCronSecret,
 } from "@/lib/env";
 import { sendProspectEmails } from "@/lib/mailer";
+import { scanMailboxForBounces } from "@/lib/mail-bounces";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -38,8 +39,9 @@ export async function GET(request: NextRequest) {
     const result = await sendProspectEmails({
       mode: "all",
     });
+    const bounceScan = await scanMailboxForBounces();
 
-    return ok({ result });
+    return ok({ result, bounceScan });
   } catch (error) {
     return fail(
       "SCHEDULED_SEND_FAILED",

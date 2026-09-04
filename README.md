@@ -284,7 +284,7 @@ El archivo `openapi.yaml` ya incluye:
 ## Despliegue en Vercel
 
 1. Crea una base Postgres accesible desde Vercel.
-2. Agrega `DATABASE_URL`, `GOOGLE_MAPS_API_KEY`, `SMTP_*`, `CRON_SECRET` e `INTERNAL_API_KEY`.
+2. Agrega `DATABASE_URL`, `GOOGLE_MAPS_API_KEY`, `SMTP_*`, `IMAP_HOST`, `IMAP_PORT`, `IMAP_USER`, `IMAP_PASS`, `CRON_SECRET` e `INTERNAL_API_KEY`.
 3. Despliega el proyecto.
 4. Ejecuta las migraciones versionadas:
 
