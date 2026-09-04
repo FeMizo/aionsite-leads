@@ -32,7 +32,7 @@ export async function scanMailboxForBounces(): Promise<BounceScanResult> {
   });
   const byEmail = new Map(prospects.map((prospect) => [normalizeEmail(prospect.normalizedEmail || prospect.email), prospect] as const).filter(([email]) => Boolean(email)));
   const result: BounceScanResult = { configured: true, scanned: 0, bounced: 0, prospects: [] };
-  const client = new ImapFlow({ host: getImapHost(), port: Number(getImapPort()), secure: getImapSecure(), auth: { user: getImapUser(), pass: getImapPass() }, logger: false });
+  const client = new ImapFlow({ host: getImapHost(), port: Number(getImapPort()), secure: getImapSecure(), auth: { user: getImapUser(), pass: getImapPass() }, logger: false, connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 15000 });
 
   await client.connect();
   const lock = await client.getMailboxLock("INBOX");
@@ -40,11 +40,15 @@ export async function scanMailboxForBounces(): Promise<BounceScanResult> {
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const uids = await client.search({ seen: false, since }, { uid: true });
     if (uids === false) return result;
+    const seenUids: number[] = [];
     for await (const message of client.fetch(uids, { uid: true, envelope: true, source: true }, { uid: true })) {
       result.scanned += 1;
       const source = message.source?.toString("utf8") || "";
       const subject = message.envelope?.subject || "";
-      if (!isBounce(subject, source)) continue;
+      if (!isBounce(subject, source)) {
+        seenUids.push(message.uid);
+        continue;
+      }
       const parsed = await simpleParser(message.source || source);
       const matches = extractEmails(`${source}\n${parsed.text || ""}`).map((email) => byEmail.get(email)).filter((prospect): prospect is NonNullable<typeof prospect> => Boolean(prospect));
       for (const prospect of matches) {
@@ -57,8 +61,9 @@ export async function scanMailboxForBounces(): Promise<BounceScanResult> {
         result.bounced += 1;
         result.prospects.push(prospect.id);
       }
-      await client.messageFlagsAdd(message.uid, ["\\Seen"], { uid: true });
+      seenUids.push(message.uid);
     }
+    if (seenUids.length) await client.messageFlagsAdd(seenUids, ["\\Seen"], { uid: true });
   } finally {
     lock.release();
     await client.logout().catch(() => undefined);
