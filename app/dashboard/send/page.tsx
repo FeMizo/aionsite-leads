@@ -19,7 +19,6 @@ export const metadata: Metadata = {
 };
 
 const PAGE_SIZE = 25;
-
 export default async function SendPage({
   searchParams,
 }: {
@@ -33,9 +32,8 @@ export default async function SendPage({
     return <DashboardUnavailable context={context as DashboardPageContext} />;
   }
 
-  const { items, totalCount } = await getProspectsByStatuses({
+  const { items } = await getProspectsByStatuses({
     statuses: ["ready"],
-    unscheduledOnly: true,
   });
 
   return (
@@ -52,14 +50,18 @@ export default async function SendPage({
 
       <ProspectTable
         title="Enviar seleccionados"
-        description="Los prospectos llegan aqui cuando ya tienen draft. Si tienen una fecha futura, veras estado programado con fecha y hora; el backend solo enviara cuando ya corresponda."
+        description="Filtra entre envíos listos y programados. Selecciona registros para ejecutar el envío cuando corresponda."
         records={items}
         endpoint="/api/send"
         actions={[{ action: "sendSelected", label: "Enviar correos", variant: "primary" }]}
         emptyLabel="No hay prospectos listos o programados para envio."
         page={page}
         pageSize={PAGE_SIZE}
-        totalCount={totalCount}
+        totalCount={items.length}
+        statusFilterOptions={[
+          { value: "ready", label: "Listos para enviar" },
+          { value: "scheduled", label: "Programados" },
+        ]}
       />
     </div>
   );

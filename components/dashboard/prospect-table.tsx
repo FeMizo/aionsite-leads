@@ -31,6 +31,7 @@ type ProspectTableProps = {
   pageSize?: number;
   totalCount?: number;
   onPageChange?: (page: number) => void;
+  statusFilterOptions?: Array<{ value: string; label: string }>;
 };
 
 type ProspectSortKey =
@@ -219,8 +220,10 @@ export function ProspectTable({
   pageSize,
   totalCount,
   onPageChange,
+  statusFilterOptions,
 }: ProspectTableProps) {
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -366,6 +369,12 @@ export function ProspectTable({
       );
     }
 
+    if (statusFilter !== "all") {
+      nextRecords = nextRecords.filter(
+        (record) => getProspectDisplayStatus(record.status, record.scheduledSendAt) === statusFilter
+      );
+    }
+
     if (!sortState) {
       return nextRecords;
     }
@@ -384,7 +393,7 @@ export function ProspectTable({
         sortState.direction
       )
     );
-  }, [columns, query, records, sortState]);
+  }, [columns, query, records, sortState, statusFilter]);
 
   const totalVisibleCount = filteredRecords.length;
   const totalPages = hasPagination ? Math.max(1, Math.ceil(totalVisibleCount / pageSize)) : 1;
@@ -616,12 +625,29 @@ export function ProspectTable({
       description={description}
       hasRows={paginatedRecords.length > 0}
       actions={
-        <input
-          className="crm-search"
-          placeholder="Buscar negocio, email o ciudad"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
+        <>
+          <input
+            className="crm-search"
+            placeholder="Buscar negocio, email o ciudad"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          {statusFilterOptions?.length ? (
+            <select
+              className="status-select"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              aria-label="Filtrar por estado"
+            >
+              <option value="all">Todos los estados</option>
+              {statusFilterOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          ) : null}
+        </>
       }
       emptyState={<div className="empty-state">{emptyLabel}</div>}
     >
