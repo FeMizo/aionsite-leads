@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
         "approved",
         "ready",
         "contacted",
+        "second_attempt",
         "followup",
         "replied",
         "closed",
@@ -220,7 +221,7 @@ async function handleLegacyDashboardAction(payload: ProspectActionPayload) {
       }
       case "markContacted": {
         const result = await transitionProspects(ids, {
-          fromStatuses: ["generated", "analyzed", "approved", "ready", "contacted"],
+          fromStatuses: ["generated", "analyzed", "approved", "ready", "contacted", "second_attempt"],
           nextStatus: "contacted",
           eventType: "marked_contacted",
           note: "Record marked as contacted manually from dashboard",
@@ -243,7 +244,7 @@ async function handleLegacyDashboardAction(payload: ProspectActionPayload) {
         }
 
         const now = new Date();
-          const isContactedStatus = ["contacted", "followup", "replied", "closed"].includes(nextStatus);
+          const isContactedStatus = ["contacted", "second_attempt", "followup", "replied", "closed"].includes(nextStatus);
         const result = await transitionProspects(ids, {
           nextStatus,
           eventType: "status_changed_manual",
@@ -261,7 +262,7 @@ async function handleLegacyDashboardAction(payload: ProspectActionPayload) {
       }
       case "markAsClient": {
         const result = await transitionProspects(ids, {
-          fromStatuses: ["contacted", "replied"],
+          fromStatuses: ["contacted", "second_attempt", "replied"],
           nextStatus: "closed",
           eventType: "marked_client",
           note: "Record marked as client",

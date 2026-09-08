@@ -30,6 +30,7 @@ type ProspectTableProps = {
   page?: number;
   pageSize?: number;
   totalCount?: number;
+  onPageChange?: (page: number) => void;
 };
 
 type ProspectSortKey =
@@ -60,6 +61,7 @@ const EDITABLE_STATUSES = [
   "approved",
   "ready",
   "contacted",
+  "second_attempt",
   "replied",
   "followup",
   "closed",
@@ -216,6 +218,7 @@ export function ProspectTable({
   page,
   pageSize,
   totalCount,
+  onPageChange,
 }: ProspectTableProps) {
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -597,6 +600,11 @@ export function ProspectTable({
   }
 
   function navigateToPage(nextPage: number) {
+    if (onPageChange) {
+      onPageChange(nextPage);
+      return;
+    }
+
     const params = new URLSearchParams(window.location.search);
     params.set("page", String(nextPage));
     router.push(`?${params.toString()}`);

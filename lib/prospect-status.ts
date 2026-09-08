@@ -24,6 +24,7 @@ export function getProspectStatusLabel(status: string) {
     ready: "listo para enviar",
     scheduled: "programado",
     contacted: "contactado",
+    second_attempt: "segundo intento",
     followup: "seguimiento",
     replied: "respondió",
     closed: "cliente",

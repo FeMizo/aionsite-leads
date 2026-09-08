@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ProspectTable } from "@/components/dashboard/prospect-table";
 import type { DashboardProspect } from "@/lib/types";
 
-type WorkspaceFilter = "all" | "generated" | "approved" | "ready" | "contacted" | "followup" | "replied" | "closed" | "rejected" | "uncontactable";
+type WorkspaceFilter = "all" | "generated" | "approved" | "ready" | "contacted" | "second_attempt" | "followup" | "replied" | "closed" | "rejected" | "uncontactable";
 
 const filters: Array<{ key: WorkspaceFilter; label: string; statuses?: string[] }> = [
   { key: "all", label: "Todos" },
@@ -12,6 +12,7 @@ const filters: Array<{ key: WorkspaceFilter; label: string; statuses?: string[] 
   { key: "approved", label: "Aprobados", statuses: ["approved"] },
   { key: "ready", label: "Listos para enviar", statuses: ["ready"] },
   { key: "contacted", label: "Contactados", statuses: ["contacted"] },
+  { key: "second_attempt", label: "Segundo intento", statuses: ["second_attempt"] },
   { key: "followup", label: "Seguimiento", statuses: ["followup"] },
   { key: "replied", label: "Respondidos", statuses: ["replied"] },
   { key: "closed", label: "Clientes", statuses: ["closed"] },
@@ -32,7 +33,6 @@ export function CrmWorkspace({ records }: { records: DashboardProspect[] }) {
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(visibleRecords.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const paginatedRecords = visibleRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const isReadyFilter = activeFilter === "ready";
   const actions = activeFilter === "generated"
     ? [
@@ -41,7 +41,7 @@ export function CrmWorkspace({ records }: { records: DashboardProspect[] }) {
       ]
     : activeFilter === "approved"
       ? [{ action: "generateDrafts", label: "Preparar mensajes", variant: "primary" as const }]
-      : activeFilter === "contacted" || activeFilter === "replied" || activeFilter === "followup"
+      : activeFilter === "contacted" || activeFilter === "second_attempt" || activeFilter === "replied" || activeFilter === "followup"
         ? [{ action: "markAsClient", label: "Marcar como cliente", variant: "primary" as const }]
         : isReadyFilter
           ? [{ action: "sendSelected", label: "Enviar seleccionados", variant: "primary" as const }]
@@ -73,12 +73,17 @@ export function CrmWorkspace({ records }: { records: DashboardProspect[] }) {
       <ProspectTable
         title={currentFilter.label}
         description="Selecciona registros para ejecutar acciones o abre el nombre para revisar y cambiar su estado sin salir de esta vista."
-        records={paginatedRecords}
+        records={visibleRecords}
         endpoint={isReadyFilter ? "/api/send" : "/api/prospects"}
         actions={actions}
         emptyLabel="No hay prospectos en esta etapa."
+        page={currentPage}
+        pageSize={pageSize}
+        totalCount={visibleRecords.length}
+        onPageChange={setPage}
       />
-      {visibleRecords.length > pageSize ? (
+      {/* Pagination is rendered by ProspectTable after sorting the full filtered set. */}
+      {false && visibleRecords.length > pageSize ? (
         <div className="crm-pagination crm-workspace__pagination">
           <button
             type="button"

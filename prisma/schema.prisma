@@ -13,6 +13,7 @@ enum ProspectStatus {
   approved
   ready
   contacted
+  second_attempt
   replied
   followup
   closed

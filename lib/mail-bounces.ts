@@ -6,7 +6,7 @@ import { getImapHost, getImapPass, getImapPort, getImapSecure, getImapUser, isIm
 import { normalizeEmail } from "@/lib/normalizers";
 
 const BOUNCE_STATUS: ProspectStatus = "uncontactable";
-const BOUNCE_STATUSES: ProspectStatus[] = ["contacted", "followup"];
+const BOUNCE_STATUSES: ProspectStatus[] = ["contacted", "second_attempt", "followup"];
 
 export type BounceScanResult = { configured: boolean; scanned: number; bounced: number; prospects: string[] };
 

@@ -27,6 +27,7 @@ const PROSPECT_STATUSES = [
   "approved",
   "ready",
   "contacted",
+  "second_attempt",
   "replied",
   "followup",
   "closed",
@@ -236,6 +237,7 @@ function resolveStatusAfterApproval(record: ProspectListRecord): ProspectStatus 
 function resolveStatusAfterDraft(record: ProspectListRecord): ProspectStatus {
   if (
     record.status === "contacted" ||
+    record.status === "second_attempt" ||
     record.status === "followup" ||
     record.status === "replied" ||
     record.status === "closed" ||

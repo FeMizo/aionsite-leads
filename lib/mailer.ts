@@ -32,7 +32,7 @@ import {
 } from "@/lib/send-scheduler";
 
 const TERMINAL_STATUSES: ProspectStatus[] = ["replied", "closed", "rejected", "uncontactable"];
-const CONTACTED_STATUSES: ProspectStatus[] = ["contacted", "followup", "replied", "closed"];
+const CONTACTED_STATUSES: ProspectStatus[] = ["contacted", "second_attempt", "followup", "replied", "closed"];
 
 type FollowupPlan = {
   stage: number;

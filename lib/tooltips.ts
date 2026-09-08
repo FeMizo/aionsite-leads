@@ -9,7 +9,7 @@ export const columnTooltips: Record<string, string> = {
   website: "Sitio web del negocio. El pipeline lo analiza para calcular el score.",
   score: "Puntuacion del 0 al 100 basada en calidad del sitio web y señales del negocio. Mayor score = mejor oportunidad.",
   priority: "Prioridad calculada para envio: alto (score alto + email valido), medio, o bajo. Solo los de prioridad alta se envian automaticamente.",
-  status: "Etapa actual del prospecto en el flujo: generated → approved → ready → contacted → replied → closed, o sin poder contactar.",
+  status: "Etapa actual del prospecto en el flujo: generated → approved → ready → contacted → segundo intento → replied → closed, o sin poder contactar.",
   scheduledSendAt: "Fecha y hora programada para el envio del correo. Si dice 'Enviar ahora', esta listo para salir.",
   lastCheckedAt: "Ultima vez que el registro fue actualizado por el pipeline o por una accion manual.",
 };
@@ -20,6 +20,7 @@ export const statusTooltips: Record<string, string> = {
   approved: "Aprobado para contactar. Falta preparar el mensaje antes de poder enviarlo.",
   ready: "Mensaje generado y listo para enviar. Vive en la seccion Enviar.",
   contacted: "El correo ya fue enviado. Se monitorea si responde.",
+  second_attempt: "Se realizó un segundo intento de contacto. Se monitorea si responde.",
   followup: "Requiere seguimiento comercial y puede recibir el siguiente contacto programado.",
   replied: "El prospecto respondio. Requiere seguimiento comercial.",
   closed: "Ciclo cerrado (cliente ganado o descartado definitivamente).",

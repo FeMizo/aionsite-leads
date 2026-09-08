@@ -11,6 +11,7 @@ export const EDITABLE_PROSPECT_STATUSES = [
   "approved",
   "ready",
   "contacted",
+  "second_attempt",
   "replied",
   "followup",
   "closed",

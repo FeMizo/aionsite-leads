@@ -149,7 +149,7 @@ export async function getProspectsByStatuses(options: {
 
 export async function getAllDashboardProspects(): Promise<DashboardProspect[]> {
   const result = await getProspectsByStatuses({
-    statuses: ["generated", "analyzed", "approved", "ready", "contacted", "followup", "replied", "closed", "rejected", "uncontactable"],
+    statuses: ["generated", "analyzed", "approved", "ready", "contacted", "second_attempt", "followup", "replied", "closed", "rejected", "uncontactable"],
   });
   return result.items;
 }
@@ -189,7 +189,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       take: 20,
     }),
     prisma.prospect.findMany({
-      where: { status: { in: ["contacted", "replied", "closed"] } },
+      where: { status: { in: ["contacted", "second_attempt", "replied", "closed"] } },
       orderBy: { lastCheckedAt: "desc" },
       take: 20,
     }),
@@ -201,7 +201,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     prisma.prospect.count({ where: { status: "approved" } }),
     prisma.prospect.count({ where: { status: "ready" } }),
     prisma.prospect.count({
-      where: { status: { in: ["contacted", "replied", "closed"] } },
+      where: { status: { in: ["contacted", "second_attempt", "replied", "closed"] } },
     }),
     prisma.prospect.count({ where: { status: "rejected" } }),
     prisma.run.count(),
