@@ -103,7 +103,7 @@ export function normalizeScheduledSendAt(
   primaryType = ""
 ) {
   if (Number.isNaN(referenceDate.getTime())) {
-    throw new Error("La fecha programada no es valida.");
+    throw new Error("La fecha programada no es válida.");
   }
 
   const config = getSendConfig(primaryType);
@@ -275,7 +275,7 @@ export async function getNextAvailableScheduledSendAt(
     candidate = getNextRecommendedSendAt(prospect, candidate);
   }
 
-  throw new Error("No se pudo encontrar un horario disponible para el envio programado.");
+  throw new Error("No se pudo encontrar un horario disponible para el envío programado.");
 }
 
 export async function countEmailsSentToday(referenceDate = new Date()) {
@@ -317,7 +317,7 @@ export async function scheduleSend(prospectId: string, scheduledAtInput: string)
 
   if (!isGoodTimeToSend(prospect, scheduledSendAt)) {
     throw new Error(
-      "La fecha programada cae fuera de las ventanas permitidas de envio."
+      "La fecha programada cae fuera de las ventanas permitidas de envío."
     );
   }
 

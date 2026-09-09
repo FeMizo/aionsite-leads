@@ -40,8 +40,8 @@ export default async function SendPage({
     <div className="page-stack">
       <PageHeader
         eyebrow="Envios"
-        title="Envio de correos"
-        description="Selecciona prospectos listos o programados. Si ya tienen fecha futura de envio, se muestran como programados con su horario exacto."
+        title="Envío de correos"
+        description="Selecciona prospectos listos o programados. Si ya tienen fecha futura de envío, se muestran como programados con su horario exacto."
       />
 
       <DashboardMetricCards data={context.data} />
@@ -54,7 +54,7 @@ export default async function SendPage({
         records={items}
         endpoint="/api/send"
         actions={[{ action: "sendSelected", label: "Enviar correos", variant: "primary" }]}
-        emptyLabel="No hay prospectos listos o programados para envio."
+        emptyLabel="No hay prospectos listos o programados para envío."
         page={page}
         pageSize={PAGE_SIZE}
         totalCount={items.length}

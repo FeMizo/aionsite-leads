@@ -27,7 +27,7 @@ function createPrismaClient() {
   const connectionString = normalizeDatabaseConnectionString(getDatabaseUrl());
 
   if (!connectionString) {
-    throw new Error("DATABASE_URL no esta configurada.");
+    throw new Error("DATABASE_URL no está configurada.");
   }
 
   const adapter = new PrismaPg({
@@ -42,7 +42,7 @@ function createPrismaClient() {
 
 export function getPrismaClient(): PrismaClient {
   if (!isDatabaseConfigured()) {
-    throw new Error("DATABASE_URL no esta configurada.");
+    throw new Error("DATABASE_URL no está configurada.");
   }
 
   if (!globalThis.__aionsitePrisma__) {

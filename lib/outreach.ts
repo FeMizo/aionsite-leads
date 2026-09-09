@@ -9,7 +9,7 @@ import { buildOpportunity } from "@/lib/opportunity";
 const SERVICES_CANVA_URL = "https://canva.link/uk8xoudaah19yry";
 
 function withServicesLink(message: string) {
-  return `${message}\n\nPuedes ver nuestros servicios de forma visual aqui: ${SERVICES_CANVA_URL}`;
+  return `${message}\n\nPuedes ver nuestros servicios de forma visual aquí: ${SERVICES_CANVA_URL}`;
 }
 
 export type OutreachMessageType =
@@ -60,10 +60,10 @@ function getOpportunityContext(prospect: OutreachProspect) {
   const pitchAngle = prospect.pitchAngle || derived.pitchAngle;
   const analysis =
     leadType === LEAD_TYPE_NO_WEBSITE
-      ? "El prospecto no tiene sitio propio. Enfoque: presencia digital, confianza y captacion de contactos."
+      ? "El prospecto no tiene sitio propio. Enfoque: presencia digital, confianza y captación de contactos."
       : leadType === LEAD_TYPE_BAD_REVIEWS
-        ? "El prospecto tiene trafico y reputacion que se puede potenciar. Enfoque: confianza y conversion."
-        : "El prospecto ya tiene presencia digital. Enfoque: claridad, oferta y conversion.";
+        ? "El prospecto tiene tráfico y reputación que se puede potenciar. Enfoque: confianza y conversión."
+        : "El prospecto ya tiene presencia digital. Enfoque: claridad, oferta y conversión.";
 
   return {
     opportunity,
@@ -87,10 +87,10 @@ function pickFirstContactVariant(prospect: OutreachProspect): OutreachScriptVari
 function buildFirstContactScript(prospect: OutreachProspect, variant: OutreachScriptVariant) {
   const context = getOpportunityContext(prospect);
   const analysisLabels: Record<OutreachScriptVariant, string> = {
-    a: "angulo directo sobre trafico por nicho y ciudad.",
-    b: "angulo suave, centrado en potencial local.",
-    c: "angulo de oportunidad detectada en Google.",
-    d: "angulo de potencial propio.",
+    a: "ángulo directo sobre tráfico por nicho y ciudad.",
+    b: "ángulo suave, centrado en potencial local.",
+    c: "ángulo de oportunidad detectada en Google.",
+    d: "ángulo de potencial propio.",
   };
   const email = buildEmail(
     {
@@ -124,16 +124,16 @@ function buildFollowup1Draft(prospect: OutreachProspect) {
   const cityLine = prospect.city ? ` en ${prospect.city}` : "";
 
   return {
-    subject: `${prospect.name}: viste mi mensaje?`,
+    subject: `${prospect.name}: ¿viste mi mensaje?`,
     message: withServicesLink(`Hola ${addressee},
 
-Solo queria confirmar si viste mi mensaje anterior.
+Solo quería confirmar si viste mi mensaje anterior.
 
 Soy Felipe, desarrollador web en AionSite.
 
 Vi una oportunidad puntual para ${prospect.name}${cityLine}: ${context.opportunity}.
 
-Te mando una propuesta con la idea?
+¿Te mando una propuesta con la idea?
 
 Saludos,
 AionSite`),
@@ -152,9 +152,9 @@ function buildFollowup2Draft(prospect: OutreachProspect) {
     typeof prospect.userRatingCount === "number" &&
     prospect.userRatingCount >= 10;
   const reviewLine = hasRating
-    ? `${prospect.name} tiene ${stars} estrellas y ${prospect.userRatingCount} resenas; es buena base para generar mas contactos.`
+    ? `${prospect.name} tiene ${stars} estrellas y ${prospect.userRatingCount} reseñas; es buena base para generar más contactos.`
     : typeof prospect.userRatingCount === "number" && prospect.userRatingCount >= 10
-      ? `Con ${prospect.userRatingCount} resenas en Google ya tienen traccion. La oportunidad esta en convertirla en contactos.`
+      ? `Con ${prospect.userRatingCount} reseñas en Google ya tienen tracción. La oportunidad está en convertirla en contactos.`
       : "Ya tienen presencia en Google. El siguiente paso es que esa visibilidad genere contactos.";
 
   return {
@@ -168,7 +168,7 @@ Te mando una propuesta con lo que ajustaria primero?
 Saludos,
 AionSite`),
     html: null,
-    analysis: "Follow-up 2: angulo breve con prueba social.",
+    analysis: "Follow-up 2: ángulo breve con prueba social.",
     opportunity: context.opportunity,
   };
 }
@@ -183,9 +183,9 @@ function buildFollowup3Draft(prospect: OutreachProspect) {
 
 Te dejo una idea final por si sirve.
 
-En una linea: ${context.opportunity}. La mejora mas directa seria ${context.recommendedSite}.
+En una línea: ${context.opportunity}. La mejora más directa sería ${context.recommendedSite}.
 
-Si en algun momento te interesa verlo, aqui estoy.
+Si en algún momento te interesa verlo, aquí estoy.
 
 Que les vaya bien,
 AionSite`),

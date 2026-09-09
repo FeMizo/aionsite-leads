@@ -93,7 +93,7 @@ function buildMailtoUrl(record: DashboardProspect) {
     subject: record.subject || `Oportunidad para ${record.name}`,
     body:
       record.message ||
-      `Hola, soy Felipe, desarrollador web en AionSite. Estuve viendo ${record.name} y creo que hay una oportunidad para conseguir mas clientes en ${record.city}.`,
+      `Hola, soy Felipe, desarrollador web en AionSite. Estuve viendo ${record.name} y creo que hay una oportunidad para conseguir más clientes en ${record.city}.`,
   });
 
   return `mailto:${record.email}?${params.toString()}`;
@@ -106,7 +106,7 @@ function buildWhatsAppUrl(record: DashboardProspect) {
     return "";
   }
 
-  const message = `Hola, soy Felipe, desarrollador web en AionSite. Estuve viendo ${record.name} y creo que hay una oportunidad para conseguir mas clientes desde Google. Te puedo mandar una propuesta?`;
+  const message = `Hola, soy Felipe, desarrollador web en AionSite. Estuve viendo ${record.name} y creo que hay una oportunidad para conseguir más clientes desde Google. ¿Te puedo mandar una propuesta?`;
 
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
@@ -129,7 +129,7 @@ async function postAction(
 
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
-    throw new Error(getApiErrorMessage(payload, "No se pudo completar la accion."));
+    throw new Error(getApiErrorMessage(payload, "No se pudo completar la acción."));
   }
 
   return response.json().catch(() => ({}));
@@ -186,24 +186,24 @@ function getActionSuccessMessage(
     return scheduledCreated > 0
       ? firstScheduledLabel
         ? `Se enviaron ${sent} correos. ${scheduledCreated} se programaron; el siguiente sale ${firstScheduledLabel}.`
-        : `Se enviaron ${sent} correos. ${scheduledCreated} se programaron para mas tarde.`
+        : `Se enviaron ${sent} correos. ${scheduledCreated} se programaron para más tarde.`
       : `Se enviaron ${sent} correos.`;
   }
 
   if (scheduledCreated > 0) {
     return firstScheduledLabel
-      ? `Se programaron ${scheduledCreated} correos. El siguiente envio sera ${firstScheduledLabel}.`
-      : `Se programaron ${scheduledCreated} correos para el siguiente horario valido. Revisa la columna de envio para ver fecha y hora.`;
+      ? `Se programaron ${scheduledCreated} correos. El siguiente envío será ${firstScheduledLabel}.`
+      : `Se programaron ${scheduledCreated} correos para el siguiente horario válido. Revisa la columna de envío para ver fecha y hora.`;
   }
 
   if (scheduled > 0) {
     return firstScheduledLabel
-      ? `Los seleccionados ya estaban programados. El siguiente envio sera ${firstScheduledLabel}.`
-      : `Los seleccionados ya estan programados para otra fecha u hora. No se enviaran hasta que llegue ese momento.`;
+      ? `Los seleccionados ya estaban programados. El siguiente envío será ${firstScheduledLabel}.`
+      : `Los seleccionados ya están programados para otra fecha u hora. No se enviarán hasta que llegue ese momento.`;
   }
 
   if (blocked > 0 || failed > 0) {
-    return "No se enviaron correos. Revisa prioridad alta, email valido, borrador y horario recomendado.";
+    return "No se enviaron correos. Revisa prioridad alta, correo válido, borrador y horario recomendado.";
   }
 
   return "No habia correos listos para enviar ahora.";
@@ -453,7 +453,7 @@ export function ProspectTable({
       return "Sin fecha programada";
     }
 
-    return displayStatus === "scheduled" ? "Fecha y hora de envio" : "Fecha registrada";
+    return displayStatus === "scheduled" ? "Fecha y hora de envío" : "Fecha registrada";
   }
 
   function getDisplayStatus(record: DashboardProspect) {
@@ -508,7 +508,7 @@ export function ProspectTable({
         setError(
           requestError instanceof Error
             ? requestError.message
-            : "No se pudo completar la accion."
+            : "No se pudo completar la acción."
         );
       }
     });

@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       "RUN_EXECUTION_FAILED",
       error instanceof Error
         ? error.message
-        : "No se pudo ejecutar la busqueda programada.",
+        : "No se pudo ejecutar la búsqueda programada.",
       500
     );
   }
@@ -61,7 +61,7 @@ export async function POST() {
       "RUN_EXECUTION_FAILED",
       error instanceof Error
         ? error.message
-        : "No se pudo ejecutar la busqueda manual.",
+        : "No se pudo ejecutar la búsqueda manual.",
       500
     );
   }

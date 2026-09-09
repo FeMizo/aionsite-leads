@@ -474,7 +474,7 @@ export async function transitionProspects(ids: string[], config: TransitionConfi
     );
 
     if (!matchingRecords.length) {
-      throw new Error("No hay registros validos para esa accion.");
+      throw new Error("No hay registros válidos para esa acción.");
     }
 
     for (const record of matchingRecords) {
@@ -573,7 +573,7 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
     const value = normalizeLeadType(input.type || "");
 
     if (!value) {
-      throw new Error("El tipo de lead no es valido.");
+      throw new Error("El tipo de lead no es válido.");
     }
 
     data.type = value;
@@ -951,7 +951,7 @@ export async function markProspectReplied(
   const receivedAt = details.receivedAt ? new Date(details.receivedAt) : new Date();
 
   if (Number.isNaN(receivedAt.getTime())) {
-    throw new Error("receivedAt no es una fecha valida.");
+    throw new Error("receivedAt no es una fecha válida.");
   }
 
   const updated = await prisma.$transaction(async (tx) => {

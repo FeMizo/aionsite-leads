@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: "%s · AionSite",
   },
   description:
-    "Dashboard operativo de prospecting para AionSite — busquedas automatizadas, gestion de prospectos y envios SMTP desde Vercel.",
+    "Dashboard operativo de prospecting para AionSite — búsquedas automatizadas, gestión de prospectos y envíos SMTP desde Vercel.",
 };
 
 export default function RootLayout({
@@ -29,7 +29,7 @@ export default function RootLayout({
                 aionsite.com.mx
               </Link>
               <p>
-                Dashboard operativo para prospecting, busquedas programadas y envios SMTP.
+                Dashboard operativo para prospecting, búsquedas programadas y envíos SMTP.
               </p>
             </div>
             <Navigation />

@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return fail(
       "SCHEDULED_SEND_FAILED",
-      error instanceof Error ? error.message : "No se pudo ejecutar el envio programado.",
+      error instanceof Error ? error.message : "No se pudo ejecutar el envío programado.",
       500
     );
   }

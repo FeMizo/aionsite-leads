@@ -75,7 +75,7 @@ const MODE_COPY: Record<
     title: "Prueba SMTP",
     description: "Usa los datos actuales del formulario para enviar una prueba SMTP a tu correo.",
     actionLabel: "Enviar prueba",
-    helperText: "La prueba no crea un registro en la base; solo valida el envio con el payload actual.",
+    helperText: "La prueba no crea un registro en la base; solo valida el envío con los datos actuales.",
   },
 };
 
@@ -90,7 +90,7 @@ async function postJson(url: string, payload: Record<string, unknown>) {
   const body = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(getApiErrorMessage(body, "No se pudo completar la accion."));
+    throw new Error(getApiErrorMessage(body, "No se pudo completar la acción."));
   }
 
   return body;
@@ -113,7 +113,7 @@ function buildWhatsAppUrl(phone: string, businessName: string) {
   }
 
   const normalizedPhone = digits.length === 10 ? `52${digits}` : digits;
-  const message = `Hola, soy Felipe, desarrollador web en AionSite. Estuve viendo ${businessName} y creo que hay una oportunidad para conseguir mas clientes desde Google. Te puedo mandar una propuesta?`;
+  const message = `Hola, soy Felipe, desarrollador web en AionSite. Estuve viendo ${businessName} y creo que hay una oportunidad para conseguir más clientes desde Google. ¿Te puedo mandar una propuesta?`;
 
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
 }
@@ -147,7 +147,7 @@ export function ManualProspectPanel() {
         setError(
           requestError instanceof Error
             ? requestError.message
-            : "No se pudo completar la accion."
+            : "No se pudo completar la acción."
         );
       }
     });
@@ -404,7 +404,7 @@ export function ManualProspectPanel() {
             </pre>
           ) : (
             <p className="crm-muted">
-              Agrega correo para generar el borrador automaticamente.
+              Agrega correo para generar el borrador automáticamente.
             </p>
           )}
         </div>

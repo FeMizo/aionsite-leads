@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Generados",
-  description: "Prospectos nuevos capturados por el pipeline pendientes de revision, aprobacion o rechazo.",
+  description: "Prospectos nuevos capturados por el pipeline pendientes de revisión, aprobación o rechazo.",
 };
 
 const PAGE_SIZE = 25;
@@ -56,7 +56,7 @@ export default async function GeneratedPage({
           { action: "approveGenerated", label: "Aprobar", variant: "primary" },
           { action: "rejectRecords", label: "Rechazar", variant: "danger" },
         ]}
-        emptyLabel="No hay registros pendientes de revision."
+        emptyLabel="No hay registros pendientes de revisión."
         page={page}
         pageSize={PAGE_SIZE}
         totalCount={totalCount}

@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return fail(
       "SEND_FAILED",
-      error instanceof Error ? error.message : "No se pudo ejecutar el envio.",
+      error instanceof Error ? error.message : "No se pudo ejecutar el envío.",
       500
     );
   }

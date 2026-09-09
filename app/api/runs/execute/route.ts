@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return fail(
       "RUN_EXECUTION_FAILED",
-      error instanceof Error ? error.message : "No se pudo ejecutar la busqueda manual.",
+      error instanceof Error ? error.message : "No se pudo ejecutar la búsqueda manual.",
       500
     );
   }

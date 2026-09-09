@@ -18,7 +18,7 @@ async function postJson(url: string, payload?: Record<string, unknown>) {
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(getApiErrorMessage(body, "No se pudo completar la accion."));
+    throw new Error(getApiErrorMessage(body, "No se pudo completar la acción."));
   }
 }
 
@@ -62,7 +62,7 @@ export function DashboardActions({
         setError(
           requestError instanceof Error
             ? requestError.message
-            : "No se pudo completar la accion."
+            : "No se pudo completar la acción."
         );
       }
     });
@@ -71,7 +71,7 @@ export function DashboardActions({
   return (
     <Banner
       title="Acciones operativas"
-      description="Lanza una busqueda manual, aprueba prospectos analizados o envia correos listos."
+      description="Lanza una búsqueda manual, aprueba prospectos analizados o envía correos listos."
       actions={
         <span
           className={`run-status ${isCrawlActive ? "is-running" : "is-ok"}`}
@@ -92,7 +92,7 @@ export function DashboardActions({
           onClick={() => run(() => postJson("/api/cron"))}
           disabled={isCrawlActive}
         >
-          {isCrawlActive ? "Ejecutando crawl..." : "Ejecutar busqueda"}
+          {isCrawlActive ? "Ejecutando crawl..." : "Ejecutar búsqueda"}
         </Button>
         <Button
           type="button"
@@ -114,12 +114,12 @@ export function DashboardActions({
           onClick={() => run(() => postJson("/api/send", {}))}
           disabled={isPending}
         >
-          Enviar prospectos ready
+          Enviar prospectos listos
         </Button>
       </div>
       {crawlInProgress && activeRunCreatedAt ? (
         <p className="crm-muted">
-          Busqueda iniciada el {formatDashboardDateTime(activeRunCreatedAt)}.
+          Búsqueda iniciada el {formatDashboardDateTime(activeRunCreatedAt)}.
         </p>
       ) : null}
       {error ? <p className="crm-error">{error}</p> : null}

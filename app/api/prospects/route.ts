@@ -48,11 +48,11 @@ export async function GET(request: NextRequest) {
   const limit = parseLimit(limitValue, 20);
 
   if (limit === null) {
-    return fail("INVALID_LIMIT", "El parametro limit debe ser un entero positivo.", 400);
+    return fail("INVALID_LIMIT", "El parámetro limit debe ser un entero positivo.", 400);
   }
 
   if (statusValue && !parseProspectStatus(statusValue)) {
-    return fail("INVALID_STATUS", "El parametro status no es valido.", 400, {
+    return fail("INVALID_STATUS", "El parámetro status no es válido.", 400, {
       allowed: [
         "generated",
         "analyzed",
@@ -240,7 +240,7 @@ async function handleLegacyDashboardAction(payload: ProspectActionPayload) {
           typeof payload.status === "string" ? parseProspectStatus(payload.status) : null;
 
         if (!nextStatus) {
-          return fail("INVALID_STATUS", "Estado no valido.", 400);
+          return fail("INVALID_STATUS", "Estado no válido.", 400);
         }
 
         const now = new Date();
@@ -283,12 +283,12 @@ async function handleLegacyDashboardAction(payload: ProspectActionPayload) {
         });
       }
       default:
-        return fail("UNSUPPORTED_ACTION", "Accion no soportada.", 400);
+        return fail("UNSUPPORTED_ACTION", "Acción no soportada.", 400);
     }
   } catch (error) {
     return fail(
       "LEGACY_ACTION_FAILED",
-      error instanceof Error ? error.message : "No se pudo completar la accion.",
+      error instanceof Error ? error.message : "No se pudo completar la acción.",
       500
     );
   }

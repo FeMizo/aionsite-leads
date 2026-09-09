@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return fail(
       "RUN_LIST_FAILED",
-      error instanceof Error ? error.message : "No se pudieron listar las busquedas.",
+      error instanceof Error ? error.message : "No se pudieron listar las búsquedas.",
       500
     );
   }

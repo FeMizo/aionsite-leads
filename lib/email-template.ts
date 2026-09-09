@@ -87,19 +87,19 @@ function getSocialProofLine(
   const hasHighRating = stars >= 4.5 && count >= 10;
 
   if (hasHighRating && count >= 100) {
-    return `Con ${stars} estrellas y mas de ${count} resenas, ya tienen una reputacion fuerte para convertir mejor.`;
+    return `Con ${stars} estrellas y más de ${count} reseñas, ya tienen una reputación fuerte para convertir mejor.`;
   }
 
   if (hasHighRating && count >= 10) {
-    return `Con ${stars} estrellas y ${count} resenas, ya tienen una buena base para captar mas contactos.`;
+    return `Con ${stars} estrellas y ${count} reseñas, ya tienen una buena base para captar más contactos.`;
   }
 
   if (count >= 100) {
-    return `Con mas de ${count} resenas ya tienen confianza; el siguiente paso es convertirla en contactos.`;
+    return `Con más de ${count} reseñas ya tienen confianza; el siguiente paso es convertirla en contactos.`;
   }
 
   if (count >= 10) {
-    return `Ya tienen ${count} resenas en Google; con ajustes puntuales ese interes puede convertirse en mas contactos.`;
+    return `Ya tienen ${count} reseñas en Google; con ajustes puntuales ese interés puede convertirse en más contactos.`;
   }
 
   return "";
@@ -108,7 +108,7 @@ function getSocialProofLine(
 function getSpecificOpportunity(prospect: ProspectEmailModel) {
   return (
     toSentenceCase(prospect.opportunity) ||
-    "hay margen para convertir mas visitas en contactos directos"
+    "hay margen para convertir más visitas en contactos directos"
   );
 }
 
@@ -139,7 +139,7 @@ function buildBaseHtml(params: {
           <td style="padding:8px 26px 0;">
             <p style="margin:0 0 16px;color:#e2e8f0;font-size:16px;line-height:1.65;">${escapeHtml(params.greeting)}</p>
             ${pHtml}
-            <p style="margin:0 0 16px;color:#cbd5e1;font-size:16px;line-height:1.65;">Puedes ver nuestros servicios de forma visual aqui: <a href="${SERVICES_CANVA_URL}" style="color:#93c5fd;text-decoration:underline;">${SERVICES_CANVA_URL}</a></p>
+            <p style="margin:0 0 16px;color:#cbd5e1;font-size:16px;line-height:1.65;">Puedes ver nuestros servicios de forma visual aquí: <a href="${SERVICES_CANVA_URL}" style="color:#93c5fd;text-decoration:underline;">${SERVICES_CANVA_URL}</a></p>
           </td>
         </tr>
         <tr>
@@ -185,7 +185,7 @@ function buildMessage(params: {
 
 ${params.paragraphs.join("\n\n")}
 
-Puedes ver nuestros servicios de forma visual aqui: ${SERVICES_CANVA_URL}
+Puedes ver nuestros servicios de forma visual aquí: ${SERVICES_CANVA_URL}
 
 ${params.ctaText}
 
@@ -203,11 +203,11 @@ function buildVariantA(prospect: ProspectEmailModel) {
   const cityPhrase = getCityPhrase(prospect.city);
   const socialProof = getSocialProofLine(prospect.userRatingCount, prospect.rating);
   const subject = prospect.contactName
-    ? `${prospect.contactName}, idea breve para captar mas clientes`
-    : `${prospect.name}: idea breve para captar mas clientes`;
+    ? `${prospect.contactName}, idea breve para captar más clientes`
+    : `${prospect.name}: idea breve para captar más clientes`;
   const paragraphs = [
-    "Soy Felipe, desarrollador web en AionSite. Trabajo con negocios locales para mejorar su presencia digital y convertir mas visitas en contactos.",
-    `Vi una oportunidad para que ${prospect.name} capte mas contactos de personas que buscan ${nicheLabel} ${cityPhrase}.`,
+    "Soy Felipe, desarrollador web en AionSite. Trabajo con negocios locales para mejorar su presencia digital y convertir más visitas en contactos.",
+    `Vi una oportunidad para que ${prospect.name} capte más contactos de personas que buscan ${nicheLabel} ${cityPhrase}.`,
     `Puntualmente: ${getSpecificOpportunity(prospect)}.`,
     ...(socialProof ? [socialProof] : []),
     "Si te sirve, te mando una propuesta con 2 o 3 ajustes concretos.",
@@ -217,8 +217,8 @@ function buildVariantA(prospect: ProspectEmailModel) {
     subject,
     greeting,
     paragraphs,
-    ctaText: "Te lo mando?",
-    ctaButtonLabel: "Si, mandalo",
+    ctaText: "¿Te lo mando?",
+    ctaButtonLabel: "Sí, mándalo",
   });
 }
 
@@ -227,20 +227,20 @@ function buildVariantB(prospect: ProspectEmailModel) {
     ? `Hola ${prospect.contactName},`
     : `Hola equipo de ${prospect.name},`;
   const cityPhrase = getCityPhrase(prospect.city);
-  const subject = `${prospect.name}: mejora rapida para captar mas clientes`;
+  const subject = `${prospect.name}: mejora rápida para captar más clientes`;
   const paragraphs = [
     "Soy Felipe, desarrollador web en AionSite. Te escribo con respeto porque estuve viendo su presencia digital.",
-    `Estuve revisando ${prospect.name} y vi una mejora sencilla para captar mas clientes ${cityPhrase}.`,
+    `Estuve revisando ${prospect.name} y vi una mejora sencilla para captar más clientes ${cityPhrase}.`,
     "No es algo complicado ni requiere empezar con publicidad.",
-    "Si quieres, te mando una propuesta con lo que ajustaria.",
+    "Si quieres, te mando una propuesta con lo que ajustaría.",
   ];
 
   return buildMessage({
     subject,
     greeting,
     paragraphs,
-    ctaText: "Le echo un ojo?",
-    ctaButtonLabel: "Si, lo quiero ver",
+    ctaText: "¿Le echo un ojo?",
+    ctaButtonLabel: "Sí, lo quiero ver",
   });
 }
 
@@ -250,20 +250,20 @@ function buildVariantC(prospect: ProspectEmailModel) {
     : `Hola equipo de ${prospect.name},`;
   const nicheLabel = getNicheLabel(prospect.primaryType || "");
   const cityPhrase = getCityPhrase(prospect.city);
-  const subject = `${prospect.name}: oportunidad en busquedas de Google`;
+  const subject = `${prospect.name}: oportunidad en búsquedas de Google`;
   const paragraphs = [
-    "Soy Felipe, desarrollador web en AionSite. Estaba revisando negocios locales y me llamo la atencion su caso.",
-    `Buscando ${nicheLabel} ${cityPhrase}, vi a ${prospect.name} y encontre una oportunidad puntual.`,
+    "Soy Felipe, desarrollador web en AionSite. Estaba revisando negocios locales y me llamó la atención su caso.",
+    `Buscando ${nicheLabel} ${cityPhrase}, vi a ${prospect.name} y encontré una oportunidad puntual.`,
     `${getSpecificOpportunity(prospect)}.`,
-    "Te puedo mandar una propuesta con la mejora que haria primero?",
+    "¿Te puedo mandar una propuesta con la mejora que haría primero?",
   ];
 
   return buildMessage({
     subject,
     greeting,
     paragraphs,
-    ctaText: "Lo revisa?",
-    ctaButtonLabel: "Si, mandamela",
+    ctaText: "¿Lo revisa?",
+    ctaButtonLabel: "Sí, mándamela",
   });
 }
 
@@ -272,9 +272,9 @@ function buildVariantD(prospect: ProspectEmailModel) {
     ? `Hola ${prospect.contactName},`
     : `Hola equipo de ${prospect.name},`;
   const cityPhrase = getCityPhrase(prospect.city);
-  const pitchAngle = toSentenceCase(prospect.pitchAngle) || "captar mas contactos directos";
+  const pitchAngle = toSentenceCase(prospect.pitchAngle) || "captar más contactos directos";
   const socialProof = getSocialProofLine(prospect.userRatingCount, prospect.rating);
-  const subject = `${prospect.name}: captar mas clientes desde Google`;
+  const subject = `${prospect.name}: captar más clientes desde Google`;
   const paragraphs = [
     "Soy Felipe, desarrollador web en AionSite. Vi su negocio y quise escribirles con una idea concreta.",
     `Estuve revisando la presencia digital de ${prospect.name} ${cityPhrase}.`,

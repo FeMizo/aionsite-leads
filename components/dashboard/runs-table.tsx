@@ -135,7 +135,7 @@ export function RunsTable({ runs }: RunsTableProps) {
   }, [columns, runs, sortState]);
 
   if (!runs.length) {
-    return <div className="empty-state">Todavia no hay busquedas registradas.</div>;
+    return <div className="empty-state">Todavía no hay búsquedas registradas.</div>;
   }
 
   function toggleSort(column: RunColumn) {
@@ -165,9 +165,9 @@ export function RunsTable({ runs }: RunsTableProps) {
   return (
     <Table
       title="Busquedas recientes"
-      description="Metricas operativas por ejecucion del pipeline de prospecting."
+      description="Métricas operativas por ejecución del pipeline de prospecting."
       hasRows={sortedRuns.length > 0}
-      emptyState={<div className="empty-state">Todavia no hay busquedas registradas.</div>}
+      emptyState={<div className="empty-state">Todavía no hay búsquedas registradas.</div>}
     >
       <table className="crm-table">
         <thead>

@@ -37,7 +37,7 @@ const sectionCards = [
   {
     href: "/dashboard/generated",
     label: "Generados",
-    description: "Prospectos nuevos o analizados pendientes de decision.",
+    description: "Prospectos nuevos o analizados pendientes de decisión.",
     metricKey: "generated",
   },
   {
@@ -100,11 +100,11 @@ export function DashboardUnavailable({ context }: { context: DashboardPageContex
         <PageHeader
           eyebrow="Dashboard"
           title="Configura la base de datos para activar el CRM"
-          description="El proyecto ya esta listo para Vercel, pero necesitas conectar Postgres antes de poder leer y operar prospectos."
+          description="El proyecto ya está listo para Vercel, pero necesitas conectar Postgres antes de poder leer y operar prospectos."
         />
 
         <Banner
-          title="Configuracion pendiente"
+          title="Configuración pendiente"
           description="Agrega estas variables en tu entorno local y en Vercel para habilitar el dashboard completo."
         >
           <div className="settings-grid">
@@ -134,8 +134,8 @@ export function DashboardUnavailable({ context }: { context: DashboardPageContex
       <div className="page-stack">
         <PageHeader
           eyebrow="Dashboard"
-          title="La base de datos no responde todavia"
-          description="La aplicacion ya compila y esta lista para Vercel, pero la conexion actual a Postgres no pudo completarse."
+          title="La base de datos no responde todavía"
+          description="La aplicación ya compila y está lista para Vercel, pero la conexión actual a Postgres no pudo completarse."
         />
 
         <Banner
@@ -192,10 +192,10 @@ export function DashboardActivitySummary({ data }: { data: DashboardData }) {
           </p>
           <p className="stat-bar__sub">
             {data.activeRun
-              ? "La busqueda actual sigue ejecutandose."
+              ? "La búsqueda actual sigue ejecutándose."
               : data.lastCrawl
                 ? `${data.lastCrawl.source || "Pipeline"} · ${data.lastCrawl.status || "completed"}`
-                : "Todavia no hay busquedas registradas."}
+                : "Todavía no hay búsquedas registradas."}
           </p>
         </div>
         <div className="stat-bar__item">
@@ -204,14 +204,14 @@ export function DashboardActivitySummary({ data }: { data: DashboardData }) {
           <p className="stat-bar__sub">Lun · Mie · Vie a las 9am UTC</p>
         </div>
         <div className="stat-bar__item">
-          <p className="stat-bar__label">Ultimo envio</p>
+          <p className="stat-bar__label">Último envío</p>
           <p className="stat-bar__value">{formatActivityDate(data.lastSend?.at)}</p>
           <p className="stat-bar__sub">
             {data.lastSend
               ? `${data.lastSend.prospectName || "Prospecto"}${
                   data.lastSend.email ? ` · ${data.lastSend.email}` : ""
                 }`
-              : "Todavia no se ha enviado ningun correo."}
+              : "Todavía no se ha enviado ningún correo."}
           </p>
         </div>
         <div className="stat-bar__item">
@@ -221,8 +221,8 @@ export function DashboardActivitySummary({ data }: { data: DashboardData }) {
           </p>
           <p className="stat-bar__sub">
             {data.crawlInProgress
-              ? "El dashboard se refresca automaticamente."
-              : "Puedes lanzar un crawl manual o continuar con envios."}
+              ? "El dashboard se refresca automáticamente."
+              : "Puedes lanzar un crawl manual o continuar con envíos."}
           </p>
         </div>
       </div>
@@ -245,7 +245,7 @@ export function DashboardSetupPanel({ setup }: { setup: DashboardSetupState }) {
           <h3>Google Places</h3>
           <p>
             {setup.missingGooglePlacesEnv.join(", ") ||
-              "Configurado y listo para busquedas manuales o cron"}
+              "Configurado y listo para búsquedas manuales o cron"}
           </p>
         </article>
         <article>

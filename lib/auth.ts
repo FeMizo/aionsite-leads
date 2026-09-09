@@ -7,7 +7,7 @@ export function requireBearer(request: NextRequest) {
   if (!internalApiKey) {
     return fail(
       "INTERNAL_API_KEY_MISSING",
-      "INTERNAL_API_KEY no esta configurada.",
+      "INTERNAL_API_KEY no está configurada.",
       503
     );
   }

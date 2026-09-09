@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Busquedas",
-  description: "Historial y metricas de cada ejecucion del pipeline automatizado.",
+  description: "Historial y métricas de cada ejecución del pipeline automatizado.",
 };
 
 export default async function RunsPage() {
@@ -28,7 +28,7 @@ export default async function RunsPage() {
       <PageHeader
         eyebrow="Busquedas"
         title="Historial del pipeline"
-        description="Audita el rendimiento de busqueda, deduplicacion y enriquecimiento en cada ejecucion."
+        description="Audita el rendimiento de búsqueda, deduplicación y enriquecimiento en cada ejecución."
       />
 
       <DashboardMetricCards data={context.data} />

@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Prospectos",
-  description: "Prospectos aprobados pendientes de preparar mensaje antes del envio.",
+  description: "Prospectos aprobados pendientes de preparar mensaje antes del envío.",
 };
 
 const PAGE_SIZE = 25;

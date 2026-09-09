@@ -78,7 +78,7 @@ const FOLLOWUP_SEQUENCE: FollowupPlan[] = [
     type: "followup_2",
     minDays: 5,
     eventType: "followup_2_sent",
-    label: "nuevo angulo",
+    label: "nuevo ángulo",
   },
   {
     stage: 3,
@@ -843,7 +843,7 @@ export async function sendTestEmail(input: ManualProspectInput = {}) {
   });
 
   if (!isValidEmail(normalizeEmail(prepared.email))) {
-    throw new Error("El correo de prueba no es valido.");
+    throw new Error("El correo de prueba no es válido.");
   }
 
   const transporter = createTransporter();
@@ -871,23 +871,23 @@ export async function sendProspectEmailById(input: {
   }
 
   if (prospect.contacted) {
-    throw new Error("El prospecto ya fue contactado y se omite el envio.");
+    throw new Error("El prospecto ya fue contactado y se omite el envío.");
   }
 
   if (["replied", "closed", "rejected"].includes(prospect.status)) {
-    throw new Error("El prospecto no esta disponible para envio.");
+    throw new Error("El prospecto no está disponible para envío.");
   }
 
   if (!isValidEmail(normalizeEmail(prospect.email))) {
-    throw new Error("El prospecto no tiene un correo valido.");
+    throw new Error("El prospecto no tiene un correo válido.");
   }
 
   if (!prospect.message.trim()) {
-    throw new Error("El prospecto esta bloqueado: falta message.");
+    throw new Error("El prospecto está bloqueado: falta el mensaje.");
   }
 
   if (prospect.status !== "ready") {
-    throw new Error("El prospecto esta bloqueado: el estado debe ser ready.");
+    throw new Error("El prospecto está bloqueado: el estado debe ser 'listo'.");
   }
 
   const subject = input.subject.trim() || prospect.subject.trim();
