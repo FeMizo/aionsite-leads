@@ -14,6 +14,9 @@ export const MAX_SOCIAL_SEARCHES_PER_RUN = Number.isFinite(
 )
   ? Math.max(1, Math.floor(Number(process.env.MAX_SOCIAL_SEARCHES_PER_RUN)))
   : 12;
+const MIN_PHOTO_AGE_DAYS = Number.isFinite(Number(process.env.MIN_PHOTO_AGE_DAYS))
+  ? Math.max(0, Math.floor(Number(process.env.MIN_PHOTO_AGE_DAYS)))
+  : undefined;
 
 function buildSearchSpecs(
   city: (typeof SEARCH_CITIES)[number],
@@ -37,6 +40,8 @@ function buildSearchSpecs(
     typeLabel: niche.typeLabel,
     includedType: niche.includedType,
     pageSize: niche.pageSize ?? 20,
+    excludeStatuses: ["CLOSED_PERMANENTLY"],
+    minPhotoAge: MIN_PHOTO_AGE_DAYS,
   }));
 }
 

@@ -64,6 +64,8 @@ Dependencias por modulo:
 - `GOOGLE_MAPS_API_KEY`: obligatorio para `/api/cron`, `/api/runs/execute` y busquedas manuales.
 - `SMTP_*`: obligatorio para `/api/send` y `/api/prospects/{id}/send`.
 - `INTERNAL_API_KEY`: obligatorio para los endpoints protegidos que usara el GPT.
+- `CRON_SECRET`: obligatorio para `/api/cron` y `/api/send/scheduled`; las peticiones sin este secreto se rechazan.
+- `/setup`: pantalla inicial para crear las credenciales del dashboard; se guardan hasheadas en Postgres.
 - `SEARCH_CITIES_JSON`: override completo del catalogo de ciudades/estados.
 - `SEARCH_CITIES_EXTRA_JSON`: ciudades/estados extra sin reemplazar los defaults.
 - `SEARCH_NICHES_JSON`: override completo del catalogo de nichos.
@@ -300,7 +302,7 @@ npm run db:seed
 
 ## Notas
 
-- El cron en `vercel.json` usa `0 9 * * 1,3,5` y Vercel lo interpreta en UTC.
+- Los crons en `vercel.json` usan `0 15 */2 * *` para búsquedas y `0 14 * * *` para envíos programados; Vercel los interpreta en UTC.
 - El repo ya incluye `prisma/migrations`, por lo que `prisma migrate deploy` es reproducible.
 - Si faltan variables, las APIs responden `503` con detalle claro en JSON.
 - Se agrego el estado `rejected` para rechazar leads sin borrar su historial.

@@ -13,6 +13,7 @@ import { compareSortValues, type SortDirection, type SortType } from "@/lib/tabl
 import { SortIndicator } from "@/components/dashboard/sort-indicator";
 import type { DashboardProspect } from "@/lib/types";
 import { ProspectStatusControl } from "@/components/dashboard/prospect-status-control";
+import { StatusIcon } from "@/components/dashboard/status-pill";
 
 type ActionConfig = {
   action: string;
@@ -806,25 +807,28 @@ export function ProspectTable({
                   </span>
                 </td>
                 <td>
-                  <select
-                    className="status-select"
-                    value={record.status}
-                    disabled={busyStatusId === record.id}
-                    onClick={(event) => event.stopPropagation()}
-                    onChange={(event) => {
-                      event.stopPropagation();
-                      void changeRecordStatus(record, event.target.value);
-                    }}
-                    aria-label={`Cambiar estado de ${record.name}`}
-                  >
-                    {EDITABLE_STATUSES.map((status) => (
-                      <option key={status} value={status}>
-                        {displayStatus === "scheduled" && status === "ready"
-                          ? "programado"
-                          : getProspectStatusLabel(status)}
-                      </option>
-                    ))}
-                  </select>
+                  <span className={`status-control status-control--${displayStatus}`}>
+                    <StatusIcon status={displayStatus} />
+                    <select
+                      className="status-select"
+                      value={record.status}
+                      disabled={busyStatusId === record.id}
+                      onClick={(event) => event.stopPropagation()}
+                      onChange={(event) => {
+                        event.stopPropagation();
+                        void changeRecordStatus(record, event.target.value);
+                      }}
+                      aria-label={`Cambiar estado de ${record.name}`}
+                    >
+                      {EDITABLE_STATUSES.map((status) => (
+                        <option key={status} value={status}>
+                          {displayStatus === "scheduled" && status === "ready"
+                            ? "programado"
+                            : getProspectStatusLabel(status)}
+                        </option>
+                      ))}
+                    </select>
+                  </span>
                 </td>
                 {showScheduledColumn ? (
                   <td>

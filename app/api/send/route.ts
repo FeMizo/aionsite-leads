@@ -8,11 +8,15 @@ import {
 } from "@/lib/env";
 import type { ManualProspectInput } from "@/lib/manual-prospects";
 import { scanMailboxForBounces } from "@/lib/mail-bounces";
+import { requireBearer } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
+  const authError = requireBearer(request);
+  if (authError) return authError;
+
   try {
     const payload = (await request.json().catch(() => ({}))) as {
       ids?: string[];
@@ -45,9 +49,15 @@ export async function POST(request: NextRequest) {
         ? payload.mode
         : "all";
     const result = await sendProspectEmails({ prospectIds: ids, mode });
-    const bounceScan = await scanMailboxForBounces();
+    let bounceScan = null;
 
-    return ok({ result, bounceScan });
+    try {
+      bounceScan = await scanMailboxForBounces();
+    } catch (error) {
+      console.error("[send] El envío terminó, pero falló el escaneo IMAP de rebotes.", error);
+    }
+
+    return ok({ result, bounceScan, bounceScanFailed: bounceScan === null });
   } catch (error) {
     return fail(
       "SEND_FAILED",

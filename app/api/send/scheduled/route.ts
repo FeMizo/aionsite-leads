@@ -16,7 +16,7 @@ function isAuthorizedCronRequest(request: NextRequest) {
   const secret = getCronSecret();
 
   if (!secret) {
-    return true;
+    return false;
   }
 
   return request.headers.get("authorization") === `Bearer ${secret}`;

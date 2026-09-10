@@ -289,7 +289,7 @@ export async function runProspectSearch(source = "google-places") {
     const activeCandidates = mergedCandidates.filter((p) => {
       if (p.businessStatus === "CLOSED_PERMANENTLY") return false;
       if (p.businessStatus === "CLOSED_TEMPORARILY") {
-        console.warn(`[pipeline] ${p.name} cerrado temporalmente`);
+        console.warn(`[pipeline] ${p.name} cerrado temporalmente; se aplica penalización de score`);
       }
       return true;
     });

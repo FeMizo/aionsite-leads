@@ -44,13 +44,12 @@ export async function scanMailboxForBounces(options: { includeSeen?: boolean } =
       { uid: true }
     );
     if (uids === false) return result;
-    const seenUids: number[] = [];
+    const bouncedUids: number[] = [];
     for await (const message of client.fetch(uids, { uid: true, envelope: true, source: true }, { uid: true })) {
       result.scanned += 1;
       const source = message.source?.toString("utf8") || "";
       const subject = message.envelope?.subject || "";
       if (!isBounce(subject, source)) {
-        seenUids.push(message.uid);
         continue;
       }
       const parsed = await simpleParser(message.source || source);
@@ -67,9 +66,9 @@ export async function scanMailboxForBounces(options: { includeSeen?: boolean } =
         result.prospects.push(prospect.id);
         updatedProspectIds.add(prospect.id);
       }
-      seenUids.push(message.uid);
+      bouncedUids.push(message.uid);
     }
-    if (seenUids.length) await client.messageFlagsAdd(seenUids, ["\\Seen"], { uid: true });
+    if (bouncedUids.length) await client.messageFlagsAdd(bouncedUids, ["\\Seen"], { uid: true });
   } finally {
     lock.release();
     await client.logout().catch(() => undefined);

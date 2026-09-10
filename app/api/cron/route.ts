@@ -12,7 +12,7 @@ function isAuthorizedCronRequest(request: NextRequest) {
   const secret = getCronSecret();
 
   if (!secret) {
-    return true;
+    return false;
   }
 
   return request.headers.get("authorization") === `Bearer ${secret}`;
@@ -47,7 +47,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  if (!isAuthorizedCronRequest(request)) {
+    return fail("CRON_UNAUTHORIZED", "Unauthorized cron request.", 401);
+  }
+
   const configError = getRunExecutionConfigError();
 
   if (configError) {

@@ -37,9 +37,11 @@ Next.js 16 App Router + PostgreSQL (Prisma 7) + Vercel Cron. Spanish-language B2
 
 ### API Routes (app/api/)
 
-All routes require `Authorization: Bearer <INTERNAL_API_KEY>` except `/api/cron` which uses `CRON_SECRET`.
+API routes require `Authorization: Bearer <INTERNAL_API_KEY>`, except `/api/cron` and `/api/send/scheduled`, which require `CRON_SECRET`.
 
-- `POST /api/cron` — Vercel Cron trigger (M/W/F 9am UTC), runs prospect search pipeline
+Dashboard access is configured through `/setup`; credentials are stored hashed in Postgres and sessions use an HTTP-only cookie.
+
+- `GET/POST /api/cron` — Vercel Cron trigger, runs prospect search pipeline
 - `POST /api/runs/execute` — Manual search trigger
 - `GET/POST /api/prospects` — List (by status) / create prospects
 - `POST /api/prospects/[id]/approve` — Approve + schedule outreach

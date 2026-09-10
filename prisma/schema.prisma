@@ -99,3 +99,11 @@ model Run {
 
   @@index([createdAt])
 }
+
+model DashboardCredential {
+  id           Int      @id @default(1)
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

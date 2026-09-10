@@ -71,6 +71,8 @@ export type SearchSpec = {
   typeLabel?: string;
   includedType?: string;
   pageSize?: number;
+  excludeStatuses?: string[];
+  minPhotoAge?: number;
 };
 
 export type DashboardProspect = {

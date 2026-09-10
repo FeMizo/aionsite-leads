@@ -15,7 +15,6 @@
   --danger-soft: #fee4e2;
   --shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.06);
   --font-ui: "Segoe UI", "IBM Plex Sans", sans-serif;
-
 }
 
 * {
@@ -509,7 +508,9 @@ code {
   color: var(--text);
   font-size: 0.875rem;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .crm-pagination__btn:hover:not(:disabled) {
@@ -660,12 +661,12 @@ code {
 }
 
 .record-secondary strong {
-  font-size: 0.92rem;
+  font-size: 0.85rem;
 }
 
 .record-secondary span {
   color: var(--muted);
-  font-size: 0.84rem;
+  font-size: 0.7rem;
 }
 
 .record-contact-actions {
@@ -732,6 +733,13 @@ code {
     box-shadow 0.16s ease;
 }
 
+.status-pill__icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: 0 0 auto;
+  margin-right: 0.35rem;
+}
+
 .status-pill--generated {
   background: #e0f2fe;
   color: #0c4a6e;
@@ -762,14 +770,34 @@ code {
   border-color: #fcd34d;
 }
 
-.status-pill--contacted,
-.status-pill--second_attempt,
-.status-pill--followup,
-.status-pill--replied,
+.status-pill--contacted {
+  background: #ecfeff;
+  color: #0e7490;
+  border-color: #a5f3fc;
+}
+
+.status-pill--second_attempt {
+  background: #fff7ed;
+  color: #c2410c;
+  border-color: #fed7aa;
+}
+
+.status-pill--followup {
+  background: #fefce8;
+  color: #a16207;
+  border-color: #fde68a;
+}
+
+.status-pill--replied {
+  background: #f5f3ff;
+  color: #6d28d9;
+  border-color: #ddd6fe;
+}
+
 .status-pill--closed {
-  background: #e0e7ff;
-  color: #3730a3;
-  border-color: #c7d2fe;
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
 }
 
 .status-pill--rejected {
@@ -795,6 +823,60 @@ code {
   font-size: 0.84rem;
   text-transform: capitalize;
   cursor: pointer;
+}
+
+.status-control {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+}
+
+.status-control > .status-pill__icon {
+  position: absolute;
+  left: 0.7rem;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.status-control .status-select {
+  padding-left: 2rem;
+}
+
+.status-control--generated {
+  color: #0c4a6e;
+}
+.status-control--analyzed {
+  color: #5b21b6;
+}
+.status-control--approved {
+  color: #0f5f58;
+}
+.status-control--ready {
+  color: #166534;
+}
+.status-control--scheduled {
+  color: #92400e;
+}
+.status-control--contacted {
+  color: #0e7490;
+}
+.status-control--second_attempt {
+  color: #c2410c;
+}
+.status-control--followup {
+  color: #a16207;
+}
+.status-control--replied {
+  color: #6d28d9;
+}
+.status-control--closed {
+  color: #047857;
+}
+.status-control--rejected {
+  color: #be123c;
+}
+.status-control--uncontactable {
+  color: #374151;
 }
 
 .status-select:disabled {
@@ -1137,7 +1219,10 @@ code {
   color: var(--muted);
   font: inherit;
   cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
 }
 
 .crm-workspace__filter strong {
@@ -1154,6 +1239,7 @@ code {
 }
 
 .record-primary__button {
+  display: -webkit-box;
   width: fit-content;
   padding: 0;
   border: 0;
@@ -1161,6 +1247,9 @@ code {
   font: inherit;
   text-align: left;
   cursor: pointer;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .crm-drawer-layer {
@@ -1329,8 +1418,12 @@ code {
 }
 
 @keyframes crm-drawer-in {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1472,4 +1565,42 @@ code {
   .detail-grid {
     grid-template-columns: 1fr;
   }
+}
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background: var(--color-bg, #f6f7f9);
+}
+
+.auth-card {
+  width: min(100%, 28rem);
+  display: grid;
+  gap: 1rem;
+  padding: 2rem;
+  border: 1px solid var(--color-border, #d9dde5);
+  border-radius: 1rem;
+  background: white;
+  box-shadow: 0 1rem 3rem rgb(20 28 45 / 10%);
+}
+
+.auth-card h1,
+.auth-card p {
+  margin: 0;
+}
+
+.auth-card label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+.auth-card input {
+  padding: 0.75rem;
+  border: 1px solid var(--color-border, #d9dde5);
+  border-radius: 0.5rem;
+}
+.auth-card a {
+  color: inherit;
+  text-align: center;
 }

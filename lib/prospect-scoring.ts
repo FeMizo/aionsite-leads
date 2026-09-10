@@ -234,6 +234,9 @@ export function scoreProspect(prospect: ProspectScoreInput): number {
   if (prospect.businessStatus === "OPERATIONAL") {
     score += 5;
   }
+  if (prospect.businessStatus === "CLOSED_TEMPORARILY") {
+    score -= 20;
+  }
   if (prospect.hasRecentPhotos) {
     score += 15;
   }

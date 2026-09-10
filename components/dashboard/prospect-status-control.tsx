@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { getProspectStatusLabel } from "@/lib/prospect-status";
+import { StatusIcon } from "@/components/dashboard/status-pill";
 
 export const EDITABLE_PROSPECT_STATUSES = [
   "generated",
@@ -74,19 +75,22 @@ export function ProspectStatusControl({
 
   return (
     <div className={`prospect-status-control ${className || ""}`.trim()}>
-      <select
-        className="status-select"
-        value={value}
-        disabled={saving}
-        onChange={(event) => void save(event.target.value)}
-        aria-label="Cambiar estado del prospecto"
-      >
-        {EDITABLE_PROSPECT_STATUSES.map((option) => (
-          <option key={option} value={option}>
-            {getProspectStatusLabel(option)}
-          </option>
-        ))}
-      </select>
+      <span className={`status-control status-control--${value}`}>
+        <StatusIcon status={value} />
+        <select
+          className="status-select"
+          value={value}
+          disabled={saving}
+          onChange={(event) => void save(event.target.value)}
+          aria-label="Cambiar estado del prospecto"
+        >
+          {EDITABLE_PROSPECT_STATUSES.map((option) => (
+            <option key={option} value={option}>
+              {getProspectStatusLabel(option)}
+            </option>
+          ))}
+        </select>
+      </span>
       {saving ? <span className="prospect-status-control__feedback">Guardando...</span> : null}
       {!saving && message ? <span className="prospect-status-control__feedback">{message}</span> : null}
       {error ? <span className="prospect-status-control__error">{error}</span> : null}

@@ -169,7 +169,26 @@ async function searchPlaces(search: SearchSpec) {
     places?: GooglePlace[];
   };
 
-  return (payload.places || []).map((place) => mapGooglePlaceToProspect(place, search));
+  return (payload.places || [])
+    .map((place) => mapGooglePlaceToProspect(place, search))
+    .filter((candidate) => {
+      if (search.excludeStatuses?.includes(candidate.businessStatus)) {
+        return false;
+      }
+
+      if (search.minPhotoAge === undefined) {
+        return true;
+      }
+
+      if (!candidate.mostRecentPhotoDate) {
+        return false;
+      }
+
+      const ageInDays =
+        (Date.now() - new Date(candidate.mostRecentPhotoDate).getTime()) /
+        (1000 * 60 * 60 * 24);
+      return ageInDays <= search.minPhotoAge;
+    });
 }
 
 export async function searchBusinesses(searches: SearchSpec[]) {
