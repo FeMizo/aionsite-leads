@@ -1,5 +1,6 @@
 import type { Prisma, Prospect, ProspectStatus } from "@/generated/prisma";
 import nodemailer from "nodemailer";
+import type { Transporter } from "nodemailer";
 import { getPrismaClient } from "@/lib/db";
 import {
   getFromEmail,
@@ -205,7 +206,7 @@ function consumeSendBudget(budget: SendBudget) {
 }
 
 async function sendEmailWithTransporter(
-  transporter: nodemailer.Transporter,
+  transporter: Transporter,
   record: ProspectEmailModel
 ) {
   const email = buildEmail(record);
@@ -224,7 +225,7 @@ async function sendEmailWithTransporter(
 }
 
 async function sendCustomEmailWithTransporter(params: {
-  transporter: nodemailer.Transporter;
+  transporter: Transporter;
   to: string;
   subject: string;
   message: string;
