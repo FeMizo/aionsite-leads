@@ -27,6 +27,7 @@ import {
 import type { ComparableProspect, ProspectCandidate } from "@/lib/types";
 import { inferWebsiteSignal } from "@/lib/website-signals";
 import { findEmailFromWebsite } from "@/providers/email-finder";
+import { crawlWebsiteInCrawlSite } from "@/providers/crawl-site";
 import { searchBusinesses } from "@/providers/google-places";
 import { searchSocialBusinesses } from "@/providers/social-search";
 
@@ -83,6 +84,7 @@ function normalizeProspect(rawProspect: ProspectCandidate): ProspectCandidate {
     source: String(rawProspect.source || "google-places").trim(),
     createdAt: rawProspect.createdAt || timestamp,
     lastCheckedAt: rawProspect.lastCheckedAt || timestamp,
+    crawlSiteRunId: rawProspect.crawlSiteRunId || "",
     businessStatus: String(rawProspect.businessStatus || "").trim(),
     placeId: rawProspect.placeId || "",
     formattedAddress: rawProspect.formattedAddress || "",
@@ -168,15 +170,25 @@ function selectFinalProspects(candidates: ProspectCandidate[]) {
 }
 
 async function enrichProspectEmail(prospect: ProspectCandidate) {
+  const crawlPromise = crawlWebsiteInCrawlSite(prospect.website)
+    .then((crawl) => crawl?.runId || "")
+    .catch((error) => {
+      console.warn(`[prospect-run] No se pudo registrar el crawl de ${prospect.name}: ${error instanceof Error ? error.message : "error"}`);
+      return "";
+    });
+
   if (prospect.email) {
     return {
-      prospect,
+      prospect: { ...prospect, crawlSiteRunId: await crawlPromise },
       fetchCount: 0,
       emailFound: 1,
     };
   }
 
-  const enrichment = await findEmailFromWebsite(prospect.website);
+  const [enrichment, crawlSiteRunId] = await Promise.all([
+    findEmailFromWebsite(prospect.website),
+    crawlPromise,
+  ]);
   const normalized = normalizeEmail(enrichment.email);
 
   return {
@@ -188,6 +200,7 @@ async function enrichProspectEmail(prospect: ProspectCandidate) {
       hasWhatsappCta: enrichment.audit.hasWhatsappCta,
       hasContactCta: enrichment.audit.hasContactCta,
       isMobileFriendly: enrichment.audit.isMobileFriendly,
+      crawlSiteRunId,
       lastCheckedAt: nowIso(),
     },
     fetchCount: enrichment.fetchCount,
@@ -215,6 +228,7 @@ function buildCreateProspectData(prospect: ProspectCandidate, runId: string) {
     hasWhatsappCta: prospect.hasWhatsappCta ?? null,
     hasContactCta: prospect.hasContactCta ?? null,
     isMobileFriendly: prospect.isMobileFriendly ?? null,
+    crawlSiteRunId: prospect.crawlSiteRunId ?? "",
     mapsUrl: prospect.mapsUrl,
     opportunity: prospect.opportunity,
     recommendedSite: prospect.recommendedSite,

@@ -41,6 +41,7 @@ export type ProspectCandidate = {
   source: string;
   createdAt: string;
   lastCheckedAt: string;
+  crawlSiteRunId?: string;
   businessStatus: string;
   hasRecentPhotos?: boolean;
   mostRecentPhotoDate?: string | null;
