@@ -19,6 +19,19 @@ type PageContext = {
   params: Promise<{ id: string }>;
 };
 
+const CONTACT_EVENT_LABELS: Record<string, string> = {
+  send_success: "Correo enviado",
+  email_opened: "Correo abierto (estimado)",
+  email_clicked: "Clic detectado (puede ser un escáner automático)",
+  email_delivered: "Correo aceptado por el servidor de destino",
+  email_bounced: "Correo rebotado",
+  email_spam_complaint: "Reporte de spam",
+  reply_detected: "Respuesta recibida",
+  followup_1_sent: "Primer seguimiento enviado",
+  followup_2_sent: "Segundo seguimiento enviado",
+  followup_3_sent: "Tercer seguimiento enviado",
+};
+
 export async function generateMetadata({ params }: PageContext): Promise<Metadata> {
   const { id } = await params;
   try {
@@ -240,7 +253,10 @@ export default async function ProspectDetailPage({ params }: PageContext) {
               <ul className="detail-events">
                 {prospect.contactEvents.map((event) => (
                   <li key={event.id} className="detail-event">
-                    <span className="detail-event__type">{event.eventType}</span>
+                    <span className="detail-event__type">{CONTACT_EVENT_LABELS[event.eventType] || event.eventType}</span>
+                    {event.eventType === "email_clicked" && event.metadata && typeof event.metadata === "object" && !Array.isArray(event.metadata) && typeof (event.metadata as Record<string, unknown>).clickedPath === "string" && (
+                      <small>{String((event.metadata as Record<string, unknown>).clickedPath)}</small>
+                    )}
                     <span className="detail-event__date">
                       {formatDashboardDateTime(event.createdAt, { city: prospect.city })}
                     </span>
