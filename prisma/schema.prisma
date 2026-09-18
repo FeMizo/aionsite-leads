@@ -64,6 +64,7 @@ model Prospect {
   crawlSiteRunId   String         @default("")
   run              Run?           @relation(fields: [runId], references: [id], onDelete: SetNull)
   contactEvents    ContactEvent[]
+  crawlHistory     ProspectCrawl[]
 
   @@index([status, createdAt])
   @@index([runId])
@@ -99,6 +100,28 @@ model Run {
   prospects            Prospect[]
 
   @@index([createdAt])
+}
+
+model ProspectCrawl {
+  id               String   @id @default(cuid())
+  prospectId       String
+  prospect         Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  ownerUsername    String   @default("")
+  crawlOwnerUserId String   @default("")
+  siteUrl          String
+  crawlSiteRunId   String   @default("")
+  projectId        String   @default("")
+  status           String   @default("pending")
+  attemptCount     Int      @default(1)
+  error            String   @default("")
+  summary          Json?
+  pdfFilename      String   @default("")
+  pdfData          Bytes?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([crawlSiteRunId])
+  @@index([status, createdAt])
 }
 
 model DashboardCredential {

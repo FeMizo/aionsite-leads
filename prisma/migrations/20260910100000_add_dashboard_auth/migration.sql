@@ -1,4 +1,4 @@
-CREATE TABLE "DashboardCredential" (
+CREATE TABLE IF NOT EXISTS "DashboardCredential" (
     "id" INTEGER NOT NULL DEFAULT 1,
     "username" TEXT NOT NULL,
     "passwordHash" TEXT NOT NULL,
@@ -7,4 +7,4 @@ CREATE TABLE "DashboardCredential" (
     CONSTRAINT "DashboardCredential_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "DashboardCredential_username_key" ON "DashboardCredential"("username");
+CREATE UNIQUE INDEX IF NOT EXISTS "DashboardCredential_username_key" ON "DashboardCredential"("username");

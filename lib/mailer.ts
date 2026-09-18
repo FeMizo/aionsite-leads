@@ -22,6 +22,7 @@ import { getProspectScoreCard } from "@/lib/prospect-scoring";
 import { normalizeEmail } from "@/lib/normalizers";
 import { getTimeZoneParts } from "@/lib/mexico-city-time";
 import { getProspectTimeZone } from "@/lib/prospect-timezone";
+import { summarizeCrawl } from "@/lib/prospect-crawls";
 import {
   countEmailsSentToday,
   getNextAvailableScheduledSendAt,
@@ -229,6 +230,7 @@ async function sendCustomEmailWithTransporter(params: {
   to: string;
   subject: string;
   message: string;
+  attachment?: { filename: string; content: Buffer };
 }) {
   return params.transporter.sendMail({
     from: `"${getFromName()}" <${getFromEmail() || getSmtpUser()}>`,
@@ -236,7 +238,23 @@ async function sendCustomEmailWithTransporter(params: {
     subject: params.subject,
     text: params.message,
     html: renderPlainTextAsHtml(params.message),
+    ...(params.attachment ? { attachments: [params.attachment] } : {}),
   });
+}
+
+async function getProspectCrawlAttachment(prospectId: string, crawlSiteRunId?: string) {
+  if (!crawlSiteRunId) return undefined;
+  const history = await getPrismaClient().prospectCrawl.findFirst({
+    where: { prospectId, crawlSiteRunId },
+    select: { status: true, error: true, summary: true, pdfData: true, pdfFilename: true },
+  });
+  if (!history || history.status !== "completed" || !history.pdfData || !history.pdfFilename) {
+    throw new Error("El rastreo aún no terminó o no tiene su PDF guardado; no se envió el correo.");
+  }
+  return {
+    attachment: { filename: history.pdfFilename, content: Buffer.from(history.pdfData) },
+    summary: summarizeCrawl(history.summary),
+  };
 }
 
 function findPreviouslyContacted(record: Prospect, records: Prospect[]) {
@@ -550,11 +568,13 @@ export async function sendInitialProspectEmails(
 
     try {
       const sentAt = new Date();
+      const crawlReport = await getProspectCrawlAttachment(record.id, record.crawlSiteRunId);
       const info = await sendCustomEmailWithTransporter({
         transporter,
         to: record.email,
         subject: record.subject.trim(),
-        message: record.message.trim(),
+        message: crawlReport ? `${record.message.trim()}\n\nResumen del rastreo: ${crawlReport.summary}` : record.message.trim(),
+        attachment: crawlReport?.attachment,
       });
 
       summary.sent += 1;
@@ -757,11 +777,13 @@ export async function sendDueFollowupEmails(
     try {
       const draft = buildProspectOutreachDraft(record, plan.type);
       const sentAt = new Date();
+      const crawlReport = await getProspectCrawlAttachment(record.id, record.crawlSiteRunId);
       const info = await sendCustomEmailWithTransporter({
         transporter,
         to: record.email,
         subject: draft.subject,
-        message: draft.message,
+        message: crawlReport ? `${draft.message}\n\nResumen del rastreo: ${crawlReport.summary}` : draft.message,
+        attachment: crawlReport?.attachment,
       });
 
       summary.followupsSent += 1;
@@ -946,11 +968,13 @@ export async function sendProspectEmailById(input: {
 
   try {
     const sentAt = new Date();
+    const crawlReport = await getProspectCrawlAttachment(prospect.id, prospect.crawlSiteRunId);
     const info = await sendCustomEmailWithTransporter({
       transporter,
       to: prospect.email,
       subject,
-      message,
+      message: crawlReport ? `${message}\n\nResumen del rastreo: ${crawlReport.summary}` : message,
+      attachment: crawlReport?.attachment,
     });
 
     await updateProspectWithEvent({

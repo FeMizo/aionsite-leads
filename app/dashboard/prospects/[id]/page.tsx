@@ -10,6 +10,7 @@ import { StatusPill } from "@/components/dashboard/status-pill";
 import { EmailPreview } from "./email-preview";
 import { ManualContactActions } from "./manual-contact-actions";
 import { ProspectStatusControl } from "@/components/dashboard/prospect-status-control";
+import { ProspectCrawlHistory } from "@/components/dashboard/prospect-crawl-history";
 
 export const dynamic = "force-dynamic";
 
@@ -141,6 +142,8 @@ export default async function ProspectDetailPage({ params }: PageContext) {
               />
             </div>
           </div>
+
+          <ProspectCrawlHistory prospectId={prospect.id} website={prospect.website} />
 
           <div className="panel">
             <div className="panel__header">
