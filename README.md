@@ -65,6 +65,8 @@ Dependencias por modulo:
 - `SMTP_*`: obligatorio para `/api/send` y `/api/prospects/{id}/send`.
 - `INTERNAL_API_KEY`: obligatorio para los endpoints protegidos que usara el GPT.
 - `CRON_SECRET`: obligatorio para `/api/cron` y `/api/send/scheduled`; las peticiones sin este secreto se rechazan.
+- `EMAIL_TRACKING_SECRET` y `EMAIL_TRACKING_BASE_URL`: habilitan seguimiento propio de aperturas y clics en los correos de prospectos; el secreto debe tener al menos 32 caracteres y la URL debe ser HTTPS en producción.
+- El seguimiento propio guarda aperturas y primeros clics por enlace en el historial del prospecto. Las aperturas son aproximadas porque algunos clientes cargan imágenes automáticamente o las bloquean.
 - `/setup`: pantalla inicial para crear las credenciales del dashboard; se guardan hasheadas en Postgres.
 - `SEARCH_CITIES_JSON`: override completo del catalogo de ciudades/estados.
 - `SEARCH_CITIES_EXTRA_JSON`: ciudades/estados extra sin reemplazar los defaults.

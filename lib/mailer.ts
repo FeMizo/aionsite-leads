@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { Prisma, Prospect, ProspectStatus } from "@/generated/prisma";
 import nodemailer from "nodemailer";
 import type { Transporter } from "nodemailer";
@@ -23,6 +24,7 @@ import { normalizeEmail } from "@/lib/normalizers";
 import { getTimeZoneParts } from "@/lib/mexico-city-time";
 import { getProspectTimeZone } from "@/lib/prospect-timezone";
 import { getCrawlEmailReport } from "@/lib/prospect-crawls";
+import { addEmailTracking, isEmailTrackingConfigured } from "@/lib/email-tracking";
 import {
   countEmailsSentToday,
   getNextAvailableScheduledSendAt,
@@ -201,6 +203,7 @@ async function sendEmailWithTransporter(
 
 async function sendCustomEmailWithTransporter(params: {
   transporter: Transporter;
+  prospectId?: string;
   to: string;
   subject: string;
   message: string;
@@ -213,14 +216,19 @@ async function sendCustomEmailWithTransporter(params: {
     attachmentName: params.attachment?.filename,
     ctaLabel: "Platicar con AionSite",
   });
-  return params.transporter.sendMail({
+  const trackingId = params.prospectId && isEmailTrackingConfigured() ? randomUUID() : "";
+  const tracked = trackingId
+    ? addEmailTracking(email.html, email.text, params.prospectId!, trackingId)
+    : email;
+  const info = await params.transporter.sendMail({
     from: `"${getFromName()}" <${getFromEmail() || getSmtpUser()}>`,
     to: params.to,
     subject: params.subject,
-    text: email.text,
-    html: email.html,
+    text: tracked.text,
+    html: tracked.html,
     ...(params.attachment ? { attachments: [params.attachment] } : {}),
   });
+  return { ...info, ...(trackingId ? { trackingId } : {}) };
 }
 
 async function getProspectCrawlAttachment(prospectId: string, crawlSiteRunId?: string) {
@@ -552,6 +560,7 @@ export async function sendInitialProspectEmails(
       const crawlReport = await getProspectCrawlAttachment(record.id, record.crawlSiteRunId);
       const info = await sendCustomEmailWithTransporter({
         transporter,
+        prospectId: record.id,
         to: record.email,
         subject: record.subject.trim(),
         message: record.message.trim(),
@@ -579,6 +588,7 @@ export async function sendInitialProspectEmails(
           toStatus: "contacted",
           note: "Outbound email sent",
           messageId: info.messageId,
+          ...(info.trackingId ? { trackingId: info.trackingId } : {}),
           followupStage: record.followupStage + 1,
         } as Prisma.InputJsonObject,
       });
@@ -762,6 +772,7 @@ export async function sendDueFollowupEmails(
       const crawlReport = await getProspectCrawlAttachment(record.id, record.crawlSiteRunId);
       const info = await sendCustomEmailWithTransporter({
         transporter,
+        prospectId: record.id,
         to: record.email,
         subject: draft.subject,
         message: draft.message,
@@ -792,6 +803,7 @@ export async function sendDueFollowupEmails(
           toStatus: "contacted",
           note: `Automated ${plan.label} sent`,
           messageId: info.messageId,
+          ...(info.trackingId ? { trackingId: info.trackingId } : {}),
           followupCount: record.followupCount + 1,
           followupStage: record.followupStage + 1,
           type: plan.type,
@@ -954,6 +966,7 @@ export async function sendProspectEmailById(input: {
     const crawlReport = await getProspectCrawlAttachment(prospect.id, prospect.crawlSiteRunId);
     const info = await sendCustomEmailWithTransporter({
       transporter,
+      prospectId: prospect.id,
       to: prospect.email,
       subject,
       message,
@@ -978,6 +991,7 @@ export async function sendProspectEmailById(input: {
         toStatus: "contacted",
         note: "Outbound email sent from prospect endpoint",
         messageId: info.messageId,
+        ...(info.trackingId ? { trackingId: info.trackingId } : {}),
         subject,
         followupStage: prospect.followupStage + 1,
       } as Prisma.InputJsonObject,

@@ -17,6 +17,8 @@ const BRAVE_SEARCH_API_KEYS = ["BRAVE_SEARCH_API_KEY"] as const;
 const FROM_NAME_ENV_KEYS = ["FROM_NAME"] as const;
 const FROM_EMAIL_ENV_KEYS = ["FROM_EMAIL"] as const;
 const CRON_SECRET_ENV_KEYS = ["CRON_SECRET"] as const;
+const EMAIL_TRACKING_SECRET_ENV_KEYS = ["EMAIL_TRACKING_SECRET"] as const;
+const EMAIL_TRACKING_BASE_URL_ENV_KEYS = ["EMAIL_TRACKING_BASE_URL"] as const;
 
 function hasValue(key: string) {
   return Boolean(process.env[key]?.trim());
@@ -109,6 +111,13 @@ export function getFromEmail() {
 
 export function getCronSecret() {
   return getFirstEnvValue(CRON_SECRET_ENV_KEYS);
+}
+
+export function getEmailTrackingConfig() {
+  return {
+    secret: getFirstEnvValue(EMAIL_TRACKING_SECRET_ENV_KEYS),
+    baseUrl: getFirstEnvValue(EMAIL_TRACKING_BASE_URL_ENV_KEYS),
+  };
 }
 
 export function getAppSetupState() {

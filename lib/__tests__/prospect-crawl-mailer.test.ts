@@ -72,6 +72,16 @@ describe("prospect crawl report in email", () => {
     expect(mail.text).toContain("Teléfono: +52 938 157 3988");
   });
 
+  it("adds a signed open pixel and rewrites links using the self-hosted tracker", async () => {
+    vi.stubEnv("EMAIL_TRACKING_SECRET", "this-is-a-test-secret-at-least-32-chars");
+    vi.stubEnv("EMAIL_TRACKING_BASE_URL", "https://leads.example.com");
+    await sendProspectEmailById({ prospectId: "p1", subject: "Revisión", message: "Hola. Visita https://example.com/info" });
+    const email = mocks.sendMail.mock.calls[0][0];
+    expect(email.html).toContain("/api/tracking/open?t=");
+    expect(email.html).toContain("/api/tracking/click?t=");
+    expect(email.text).toContain("/api/tracking/click?t=");
+  });
+
   it("escapes prospect-written content in the premium HTML email", async () => {
     mocks.prospectFindUnique.mockResolvedValue({
       ...prospect,
