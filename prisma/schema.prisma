@@ -34,6 +34,7 @@ model Prospect {
   type             String
   website          String         @default("")
   rating           String         @default("")
+  userRatingCount  Int?
   websiteFetchFailed Boolean      @default(false)
   websiteLoadTimeMs Int?
   hasWhatsappCta   Boolean?
@@ -58,6 +59,7 @@ model Prospect {
   updatedAt        DateTime       @updatedAt
   businessStatus   String         @default("")
   primaryType      String         @default("")
+  formattedAddress String         @default("")
   lastError        String         @default("")
   lastMessageId    String         @default("")
   runId            String?
@@ -65,6 +67,7 @@ model Prospect {
   run              Run?           @relation(fields: [runId], references: [id], onDelete: SetNull)
   contactEvents    ContactEvent[]
   crawlHistory     ProspectCrawl[]
+  researches       ProspectResearch[]
 
   @@index([status, createdAt])
   @@index([runId])
@@ -122,6 +125,43 @@ model ProspectCrawl {
 
   @@index([crawlSiteRunId])
   @@index([status, createdAt])
+}
+
+model ProspectResearch {
+  id            String   @id @default(cuid())
+  prospectId    String
+  prospect      Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  status        String   @default("running")
+  sourceResults Json?
+  error         String  @default("")
+  startedAt     DateTime @default(now())
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+  findings      ProspectResearchFinding[]
+
+  @@index([prospectId, createdAt])
+  @@index([status, createdAt])
+}
+
+model ProspectResearchFinding {
+  id              String           @id @default(cuid())
+  researchId      String
+  research        ProspectResearch @relation(fields: [researchId], references: [id], onDelete: Cascade)
+  field           String
+  currentValue    String            @default("null")
+  proposedValue   String
+  sourceName      String
+  sourceUrl       String
+  confidence      String
+  confidenceReason String
+  status          String            @default("pending")
+  decision        String            @default("")
+  decidedBy       String            @default("")
+  decidedAt       DateTime?
+  createdAt       DateTime          @default(now())
+
+  @@index([researchId, status])
+  @@index([field, createdAt])
 }
 
 model DashboardCredential {

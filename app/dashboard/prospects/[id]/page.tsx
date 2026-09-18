@@ -11,6 +11,7 @@ import { EmailPreview } from "./email-preview";
 import { ManualContactActions } from "./manual-contact-actions";
 import { ProspectStatusControl } from "@/components/dashboard/prospect-status-control";
 import { ProspectCrawlHistory } from "@/components/dashboard/prospect-crawl-history";
+import { ProspectResearchReview } from "@/components/dashboard/prospect-research-review";
 
 export const dynamic = "force-dynamic";
 
@@ -129,6 +130,24 @@ export default async function ProspectDetailPage({ params }: PageContext) {
                   <dd>{prospect.contactName}</dd>
                 </>
               )}
+              {prospect.formattedAddress && (
+                <>
+                  <dt>Dirección</dt>
+                  <dd>{prospect.formattedAddress}</dd>
+                </>
+              )}
+              {prospect.primaryType && (
+                <>
+                  <dt>Giro detectado</dt>
+                  <dd>{prospect.primaryType}</dd>
+                </>
+              )}
+              {prospect.userRatingCount !== null && prospect.userRatingCount !== undefined && (
+                <>
+                  <dt>Reseñas en Google</dt>
+                  <dd>{prospect.userRatingCount}</dd>
+                </>
+              )}
             </dl>
 
             <div className="manual-contact-actions__wrap">
@@ -144,6 +163,8 @@ export default async function ProspectDetailPage({ params }: PageContext) {
           </div>
 
           <ProspectCrawlHistory prospectId={prospect.id} website={prospect.website} />
+
+          <ProspectResearchReview prospectId={prospect.id} />
 
           <div className="panel">
             <div className="panel__header">

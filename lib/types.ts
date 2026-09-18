@@ -103,6 +103,9 @@ export type DashboardProspect = {
   createdAt: string;
   lastCheckedAt: string;
   businessStatus: string;
+  primaryType?: string;
+  formattedAddress?: string;
+  userRatingCount?: number | null;
   lastError: string;
   lastMessageId: string;
   updatedAt: string;

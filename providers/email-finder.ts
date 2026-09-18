@@ -167,6 +167,8 @@ export async function findEmailFromWebsite(website: string) {
         hasContactCta: false,
         isMobileFriendly: null,
       } satisfies WebsiteAudit,
+      sourceUrl: "",
+      auditSourceUrl: "",
     };
   }
 
@@ -193,6 +195,8 @@ export async function findEmailFromWebsite(website: string) {
       email: homepageEmails[0],
       fetchCount,
       audit,
+      sourceUrl: url,
+      auditSourceUrl: url,
     };
   }
 
@@ -208,6 +212,8 @@ export async function findEmailFromWebsite(website: string) {
         email: emails[0],
         fetchCount,
         audit,
+        sourceUrl: link,
+        auditSourceUrl: url,
       };
     }
   }
@@ -216,5 +222,7 @@ export async function findEmailFromWebsite(website: string) {
     email: "",
     fetchCount,
     audit,
+    sourceUrl: url,
+    auditSourceUrl: url,
   };
 }
