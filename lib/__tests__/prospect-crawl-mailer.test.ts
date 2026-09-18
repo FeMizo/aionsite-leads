@@ -67,6 +67,9 @@ describe("prospect crawl report in email", () => {
     expect(mail.html).toContain("Resumen de la revisión");
     expect(mail.html).toContain("#ffffff");
     expect(mail.html).toContain("Platicar con AionSite");
+    expect(mail.html).toContain('href="tel:+529381573988"');
+    expect(mail.html).toContain("+52 938 157 3988");
+    expect(mail.text).toContain("Teléfono: +52 938 157 3988");
   });
 
   it("escapes prospect-written content in the premium HTML email", async () => {

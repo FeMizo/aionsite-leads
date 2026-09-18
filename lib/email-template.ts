@@ -2,6 +2,8 @@ import type { Prospect } from "@/generated/prisma";
 
 const BRAND_NAME = "AionSite";
 const BRAND_EMAIL = "contacto@aionsite.com.mx";
+const BRAND_PHONE = "+52 938 157 3988";
+const BRAND_PHONE_TEL = "+529381573988";
 const BRAND_WHATSAPP_URL =
   "https://wa.me/5219381238531?text=Hola%20AionSite%2C%20quiero%20que%20me%20envien%20la%20propuesta.";
 const SERVICES_CANVA_URL = "https://canva.link/uk8xoudaah19yry";
@@ -161,11 +163,12 @@ export function renderPremiumOutreachEmail(params: {
     ? `\n\nResumen de la revisión\n${params.report.headline}${params.report.findings.map((finding) => `\n- ${finding.title}: observado en ${finding.pageCount} ${finding.pageCount === 1 ? "página" : "páginas"}. ${finding.impact}`).join("")}\n\n${params.report.scopeNote}`
     : "";
   const attachmentText = params.attachmentName ? `\n\nInforme PDF adjunto: ${params.attachmentName}` : "";
+  const contactText = `\n\n${BRAND_NAME} · ${BRAND_EMAIL}\nTeléfono: ${BRAND_PHONE}\nSi prefieres, responde directamente a este correo.`;
   const preheader = params.report?.headline || "Una idea concreta para mejorar la presencia digital de tu negocio.";
 
   return {
-    text: `${params.message.trim()}${reportText}${attachmentText}`,
-    html: `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f2f5f7;font-family:Arial,Helvetica,sans-serif;color:#102a43;"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preheader)}</div><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#f2f5f7"><tr><td align="center" style="padding:28px 12px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:620px;background:#ffffff;border:1px solid #e1e8ee;border-radius:10px;overflow:hidden;"><tr><td height="5" bgcolor="#12a6a0" style="height:5px;font-size:0;line-height:0;">&nbsp;</td></tr><tr><td style="padding:25px 30px 12px;"><span style="color:#102a43;font-size:22px;font-weight:700;letter-spacing:-0.4px;">${BRAND_NAME}</span><span style="padding-left:9px;color:#12a6a0;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Presencia digital</span></td></tr><tr><td style="padding:15px 30px 8px;">${renderMessageBlocks(params.message)}${reportHtml}${attachmentHtml}${ctaHtml}</td></tr><tr><td style="padding:18px 30px 24px;border-top:1px solid #e8edf1;color:#64748b;font-size:12px;line-height:1.6;">${BRAND_NAME} · <a href="mailto:${BRAND_EMAIL}" style="color:#087f8c;text-decoration:none;">${BRAND_EMAIL}</a><br>Si prefieres, responde directamente a este correo.</td></tr></table></td></tr></table></body></html>`,
+    text: `${params.message.trim()}${reportText}${attachmentText}${contactText}`,
+    html: `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f2f5f7;font-family:Arial,Helvetica,sans-serif;color:#102a43;"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preheader)}</div><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#f2f5f7"><tr><td align="center" style="padding:28px 12px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:620px;background:#ffffff;border:1px solid #e1e8ee;border-radius:10px;overflow:hidden;"><tr><td height="5" bgcolor="#12a6a0" style="height:5px;font-size:0;line-height:0;">&nbsp;</td></tr><tr><td style="padding:25px 30px 12px;"><span style="color:#102a43;font-size:22px;font-weight:700;letter-spacing:-0.4px;">${BRAND_NAME}</span><span style="padding-left:9px;color:#12a6a0;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Presencia digital</span></td></tr><tr><td style="padding:15px 30px 8px;">${renderMessageBlocks(params.message)}${reportHtml}${attachmentHtml}${ctaHtml}</td></tr><tr><td style="padding:18px 30px 24px;border-top:1px solid #e8edf1;color:#64748b;font-size:12px;line-height:1.6;">${BRAND_NAME} · <a href="mailto:${BRAND_EMAIL}" style="color:#087f8c;text-decoration:none;">${BRAND_EMAIL}</a><br>Teléfono: <a href="tel:${BRAND_PHONE_TEL}" style="color:#087f8c;text-decoration:none;">${BRAND_PHONE}</a><br>Si prefieres, responde directamente a este correo.</td></tr></table></td></tr></table></body></html>`,
   };
 }
 
