@@ -60,8 +60,26 @@ describe("prospect crawl report in email", () => {
     const mail = mocks.sendMail.mock.calls[0][0];
     expect(mail.attachments).toEqual([{ filename: "crawl-summary.pdf", content: Buffer.from("%PDF-1.4 test") }]);
     expect(mail.text).toContain("Se revisaron 4 páginas");
-    expect(mail.text).toContain("enlaces a páginas inexistentes");
-    expect(mail.text).toContain("impactos potenciales");
+    expect(mail.text).toContain("Enlaces a páginas inexistentes");
+    expect(mail.text).toContain("observado en 1 página");
+    expect(mail.text).toContain("efectos descritos son potenciales");
+    expect(mail.text).toContain("Informe PDF adjunto: crawl-summary.pdf");
+    expect(mail.html).toContain("Resumen de la revisión");
+    expect(mail.html).toContain("#ffffff");
+    expect(mail.html).toContain("Platicar con AionSite");
+  });
+
+  it("escapes prospect-written content in the premium HTML email", async () => {
+    mocks.prospectFindUnique.mockResolvedValue({
+      ...prospect,
+      message: "Hola <script>alert('x')</script>\n\nVisita https://example.com/info",
+    });
+
+    await sendProspectEmailById({ prospectId: "p1", subject: "Revisión", message: "Hola <script>alert('x')</script>\n\nVisita https://example.com/info" });
+    const mail = mocks.sendMail.mock.calls[0][0];
+    expect(mail.html).toContain("&lt;script&gt;");
+    expect(mail.html).not.toContain("<script>");
+    expect(mail.html).toContain('href="https://example.com/info"');
   });
 
   it("does not send a prospect email while its crawl PDF is pending or missing", async () => {

@@ -1,4 +1,5 @@
 import { getPrismaClient } from "@/lib/db";
+import type { CrawlEmailReport } from "@/lib/email-template";
 import { crawlWebsiteInCrawlSite, getCrawlSummaryPdf } from "@/providers/crawl-site";
 
 export async function startProspectCrawl(prospectId: string, retry = false) {
@@ -48,29 +49,64 @@ export async function startProspectCrawl(prospectId: string, retry = false) {
   }
 }
 
-export function summarizeCrawl(summary: unknown) {
-  if (!summary || typeof summary !== "object") return "El rastreo terminó, pero no devolvió métricas resumibles.";
+const CRAWL_FINDINGS: Record<string, { title: string; impact: string }> = {
+  httpErrors: { title: "Acceso limitado durante el rastreo", impact: "Conviene comprobar el acceso automatizado; este resultado no confirma que las personas visitantes también estén bloqueadas." },
+  "404": { title: "Enlaces a páginas inexistentes", impact: "Corregirlos podría reducir callejones sin salida para quienes navegan el sitio." },
+  noindex: { title: "Páginas excluidas de buscadores", impact: "Vale la pena confirmar que las páginas importantes puedan aparecer en búsquedas." },
+  titleIssues: { title: "Títulos de página por revisar", impact: "Títulos más claros pueden explicar mejor cada página en los resultados de búsqueda." },
+  descIssues: { title: "Descripciones de búsqueda por mejorar", impact: "Una descripción precisa puede ayudar a las personas a decidir si el resultado responde a su búsqueda." },
+  h1Issues: { title: "Encabezados principales por revisar", impact: "Una jerarquía clara puede facilitar que visitantes entiendan el tema de cada página." },
+  imgIssues: { title: "Información de imágenes incompleta", impact: "Textos alternativos descriptivos ayudan a contextualizar imágenes y a tecnologías de asistencia." },
+  brokenImages: { title: "Imágenes que no cargaron", impact: "Revisarlas podría evitar espacios visuales vacíos en las páginas afectadas." },
+  brokenButtons: { title: "Botones o enlaces de acción por revisar", impact: "Comprobarlos ayuda a que las personas puedan completar la acción esperada." },
+  placeholderLinks: { title: "Enlaces provisionales detectados", impact: "Sustituirlos por destinos funcionales puede facilitar la navegación." },
+  formsNoAction: { title: "Formularios sin destino de envío", impact: "Revisar el destino puede ayudar a que las consultas lleguen al equipo adecuado." },
+  formsNoSubmit: { title: "Formularios sin botón de envío", impact: "Una acción de envío visible puede hacer más claro cómo completar el formulario." },
+  slowLoad: { title: "Páginas con carga lenta", impact: "Optimizar la carga podría reducir la espera, especialmente en conexiones móviles." },
+  duplicates: { title: "Títulos repetidos", impact: "Diferenciarlos puede comunicar mejor el propósito de cada página." },
+  noOg: { title: "Vista previa social incompleta", impact: "Completarla puede mejorar cómo aparece el sitio al compartirlo." },
+  noTwitterCard: { title: "Vista previa para X incompleta", impact: "Completarla puede mejorar la presentación al compartir enlaces en esa plataforma." },
+  noStructuredData: { title: "Datos estructurados no detectados", impact: "Añadir datos pertinentes puede dar a buscadores más contexto sobre el contenido." },
+  noViewport: { title: "Configuración móvil por verificar", impact: "Comprobarla ayuda a presentar el contenido de forma adecuada en distintos tamaños de pantalla." },
+  noCharset: { title: "Codificación de texto por verificar", impact: "Definirla explícitamente ayuda a mostrar caracteres de forma consistente." },
+  renderBlockingJs: { title: "Scripts que pueden retrasar el renderizado", impact: "Revisarlos podría ayudar a mostrar antes el contenido principal." },
+  renderBlockingCss: { title: "Hojas de estilo que pueden retrasar el renderizado", impact: "Revisarlas podría ayudar a presentar antes el contenido visible." },
+  thinContent: { title: "Contenido breve en algunas páginas", impact: "Ampliarlo con información útil puede responder mejor a las preguntas de visitantes." },
+  largeHtml: { title: "Páginas con HTML pesado", impact: "Reducir recursos innecesarios podría mejorar la transferencia inicial del documento." },
+  weakNavigation: { title: "Navegación principal por revisar", impact: "Una navegación clara puede ayudar a encontrar servicios y datos de contacto." },
+  headingSkips: { title: "Saltos en la jerarquía de encabezados", impact: "Ordenarlos puede facilitar la lectura y comprensión de la estructura." },
+  blocked: { title: "Páginas bloqueadas por robots.txt", impact: "Confirma que el bloqueo sea intencional para las páginas incluidas." },
+  orphanPages: { title: "Páginas sin enlaces internos detectados", impact: "Enlazarlas desde secciones pertinentes podría facilitar su descubrimiento." },
+};
+
+export function getCrawlEmailReport(summary: unknown): CrawlEmailReport | null {
+  if (!summary || typeof summary !== "object") return null;
   const data = summary as { total?: number; withIssues?: number; stats?: Record<string, unknown> };
-  if (typeof data.total !== "number" || typeof data.withIssues !== "number") return "El rastreo terminó; revisa el PDF adjunto para ver los hallazgos respaldados.";
-  if (!data.withIssues) return `Se revisaron ${data.total} páginas sin incidencias en las comprobaciones ejecutadas. El alcance se limita a esas páginas.`;
-  const findingImpacts: Record<string, [string, string]> = {
-    "404": ["enlaces a páginas inexistentes", "Repararlos puede reducir callejones sin salida y pérdida de visitas."],
-    noindex: ["páginas excluidas de buscadores", "Conviene confirmar que las páginas importantes puedan aparecer en búsquedas."],
-    titleIssues: ["títulos de página por mejorar", "Títulos claros ayudan a explicar cada página en los resultados."],
-    descIssues: ["descripciones de búsqueda incompletas", "Descripciones útiles pueden hacer más atractivo el resultado."],
-    h1Issues: ["encabezados principales por revisar", "Una jerarquía clara ayuda a visitantes y buscadores a entender la página."],
-    brokenButtons: ["botones o enlaces de acción rotos", "Corregirlos puede facilitar el contacto y otras acciones."],
-    formsNoAction: ["formularios sin destino de envío", "Revisarlos ayuda a que las consultas lleguen al negocio."],
-    formsNoSubmit: ["formularios sin botón de envío", "Una acción clara facilita que los visitantes envíen sus datos."],
-    slowLoad: ["páginas con carga lenta", "Mejorar velocidad puede reducir fricción, sobre todo en móviles."],
-    duplicates: ["títulos repetidos", "Diferenciarlos ayuda a comunicar mejor el propósito de cada página."],
-    noOg: ["vistas previas sociales incompletas", "Completarlas mejora cómo se presenta el sitio al compartirlo."],
-    noStructuredData: ["datos estructurados faltantes", "Añadirlos ayuda a describir el negocio y su contenido a buscadores."],
-  };
-  const findings = Object.entries(findingImpacts)
-    .filter(([key]) => Number(data.stats?.[key]) > 0)
+  if (typeof data.total !== "number" || typeof data.withIssues !== "number") return null;
+  const total = Math.max(0, Math.trunc(data.total));
+  const withIssues = Math.max(0, Math.min(total, Math.trunc(data.withIssues)));
+  const stats = data.stats || {};
+  const findings = Object.entries(CRAWL_FINDINGS)
+    .map(([key, finding]) => ({ ...finding, pageCount: Math.max(0, Math.trunc(Number(stats[key]) || 0)) }))
+    .filter((finding) => finding.pageCount > 0)
+    .sort((a, b) => b.pageCount - a.pageCount || a.title.localeCompare(b.title, "es"))
     .slice(0, 3)
-    .map(([, [label, impact]]) => `${label}: ${impact}`);
-  const detail = findings.length ? findings.join(" ") : "El informe adjunto detalla los hallazgos observados.";
-  return `Se revisaron ${data.total} páginas y se detectaron hallazgos en ${data.withIssues}. ${detail} Son impactos potenciales; el análisis cubre únicamente las páginas revisadas.`;
+    .map(({ title, pageCount, impact }) => ({ title, pageCount, impact }));
+  const headline = withIssues
+    ? `Se revisaron ${total} páginas y se detectaron puntos por revisar en ${withIssues}.`
+    : `Se revisaron ${total} páginas sin incidencias en las comprobaciones ejecutadas.`;
+  return {
+    headline,
+    findings,
+    scopeNote: `Este resumen se limita a las ${total} páginas rastreadas y a las comprobaciones ejecutadas. Los efectos descritos son potenciales; no se garantizan cambios en posiciones, visitas o ventas.`,
+  };
+}
+
+export function summarizeCrawl(summary: unknown) {
+  const report = getCrawlEmailReport(summary);
+  if (!report) return "El rastreo terminó; revisa el PDF adjunto para consultar los hallazgos respaldados.";
+  const findings = report.findings.map((finding) =>
+    `- ${finding.title}: observado en ${finding.pageCount} ${finding.pageCount === 1 ? "página" : "páginas"}. ${finding.impact}`
+  );
+  return [report.headline, ...(findings.length ? ["Hallazgos principales:\n" + findings.join("\n")] : []), report.scopeNote].join("\n\n");
 }

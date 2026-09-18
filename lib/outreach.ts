@@ -129,11 +129,11 @@ function buildFollowup1Draft(prospect: OutreachProspect) {
 
 Solo quería confirmar si viste mi mensaje anterior.
 
-Soy Felipe, desarrollador web en AionSite.
+Soy Felipe, desarrollador web en AionSite. Puedo ayudarte a revisar cómo presentar con claridad sus servicios y facilitar el contacto.
 
-Vi una oportunidad puntual para ${prospect.name}${cityLine}: ${context.opportunity}.
+La oportunidad que te mencioné para ${prospect.name}${cityLine} es: ${context.opportunity}. Cualquier resultado dependerá de cómo respondan las personas visitantes.
 
-¿Te mando una propuesta con la idea?
+Si aún te interesa, puedo enviarte una propuesta breve con el primer ajuste que evaluaría.
 
 Saludos,
 AionSite`),
@@ -151,11 +151,11 @@ function buildFollowup2Draft(prospect: OutreachProspect) {
     stars >= 4.0 &&
     typeof prospect.userRatingCount === "number" &&
     prospect.userRatingCount >= 10;
-  const reviewLine = hasRating
-    ? `${prospect.name} tiene ${stars} estrellas y ${prospect.userRatingCount} reseñas; es buena base para generar más contactos.`
+    const reviewLine = hasRating
+    ? `${prospect.name} tiene ${stars} estrellas y ${prospect.userRatingCount} reseñas. Esa reputación puede aprovecharse mejor si el sitio facilita el siguiente paso.`
     : typeof prospect.userRatingCount === "number" && prospect.userRatingCount >= 10
-      ? `Con ${prospect.userRatingCount} reseñas en Google ya tienen tracción. La oportunidad está en convertirla en contactos.`
-      : "Ya tienen presencia en Google. El siguiente paso es que esa visibilidad genere contactos.";
+      ? `Con ${prospect.userRatingCount} reseñas en Google ya existe una base de confianza. El sitio puede ayudar a explicar cómo solicitar información.`
+      : "Su presencia en Google ya facilita que las personas encuentren el negocio. El sitio puede ayudarles a entender la oferta y cómo contactar.";
 
   return {
     subject: `${prospect.name}: otro punto breve`,
@@ -163,7 +163,7 @@ function buildFollowup2Draft(prospect: OutreachProspect) {
 
 ${reviewLine}
 
-Te mando una propuesta con lo que ajustaria primero?
+¿Te gustaría que te enviara una propuesta breve con el primer ajuste que evaluaría?
 
 Saludos,
 AionSite`),

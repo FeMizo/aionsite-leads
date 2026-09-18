@@ -12,7 +12,7 @@ import {
   getSmtpUser,
 } from "@/lib/env";
 import { findDuplicate } from "@/lib/dedupe";
-import { buildEmail, type ProspectEmailModel } from "@/lib/email-template";
+import { buildEmail, renderPremiumOutreachEmail, type CrawlEmailReport, type ProspectEmailModel } from "@/lib/email-template";
 import {
   type ManualProspectInput,
   validateManualProspect,
@@ -22,7 +22,7 @@ import { getProspectScoreCard } from "@/lib/prospect-scoring";
 import { normalizeEmail } from "@/lib/normalizers";
 import { getTimeZoneParts } from "@/lib/mexico-city-time";
 import { getProspectTimeZone } from "@/lib/prospect-timezone";
-import { summarizeCrawl } from "@/lib/prospect-crawls";
+import { getCrawlEmailReport } from "@/lib/prospect-crawls";
 import {
   countEmailsSentToday,
   getNextAvailableScheduledSendAt,
@@ -121,32 +121,6 @@ function createTransporter() {
   });
 }
 
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-function renderPlainTextAsHtml(message: string) {
-  return `<!DOCTYPE html>
-<html lang="es">
-  <body style="margin:0;padding:24px;background:#f8fafc;font-family:Arial,sans-serif;color:#0f172a;">
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:680px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:18px;">
-      <tr>
-        <td style="padding:28px;">
-          <div style="white-space:pre-wrap;font-size:15px;line-height:1.75;color:#334155;">${escapeHtml(
-            message
-          )}</div>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>`;
-}
-
 function daysSince(value: Date | null) {
   if (!value) {
     return Number.POSITIVE_INFINITY;
@@ -230,14 +204,21 @@ async function sendCustomEmailWithTransporter(params: {
   to: string;
   subject: string;
   message: string;
+  report?: CrawlEmailReport | null;
   attachment?: { filename: string; content: Buffer };
 }) {
+  const email = renderPremiumOutreachEmail({
+    message: params.message,
+    report: params.report,
+    attachmentName: params.attachment?.filename,
+    ctaLabel: "Platicar con AionSite",
+  });
   return params.transporter.sendMail({
     from: `"${getFromName()}" <${getFromEmail() || getSmtpUser()}>`,
     to: params.to,
     subject: params.subject,
-    text: params.message,
-    html: renderPlainTextAsHtml(params.message),
+    text: email.text,
+    html: email.html,
     ...(params.attachment ? { attachments: [params.attachment] } : {}),
   });
 }
@@ -253,7 +234,7 @@ async function getProspectCrawlAttachment(prospectId: string, crawlSiteRunId?: s
   }
   return {
     attachment: { filename: history.pdfFilename, content: Buffer.from(history.pdfData) },
-    summary: summarizeCrawl(history.summary),
+    report: getCrawlEmailReport(history.summary),
   };
 }
 
@@ -573,7 +554,8 @@ export async function sendInitialProspectEmails(
         transporter,
         to: record.email,
         subject: record.subject.trim(),
-        message: crawlReport ? `${record.message.trim()}\n\nResumen del rastreo: ${crawlReport.summary}` : record.message.trim(),
+        message: record.message.trim(),
+        report: crawlReport?.report,
         attachment: crawlReport?.attachment,
       });
 
@@ -782,7 +764,8 @@ export async function sendDueFollowupEmails(
         transporter,
         to: record.email,
         subject: draft.subject,
-        message: crawlReport ? `${draft.message}\n\nResumen del rastreo: ${crawlReport.summary}` : draft.message,
+        message: draft.message,
+        report: crawlReport?.report,
         attachment: crawlReport?.attachment,
       });
 
@@ -973,7 +956,8 @@ export async function sendProspectEmailById(input: {
       transporter,
       to: prospect.email,
       subject,
-      message: crawlReport ? `${message}\n\nResumen del rastreo: ${crawlReport.summary}` : message,
+      message,
+      report: crawlReport?.report,
       attachment: crawlReport?.attachment,
     });
 

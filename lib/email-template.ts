@@ -2,10 +2,15 @@ import type { Prospect } from "@/generated/prisma";
 
 const BRAND_NAME = "AionSite";
 const BRAND_EMAIL = "contacto@aionsite.com.mx";
-const BRAND_LOGO_URL = "https://aionsite.com.mx/logo-aionsite.png";
 const BRAND_WHATSAPP_URL =
   "https://wa.me/5219381238531?text=Hola%20AionSite%2C%20quiero%20que%20me%20envien%20la%20propuesta.";
 const SERVICES_CANVA_URL = "https://canva.link/uk8xoudaah19yry";
+
+export type CrawlEmailReport = {
+  headline: string;
+  findings: Array<{ title: string; pageCount: number; impact: string }>;
+  scopeNote: string;
+};
 
 export type EmailVariant = "a" | "b" | "c" | "d";
 
@@ -48,15 +53,15 @@ function toSentenceCase(value: string) {
 function getNicheLabel(type: string): string {
   const map: Record<string, string> = {
     dentist: "consultorios dentales",
-    doctor: "clinicas medicas",
-    lawyer: "despachos juridicos",
-    beauty_salon: "salones de belleza y esteticas",
-    car_repair: "talleres mecanicos",
+    doctor: "clínicas médicas",
+    lawyer: "despachos jurídicos",
+    beauty_salon: "salones de belleza y estéticas",
+    car_repair: "talleres mecánicos",
     restaurant: "restaurantes y fondas",
     lodging: "hoteles y hospedajes",
     gym: "gimnasios y centros deportivos",
     real_estate_agency: "agencias inmobiliarias",
-    veterinary_care: "clinicas veterinarias",
+    veterinary_care: "clínicas veterinarias",
     school: "academias y escuelas",
     accounting: "despachos contables",
     water_purification: "purificadoras de agua",
@@ -118,60 +123,50 @@ function buildBaseHtml(params: {
   ctaText: string;
   ctaButtonLabel: string;
 }) {
-  const pHtml = params.paragraphs
-    .map(
-      (p) =>
-        `<p style="margin:0 0 16px;color:#cbd5e1;font-size:16px;line-height:1.65;">${escapeHtml(p)}</p>`
-    )
-    .join("\n            ");
+  const message = [params.greeting, ...params.paragraphs, params.ctaText].join("\n\n");
+  return renderPremiumOutreachEmail({ message, ctaLabel: params.ctaButtonLabel }).html;
+}
 
-  return `<!DOCTYPE html>
-<html lang="es">
-  <body style="margin:0;padding:0;background:rgb(15,23,42);font-family:Arial,sans-serif;color:#e2e8f0;">
-    <div style="padding:32px 16px;background:rgb(15,23,42);">
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:640px;margin:0 auto;background:rgb(15,23,42);border:1px solid rgba(148,163,184,0.18);border-radius:20px;overflow:hidden;">
-        <tr>
-          <td style="padding:26px 26px 10px;">
-            <img src="${BRAND_LOGO_URL}" alt="${BRAND_NAME}" width="200" style="display:block;width:200px;max-width:100%;height:auto;" />
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:8px 26px 0;">
-            <p style="margin:0 0 16px;color:#e2e8f0;font-size:16px;line-height:1.65;">${escapeHtml(params.greeting)}</p>
-            ${pHtml}
-            <p style="margin:0 0 16px;color:#cbd5e1;font-size:16px;line-height:1.65;">Puedes ver nuestros servicios de forma visual aquí: <a href="${SERVICES_CANVA_URL}" style="color:#93c5fd;text-decoration:underline;">${SERVICES_CANVA_URL}</a></p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:2px 26px 10px;">
-            <div style="background:rgba(37,99,235,0.16);border:1px solid rgba(96,165,250,0.24);border-radius:16px;padding:16px 18px;">
-              <p style="margin:0;color:#f8fafc;font-size:17px;font-weight:700;">${escapeHtml(params.ctaText)}</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:10px 26px 0;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-              <tr>
-                <td style="border-radius:999px;background:#2563eb;">
-                  <a href="${BRAND_WHATSAPP_URL}" style="display:inline-block;padding:13px 20px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">${escapeHtml(params.ctaButtonLabel)}</a>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:26px;color:#94a3b8;font-size:13px;line-height:1.7;">
-            <p style="margin:0 0 8px;color:#e2e8f0;">${BRAND_NAME}</p>
-            <p style="margin:0;">
-              <a href="mailto:${BRAND_EMAIL}" style="color:#93c5fd;text-decoration:none;">${BRAND_EMAIL}</a>
-            </p>
-          </td>
-        </tr>
-      </table>
-    </div>
-  </body>
-</html>`;
+function escapeAndLinkify(value: string) {
+  return escapeHtml(value).replace(/(https?:\/\/[^\s<]+)/g, (url) =>
+    `<a href="${url}" style="color:#087f8c;text-decoration:underline;">${url}</a>`
+  );
+}
+
+function renderMessageBlocks(message: string) {
+  return message
+    .trim()
+    .split(/\n\s*\n/)
+    .filter(Boolean)
+    .map((block) => `<p style="margin:0 0 17px;color:#334155;font-size:15px;line-height:1.75;">${escapeAndLinkify(block).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+}
+
+export function renderPremiumOutreachEmail(params: {
+  message: string;
+  report?: CrawlEmailReport | null;
+  attachmentName?: string;
+  ctaLabel?: string;
+}) {
+  const reportHtml = params.report
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:8px 0 22px;background:#f3f8fa;border-left:4px solid #12a6a0;border-radius:4px;"><tr><td style="padding:18px 20px;"><p style="margin:0 0 8px;color:#102a43;font-size:16px;font-weight:700;">Resumen de la revisión</p><p style="margin:0 0 12px;color:#334155;font-size:14px;line-height:1.6;">${escapeHtml(params.report.headline)}</p>${params.report.findings.map((finding) => `<p style="margin:0 0 10px;color:#334155;font-size:14px;line-height:1.6;"><strong style="color:#102a43;">${escapeHtml(finding.title)}</strong> · observado en ${finding.pageCount} ${finding.pageCount === 1 ? "página" : "páginas"}. ${escapeHtml(finding.impact)}</p>`).join("")}<p style="margin:10px 0 0;color:#64748b;font-size:12px;line-height:1.55;">${escapeHtml(params.report.scopeNote)}</p></td></tr></table>`
+    : "";
+  const attachmentHtml = params.attachmentName
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;background:#f8fafc;border:1px solid #dbe4ec;border-radius:8px;"><tr><td style="padding:13px 16px;color:#334155;font-size:13px;line-height:1.5;"><strong style="color:#102a43;">Informe adjunto</strong><br>${escapeHtml(params.attachmentName)} · PDF</td></tr></table>`
+    : "";
+  const ctaHtml = params.ctaLabel
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;"><tr><td bgcolor="#102a43" style="border-radius:6px;"><a href="${BRAND_WHATSAPP_URL}" style="display:inline-block;padding:13px 20px;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;">${escapeHtml(params.ctaLabel)}</a></td></tr></table>`
+    : "";
+  const reportText = params.report
+    ? `\n\nResumen de la revisión\n${params.report.headline}${params.report.findings.map((finding) => `\n- ${finding.title}: observado en ${finding.pageCount} ${finding.pageCount === 1 ? "página" : "páginas"}. ${finding.impact}`).join("")}\n\n${params.report.scopeNote}`
+    : "";
+  const attachmentText = params.attachmentName ? `\n\nInforme PDF adjunto: ${params.attachmentName}` : "";
+  const preheader = params.report?.headline || "Una idea concreta para mejorar la presencia digital de tu negocio.";
+
+  return {
+    text: `${params.message.trim()}${reportText}${attachmentText}`,
+    html: `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f2f5f7;font-family:Arial,Helvetica,sans-serif;color:#102a43;"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preheader)}</div><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#f2f5f7"><tr><td align="center" style="padding:28px 12px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:620px;background:#ffffff;border:1px solid #e1e8ee;border-radius:10px;overflow:hidden;"><tr><td height="5" bgcolor="#12a6a0" style="height:5px;font-size:0;line-height:0;">&nbsp;</td></tr><tr><td style="padding:25px 30px 12px;"><span style="color:#102a43;font-size:22px;font-weight:700;letter-spacing:-0.4px;">${BRAND_NAME}</span><span style="padding-left:9px;color:#12a6a0;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Presencia digital</span></td></tr><tr><td style="padding:15px 30px 8px;">${renderMessageBlocks(params.message)}${reportHtml}${attachmentHtml}${ctaHtml}</td></tr><tr><td style="padding:18px 30px 24px;border-top:1px solid #e8edf1;color:#64748b;font-size:12px;line-height:1.6;">${BRAND_NAME} · <a href="mailto:${BRAND_EMAIL}" style="color:#087f8c;text-decoration:none;">${BRAND_EMAIL}</a><br>Si prefieres, responde directamente a este correo.</td></tr></table></td></tr></table></body></html>`,
+  };
 }
 
 function buildMessage(params: {
@@ -206,11 +201,11 @@ function buildVariantA(prospect: ProspectEmailModel) {
     ? `${prospect.contactName}, idea breve para captar más clientes`
     : `${prospect.name}: idea breve para captar más clientes`;
   const paragraphs = [
-    "Soy Felipe, desarrollador web en AionSite. Trabajo con negocios locales para mejorar su presencia digital y convertir más visitas en contactos.",
-    `Vi una oportunidad para que ${prospect.name} capte más contactos de personas que buscan ${nicheLabel} ${cityPhrase}.`,
-    `Puntualmente: ${getSpecificOpportunity(prospect)}.`,
+    "Soy Felipe, desarrollador web en AionSite. Ayudo a negocios locales a presentar con claridad sus servicios y a facilitar el contacto desde su sitio.",
+    `Al revisar la presencia digital de ${prospect.name}, identifiqué una oportunidad relacionada con ${getSpecificOpportunity(prospect)}.`,
+    `Resolver este punto podría ayudar a que quienes buscan ${nicheLabel} ${cityPhrase} entiendan mejor la oferta y encuentren con más facilidad el siguiente paso. El resultado depende de cómo respondan las personas que visitan el sitio.`,
     ...(socialProof ? [socialProof] : []),
-    "Si te sirve, te mando una propuesta con 2 o 3 ajustes concretos.",
+    "Si te parece útil, puedo compartirte una propuesta breve con dos o tres ajustes, empezando por el más relevante.",
   ];
 
   return buildMessage({
@@ -229,10 +224,10 @@ function buildVariantB(prospect: ProspectEmailModel) {
   const cityPhrase = getCityPhrase(prospect.city);
   const subject = `${prospect.name}: mejora rápida para captar más clientes`;
   const paragraphs = [
-    "Soy Felipe, desarrollador web en AionSite. Te escribo con respeto porque estuve viendo su presencia digital.",
-    `Estuve revisando ${prospect.name} y vi una mejora sencilla para captar más clientes ${cityPhrase}.`,
-    "No es algo complicado ni requiere empezar con publicidad.",
-    "Si quieres, te mando una propuesta con lo que ajustaría.",
+    "Soy Felipe, desarrollador web en AionSite. Estuve revisando la presencia digital de su negocio y encontré un aspecto que podría explicarse mejor a sus visitantes.",
+    `La oportunidad está relacionada con cómo ${prospect.name} presenta sus servicios a las personas que buscan opciones ${cityPhrase}.`,
+    "Una mejora en claridad o navegación puede facilitar que encuentren la información y sepan cómo contactar. No implica una garantía de más visitas o ventas.",
+    "Si te interesa, puedo enviarte una propuesta corta con los primeros cambios que evaluaría.",
   ];
 
   return buildMessage({
@@ -252,10 +247,10 @@ function buildVariantC(prospect: ProspectEmailModel) {
   const cityPhrase = getCityPhrase(prospect.city);
   const subject = `${prospect.name}: oportunidad en búsquedas de Google`;
   const paragraphs = [
-    "Soy Felipe, desarrollador web en AionSite. Estaba revisando negocios locales y me llamó la atención su caso.",
-    `Buscando ${nicheLabel} ${cityPhrase}, vi a ${prospect.name} y encontré una oportunidad puntual.`,
-    `${getSpecificOpportunity(prospect)}.`,
-    "¿Te puedo mandar una propuesta con la mejora que haría primero?",
+    "Soy Felipe, desarrollador web en AionSite. Al revisar negocios locales, encontré una oportunidad concreta en la presencia digital de su negocio.",
+    `Para personas que buscan ${nicheLabel} ${cityPhrase}, puede ser útil que la información principal y las opciones de contacto sean fáciles de encontrar.`,
+    `En este caso, el punto que revisaría primero es: ${getSpecificOpportunity(prospect)}.`,
+    "Si quieres, te comparto una propuesta breve para que valores si tiene sentido hacer ese ajuste.",
   ];
 
   return buildMessage({
@@ -276,11 +271,11 @@ function buildVariantD(prospect: ProspectEmailModel) {
   const socialProof = getSocialProofLine(prospect.userRatingCount, prospect.rating);
   const subject = `${prospect.name}: captar más clientes desde Google`;
   const paragraphs = [
-    "Soy Felipe, desarrollador web en AionSite. Vi su negocio y quise escribirles con una idea concreta.",
-    `Estuve revisando la presencia digital de ${prospect.name} ${cityPhrase}.`,
-    `Vi potencial para mejorar ${pitchAngle}.`,
+    "Soy Felipe, desarrollador web en AionSite. Quise escribirles con una observación concreta sobre su presencia digital.",
+    `Al revisar ${prospect.name} ${cityPhrase}, vi una oportunidad para trabajar ${pitchAngle}.`,
+    "Una presentación más clara puede ayudar a que las personas comprendan la oferta y encuentren cómo solicitar información; el efecto real depende de su audiencia.",
     ...(socialProof ? [socialProof] : []),
-    "Si te interesa, te mando una propuesta con los ajustes que haria primero.",
+    "Si te interesa, puedo compartirte una propuesta con los ajustes que revisaría primero.",
   ];
 
   return buildMessage({

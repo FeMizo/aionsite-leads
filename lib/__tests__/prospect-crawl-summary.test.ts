@@ -5,9 +5,10 @@ describe("prospect crawl email summary", () => {
   it("uses findings reported by Crawl-Site and explains potential impact", () => {
     const summary = summarizeCrawl({ total: 8, withIssues: 3, stats: { "404": 2, noindex: 1 } });
     expect(summary).toContain("8 páginas");
-    expect(summary).toContain("enlaces a páginas inexistentes");
-    expect(summary).toContain("páginas excluidas de buscadores");
-    expect(summary).toContain("impactos potenciales");
+    expect(summary).toContain("Enlaces a páginas inexistentes");
+    expect(summary).toContain("Páginas excluidas de buscadores");
+    expect(summary).toContain("efectos descritos son potenciales");
+    expect(summary).toContain("observado en 2 páginas");
   });
 
   it("does not invent findings when no issues were reported", () => {
