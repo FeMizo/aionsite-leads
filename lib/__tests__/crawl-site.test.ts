@@ -20,6 +20,8 @@ describe("Crawl-Site summary PDF integration", () => {
     const result = await crawlWebsiteInCrawlSite("https://example.com", "local-idempotency-key");
     expect(result).toEqual({ runId: "run-1", projectId: "project-1", ownerUserId: "user-owner", status: "completed", summary: { total: 4, withIssues: 2, stats: { "404": 1 } } });
     expect(String(fetch.mock.calls[1][0])).toContain("/api/crawl?");
+    expect(new URL(String(fetch.mock.calls[1][0])).searchParams.get("source")).toBe("sitemap");
+    expect(new URL(String(fetch.mock.calls[1][0])).searchParams.get("max")).toBe("5");
     expect(fetch.mock.calls[1][1].headers["Idempotency-Key"]).toBe("local-idempotency-key");
     expect(JSON.stringify(result)).not.toContain("fixture-secret");
   });
