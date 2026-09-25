@@ -7,6 +7,8 @@ export type SearchCityTarget = {
   state: string;
   queryLocation: string;
   timeZone: string;
+  regionCode?: string;
+  languageCode?: string;
   priority?: number;
   aliases?: string[];
   enabled?: boolean;
@@ -56,6 +58,7 @@ export const DEFAULT_SEARCH_CITIES: SearchCityTarget[] = [
     timeZone: "America/Mexico_City",
     priority: 78,
     aliases: ["Tuxtla", "Tuxtla Gutiérrez"],
+    enabled: false,
   },
   {
     slug: "veracruz",
@@ -74,6 +77,7 @@ export const DEFAULT_SEARCH_CITIES: SearchCityTarget[] = [
     timeZone: "America/Mexico_City",
     priority: 80,
     aliases: ["Culiacan Rosales", "Culiacán"],
+    enabled: false,
   },
   {
     slug: "tepic",
@@ -82,6 +86,7 @@ export const DEFAULT_SEARCH_CITIES: SearchCityTarget[] = [
     queryLocation: "Tepic, Nayarit, Mexico",
     timeZone: "America/Mexico_City",
     priority: 74,
+    enabled: false,
     aliases: ["Tepic Nayarit"],
   },
   {
@@ -91,6 +96,7 @@ export const DEFAULT_SEARCH_CITIES: SearchCityTarget[] = [
     queryLocation: "Campeche, Campeche, Mexico",
     timeZone: "America/Mexico_City",
     priority: 76,
+    enabled: false,
     aliases: ["San Francisco de Campeche"],
   },
   {
@@ -100,6 +106,7 @@ export const DEFAULT_SEARCH_CITIES: SearchCityTarget[] = [
     queryLocation: "Ciudad del Carmen, Campeche, Mexico",
     timeZone: "America/Mexico_City",
     priority: 79,
+    enabled: false,
     aliases: ["Cd. del Carmen", "Carmen"],
   },
   {
@@ -118,6 +125,7 @@ export const DEFAULT_SEARCH_CITIES: SearchCityTarget[] = [
     queryLocation: "Leon, Guanajuato, Mexico",
     timeZone: "America/Mexico_City",
     priority: 81,
+    enabled: false,
     aliases: ["León", "Leon de los Aldama"],
   },
   {
@@ -181,6 +189,7 @@ export const DEFAULT_SEARCH_CITIES: SearchCityTarget[] = [
     queryLocation: "Aguascalientes, Aguascalientes, Mexico",
     timeZone: "America/Mexico_City",
     priority: 84,
+    enabled: false,
     aliases: ["Ags"],
   },
   {
@@ -190,6 +199,7 @@ export const DEFAULT_SEARCH_CITIES: SearchCityTarget[] = [
     queryLocation: "San Luis Potosi, San Luis Potosi, Mexico",
     timeZone: "America/Mexico_City",
     priority: 83,
+    enabled: false,
     aliases: ["SLP"],
   },
   {
@@ -199,6 +209,7 @@ export const DEFAULT_SEARCH_CITIES: SearchCityTarget[] = [
     queryLocation: "Morelia, Michoacan, Mexico",
     timeZone: "America/Mexico_City",
     priority: 82,
+    enabled: false,
     aliases: ["Morelia Michoacan"],
   },
   {
@@ -208,7 +219,118 @@ export const DEFAULT_SEARCH_CITIES: SearchCityTarget[] = [
     queryLocation: "Chihuahua, Chihuahua, Mexico",
     timeZone: "America/Chihuahua",
     priority: 80,
+    enabled: false,
     aliases: ["Chihuahua CHH"],
+  },
+  {
+    slug: "miami",
+    city: "Miami",
+    state: "Florida",
+    queryLocation: "Miami, Florida, United States",
+    timeZone: "America/New_York",
+    regionCode: "US",
+    languageCode: "en",
+    priority: 90,
+    aliases: ["Miami FL"],
+  },
+  {
+    slug: "orlando",
+    city: "Orlando",
+    state: "Florida",
+    queryLocation: "Orlando, Florida, United States",
+    timeZone: "America/New_York",
+    regionCode: "US",
+    languageCode: "en",
+    priority: 84,
+    aliases: ["Orlando FL"],
+  },
+  {
+    slug: "houston",
+    city: "Houston",
+    state: "Texas",
+    queryLocation: "Houston, Texas, United States",
+    timeZone: "America/Chicago",
+    regionCode: "US",
+    languageCode: "en",
+    priority: 82,
+    aliases: ["Houston TX"],
+  },
+  {
+    slug: "los-angeles",
+    city: "Los Angeles",
+    state: "California",
+    queryLocation: "Los Angeles, California, United States",
+    timeZone: "America/Los_Angeles",
+    regionCode: "US",
+    languageCode: "en",
+    priority: 80,
+    aliases: ["Los Angeles CA", "LA"],
+  },
+  {
+    slug: "san-diego",
+    city: "San Diego",
+    state: "California",
+    queryLocation: "San Diego, California, United States",
+    timeZone: "America/Los_Angeles",
+    regionCode: "US",
+    languageCode: "en",
+    priority: 78,
+    aliases: ["San Diego CA"],
+  },
+  {
+    slug: "madrid",
+    city: "Madrid",
+    state: "Madrid",
+    queryLocation: "Madrid, Spain",
+    timeZone: "Europe/Madrid",
+    regionCode: "ES",
+    languageCode: "es",
+    priority: 94,
+    aliases: ["Madrid España"],
+  },
+  {
+    slug: "barcelona",
+    city: "Barcelona",
+    state: "Catalonia",
+    queryLocation: "Barcelona, Spain",
+    timeZone: "Europe/Madrid",
+    regionCode: "ES",
+    languageCode: "es",
+    priority: 92,
+    aliases: ["Barcelona España"],
+  },
+  {
+    slug: "valencia",
+    city: "Valencia",
+    state: "Valencian Community",
+    queryLocation: "Valencia, Spain",
+    timeZone: "Europe/Madrid",
+    regionCode: "ES",
+    languageCode: "es",
+    priority: 83,
+    aliases: ["Valencia España"],
+  },
+  {
+    slug: "lisbon",
+    city: "Lisbon",
+    state: "Lisbon",
+    queryLocation: "Lisbon, Portugal",
+    timeZone: "Europe/Lisbon",
+    regionCode: "PT",
+    languageCode: "pt-PT",
+    priority: 81,
+    aliases: ["Lisboa Portugal"],
+  },
+  {
+    slug: "milan",
+    city: "Milan",
+    state: "Lombardy",
+    queryLocation: "Milan, Italy",
+    timeZone: "Europe/Rome",
+    regionCode: "IT",
+    languageCode: "it",
+    priority: 76,
+    aliases: ["Milano Italy"],
   },
 ];
 
@@ -406,6 +528,9 @@ function normalizeSearchCityTarget(entry: Partial<SearchCityTarget>): SearchCity
     state,
     queryLocation,
     timeZone,
+    regionCode: normalizeText(String(entry.regionCode || "")) || undefined,
+    languageCode: normalizeText(String(entry.languageCode || "")) || undefined,
+    priority: Number.isFinite(Number(entry.priority)) ? Number(entry.priority) : undefined,
     aliases: aliases.length ? aliases : undefined,
     enabled: entry.enabled !== false,
   };

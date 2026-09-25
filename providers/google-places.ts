@@ -159,8 +159,8 @@ async function searchPlaces(search: SearchSpec) {
   const endpoint = getGooglePlacesEndpoint(GOOGLE_PLACES_API_URL);
   const body = {
     textQuery: search.textQuery,
-    languageCode: "es",
-    regionCode: "MX",
+    languageCode: search.languageCode || "es",
+    regionCode: search.regionCode || "MX",
     rankPreference: "RELEVANCE",
     pageSize: search.pageSize || 15,
     ...(search.includedType ? { includedType: search.includedType } : {}),

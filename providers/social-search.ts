@@ -113,8 +113,8 @@ async function searchBrave(search: SearchSpec, domain: string, apiKey: string) {
   const url = new URL(BRAVE_SEARCH_ENDPOINT);
   url.searchParams.set("q", query);
   url.searchParams.set("count", "10");
-  url.searchParams.set("country", "mx");
-  url.searchParams.set("search_lang", "es");
+  url.searchParams.set("country", (search.regionCode || "MX").toLowerCase());
+  url.searchParams.set("search_lang", (search.languageCode || "es").split("-")[0]);
 
   const response = await fetch(url, {
     headers: {

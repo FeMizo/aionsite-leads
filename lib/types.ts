@@ -85,6 +85,8 @@ export type SearchSpec = {
   textQuery: string;
   queryVariant?: string;
   potentialScore?: number;
+  regionCode?: string;
+  languageCode?: string;
   typeLabel?: string;
   includedType?: string;
   pageSize?: number;

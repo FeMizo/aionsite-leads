@@ -36,6 +36,8 @@ function buildSearchSpecs(
     label: `${niche.label} en ${city.city}${queries.length > 1 ? ` (${index + 1})` : ""}`,
     textQuery: `${query} en ${city.queryLocation}`,
     queryVariant: query,
+    regionCode: city.regionCode || "MX",
+    languageCode: city.languageCode || "es",
     potentialScore: (city.priority ?? 50) + (niche.priority ?? 50),
     typeLabel: niche.typeLabel,
     includedType: niche.includedType,
