@@ -40,3 +40,8 @@ next-env.d.ts
 .vercel
 .env*.local
 .env*
+outputs/getxo-tiendas-deporte-2026-09-25/build-getxo.mjs
+outputs/getxo-tiendas-deporte-2026-09-25/fuentes-notas-preview.png
+outputs/getxo-tiendas-deporte-2026-09-25/prospectos-getxo-preview.png
+outputs/getxo-tiendas-deporte-2026-09-25/tiendas-deporte-getxo.xlsx.inspect.ndjson
+outputs/getxo-tiendas-deporte-2026-09-25/node_modules/
