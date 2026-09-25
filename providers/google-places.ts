@@ -3,6 +3,7 @@ import {
   getGooglePlacesApiKey,
   getGooglePlacesEndpoint,
 } from "@/lib/env";
+import { analyzeReviews, type ReviewInput } from "@/lib/review-analysis";
 
 const GOOGLE_PLACES_API_URL =
   "https://places.googleapis.com/v1/places:searchText";
@@ -21,6 +22,7 @@ const DEFAULT_FIELD_MASK = [
   "places.photos",
   "places.types",
   "places.regularOpeningHours",
+  "places.reviews",
 ].join(",");
 
 type GooglePlacePhoto = {
@@ -54,6 +56,14 @@ type GooglePlace = {
   openingHours?: GooglePlaceOpeningHours;
   regularOpeningHours?: GooglePlaceOpeningHours;
   types?: string[];
+  reviews?: Array<{
+    rating?: number;
+    text?: { text?: string };
+    originalText?: { text?: string };
+    publishTime?: string;
+    relativePublishTimeDescription?: string;
+    googleMapsUri?: string;
+  }>;
 };
 
 function extractPhotoSignals(photos: GooglePlacePhoto[] = []) {
@@ -134,6 +144,14 @@ function mapGooglePlaceToProspect(
     hasCompleteHours: hourSignals !== null && hourSignals.weekdayText.length > 0,
     openingHours: hourSignals,
     businessTypes: place.types || [],
+    reviewAnalysis: analyzeReviews((place.reviews || []).map((review): ReviewInput => ({
+      rating: review.rating,
+      text: review.text?.text,
+      originalText: review.originalText?.text,
+      publishTime: review.publishTime,
+      relativePublishTimeDescription: review.relativePublishTimeDescription,
+      googleMapsUri: review.googleMapsUri,
+    }))),
   };
 }
 

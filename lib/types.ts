@@ -1,4 +1,5 @@
 import type { ProspectPriority, ProspectScoreBreakdown } from "@/lib/prospect-scoring";
+import type { ReviewAnalysis } from "@/lib/review-analysis";
 
 export type ProspectAction =
   | "approveGenerated"
@@ -62,6 +63,7 @@ export type ProspectCandidate = {
   hasCompleteHours?: boolean;
   openingHours?: { weekdayText: string[]; isOpen: boolean | null } | null;
   businessTypes?: string[];
+  reviewAnalysis?: ReviewAnalysis | null;
   score?: number;
   priority?: ProspectPriority;
   scoreBreakdown?: ProspectScoreBreakdown;

@@ -41,6 +41,7 @@ export default async function AnalyticsPage() {
         <span className="page-header__eyebrow">Medición</span>
         <h1>Analítica de respuestas</h1>
         <p>Compara qué segmentos, prompts y ofertas generan conversaciones.</p>
+        <p><a className="button button--secondary" href="/api/exports/prospects">Exportar prospectos a Excel</a></p>
       </header>
       <section className="dashboard-metrics">
         {Object.entries({ Prospectos: analytics.totals.prospects, Contactados: analytics.totals.contacted, Respuestas: analytics.totals.replied, Interesados: analytics.totals.interested, Clientes: analytics.totals.closed, Ingresos: `$${analytics.totals.revenue.toLocaleString("es-MX")}` }).map(([label, value]) => <div className="metric-card" key={label}><span>{label}</span><strong>{value}</strong></div>)}

@@ -31,6 +31,8 @@ import { findEmailFromWebsite } from "@/providers/email-finder";
 import { crawlWebsiteInCrawlSite } from "@/providers/crawl-site";
 import { searchBusinesses } from "@/providers/google-places";
 import { searchSocialBusinesses } from "@/providers/social-search";
+import { buildCommercialSignals } from "@/lib/review-analysis";
+import { CRM_PROMPT_VERSION } from "@/lib/crm-prompts";
 
 function nowIso() {
   return new Date().toISOString();
@@ -60,6 +62,15 @@ function normalizeProspect(rawProspect: ProspectCandidate): ProspectCandidate {
     hasWhatsappCta: rawProspect.hasWhatsappCta,
     hasContactCta: rawProspect.hasContactCta,
     isMobileFriendly: rawProspect.isMobileFriendly,
+  });
+  const commercial = buildCommercialSignals({
+    type,
+    rating: rawProspect.rating || "",
+    userRatingCount: rawProspect.userRatingCount,
+    website: rawProspect.website,
+    reviewAnalysis: rawProspect.reviewAnalysis,
+    opportunity: rawProspect.opportunity || derived.opportunity,
+    recommendedSite: rawProspect.recommendedSite || derived.recommendedSite,
   });
 
   return {
@@ -96,6 +107,13 @@ function normalizeProspect(rawProspect: ProspectCandidate): ProspectCandidate {
     hasCompleteHours: rawProspect.hasCompleteHours ?? false,
     openingHours: rawProspect.openingHours ?? null,
     businessTypes: rawProspect.businessTypes ?? [],
+    reviewAnalysis: rawProspect.reviewAnalysis ?? null,
+    segmentIdeal: rawProspect.segmentIdeal || commercial.segmentIdeal,
+    painPoint: rawProspect.painPoint || commercial.painPoint,
+    evidence: rawProspect.evidence || commercial.evidence,
+    recommendedOffer: rawProspect.recommendedOffer || commercial.recommendedOffer,
+    nextAction: rawProspect.nextAction || commercial.nextAction,
+    promptVersion: rawProspect.promptVersion || CRM_PROMPT_VERSION,
   };
 }
 
@@ -235,6 +253,12 @@ function buildCreateProspectData(prospect: ProspectCandidate, runId: string) {
     opportunity: prospect.opportunity,
     recommendedSite: prospect.recommendedSite,
     pitchAngle: prospect.pitchAngle,
+    segmentIdeal: prospect.segmentIdeal || "",
+    painPoint: prospect.painPoint || "",
+    evidence: prospect.evidence as Prisma.InputJsonValue | undefined,
+    recommendedOffer: prospect.recommendedOffer || "",
+    nextAction: prospect.nextAction || "",
+    promptVersion: prospect.promptVersion || "",
     fitScore: scoreBreakdown.fit,
     urgencyScore: scoreBreakdown.urgency,
     contactabilityScore: scoreBreakdown.contactability,
