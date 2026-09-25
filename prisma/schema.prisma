@@ -44,6 +44,23 @@ model Prospect {
   opportunity      String         @default("")
   recommendedSite  String         @default("")
   pitchAngle       String         @default("")
+  segmentIdeal     String         @default("")
+  painPoint        String         @default("")
+  evidence         Json?
+  recommendedOffer String         @default("")
+  nextAction       String         @default("")
+  owner            String         @default("")
+  nextFollowupAt   DateTime?
+  fitScore         Int            @default(0)
+  urgencyScore     Int            @default(0)
+  contactabilityScore Int         @default(0)
+  activityScore    Int            @default(0)
+  promptVersion    String         @default("")
+  responseCategory String         @default("")
+  meetingAt        DateTime?
+  proposalAt       DateTime?
+  closedAt         DateTime?
+  revenue          Float?
   subject          String         @default("")
   message          String         @default("")
   status           ProspectStatus @default(generated)

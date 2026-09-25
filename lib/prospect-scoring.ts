@@ -4,6 +4,13 @@ import { inferWebsiteSignal } from "@/lib/website-signals";
 
 export type ProspectPriority = "alto" | "medio" | "bajo";
 export type ProspectAutomationStatus = "approved" | "analyzed";
+export type ProspectScoreBreakdown = {
+  fit: number;
+  urgency: number;
+  contactability: number;
+  activity: number;
+  total: number;
+};
 export const MINIMUM_SAVE_SCORE = 35;
 export const MINIMUM_QUALIFIED_PROSPECT_SCORE = 50;
 export const AUTO_READY_PROSPECT_SCORE = 40;
@@ -162,100 +169,115 @@ export function isBusinessActive(
 // --- Score principal ---
 
 export function scoreProspect(prospect: ProspectScoreInput): number {
+  return getProspectScoreBreakdown(prospect).total;
+}
+
+export function getProspectScoreBreakdown(prospect: ProspectScoreInput): ProspectScoreBreakdown {
   const websiteSignal = inferWebsiteSignal(prospect);
   const reviewCount = parseReviewCount(prospect.userRatingCount);
   const rating = parseRating(prospect.rating || "");
   const normalizedEmail = normalizeEmail(prospect.email || "");
   const normalizedPhone = normalizePhone(prospect.phone || "");
-  let score = 0;
+  let fit = 0;
+  let urgency = 0;
+  let contactability = 0;
+  let activity = 0;
 
   // 1. ESTADO DEL SITIO WEB
   if (websiteSignal === "missing") {
-    score += 40;
+    fit += 40;
   } else if (websiteSignal === "social-only") {
-    score += 30;
+    fit += 30;
   } else if (websiteSignal === "basic") {
-    score += 24;
+    fit += 24;
   } else if (prospect.websiteFetchFailed) {
-    score += 20;
+    fit += 20;
   } else if (typeof prospect.websiteLoadTimeMs === "number") {
     if (prospect.websiteLoadTimeMs >= 6000) {
-      score += 16;
+      urgency += 16;
     } else if (prospect.websiteLoadTimeMs >= 4500) {
-      score += 10;
+      urgency += 10;
     } else if (hasStoredAuditSnapshot(prospect)) {
-      score += 10;
+      fit += 10;
     }
   } else if (websiteSignal === "existing" && hasStoredAuditSnapshot(prospect)) {
-    score += 10;
+    fit += 10;
   }
 
   // 2. CONVERSION SIGNALS
   if (lacksContactCta(prospect)) {
-    score += 12;
+    fit += 12;
   }
   if (prospect.isMobileFriendly === false) {
-    score += 10;
+    urgency += 10;
   }
 
   // 2b. DIRECT CONTACTABILITY
   if (normalizedPhone) {
-    score += 12;
+    contactability += 12;
   }
   if (normalizedEmail) {
-    score += 8;
+    contactability += 8;
   }
   if (prospect.hasWhatsappCta) {
-    score += 8;
+    contactability += 8;
   }
   if (prospect.hasContactCta) {
-    score += 6;
+    contactability += 6;
   }
   if (normalizedPhone && normalizedEmail) {
-    score += 4;
+    contactability += 4;
   }
   if (!hasDirectContactPath(prospect)) {
-    score -= 8;
+    contactability -= 8;
   }
 
   // 3. TRACTION
   if (reviewCount >= 50) {
-    score += 15;
+    activity += 15;
   } else if (reviewCount >= 15) {
-    score += 8;
+    activity += 8;
   }
 
   // 4. RATING URGENCY
   if (hasRatingOpportunity(prospect)) {
-    score += 20;
+    urgency += 20;
   }
 
   // 5. BUSINESS ACTIVITY
   if (prospect.businessStatus === "OPERATIONAL") {
-    score += 5;
+    activity += 5;
   }
   if (prospect.businessStatus === "CLOSED_TEMPORARILY") {
-    score -= 20;
+    activity -= 20;
   }
   if (prospect.hasRecentPhotos) {
-    score += 15;
+    activity += 15;
   }
   if (prospect.openingHours?.weekdayText && prospect.openingHours.weekdayText.length > 0) {
-    score += 5;
+    activity += 5;
   }
   if ((prospect.photoCount ?? 0) === 0 && reviewCount < 10) {
-    score -= 10;
+    activity -= 10;
   }
 
+  const total = fit + urgency + contactability + activity;
+
   if (
-    score === 0 &&
+    total === 0 &&
     !hasStoredAuditSnapshot(prospect) &&
     (websiteSignal === "existing" || rating !== null)
   ) {
-    return INCOMPLETE_AUDIT_BASELINE_SCORE;
+    return {
+      fit: INCOMPLETE_AUDIT_BASELINE_SCORE,
+      urgency: 0,
+      contactability: 0,
+      activity: 0,
+      total: INCOMPLETE_AUDIT_BASELINE_SCORE,
+    };
   }
 
-  return score;
+  return { fit, urgency, contactability, activity, total };
 }
 
 export type ProspectScoreCard = {

@@ -10,7 +10,10 @@ const groups = [
   },
   {
     label: "Operación",
-    items: [{ href: "/dashboard/runs", label: "Búsquedas" }],
+    items: [
+      { href: "/dashboard/runs", label: "Búsquedas" },
+      { href: "/dashboard/analytics", label: "Analítica" },
+    ],
   },
 ];
 

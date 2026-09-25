@@ -1,4 +1,4 @@
-import type { ProspectPriority } from "@/lib/prospect-scoring";
+import type { ProspectPriority, ProspectScoreBreakdown } from "@/lib/prospect-scoring";
 
 export type ProspectAction =
   | "approveGenerated"
@@ -29,6 +29,19 @@ export type ProspectCandidate = {
   opportunity: string;
   recommendedSite: string;
   pitchAngle: string;
+  segmentIdeal?: string;
+  painPoint?: string;
+  evidence?: Record<string, unknown> | null;
+  recommendedOffer?: string;
+  nextAction?: string;
+  owner?: string;
+  nextFollowupAt?: string | null;
+  promptVersion?: string;
+  responseCategory?: string;
+  meetingAt?: string | null;
+  proposalAt?: string | null;
+  closedAt?: string | null;
+  revenue?: number | null;
   subject?: string;
   message?: string;
   contacted?: boolean;
@@ -51,6 +64,7 @@ export type ProspectCandidate = {
   businessTypes?: string[];
   score?: number;
   priority?: ProspectPriority;
+  scoreBreakdown?: ProspectScoreBreakdown;
   placeId?: string;
   formattedAddress?: string;
   primaryType?: string;
@@ -90,6 +104,19 @@ export type DashboardProspect = {
   opportunity: string;
   recommendedSite: string;
   pitchAngle: string;
+  segmentIdeal: string;
+  painPoint: string;
+  evidence: Record<string, unknown> | null;
+  recommendedOffer: string;
+  nextAction: string;
+  owner: string;
+  nextFollowupAt: string | null;
+  promptVersion: string;
+  responseCategory: string;
+  meetingAt: string | null;
+  proposalAt: string | null;
+  closedAt: string | null;
+  revenue: number | null;
   subject: string;
   message: string;
   contacted: boolean;
@@ -111,6 +138,7 @@ export type DashboardProspect = {
   updatedAt: string;
   score: number;
   priority: ProspectPriority;
+  scoreBreakdown: ProspectScoreBreakdown;
 };
 
 export type DashboardRun = {

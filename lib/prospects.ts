@@ -1,4 +1,4 @@
-import type { Prisma, ProspectStatus } from "@/generated/prisma";
+import { Prisma, type ProspectStatus } from "@/generated/prisma";
 import { getPrismaClient } from "@/lib/db";
 import { findDuplicate } from "@/lib/dedupe";
 import { createManualProspect } from "@/lib/manual-prospects";
@@ -11,6 +11,7 @@ import {
 } from "@/lib/outreach";
 import {
   getProspectScoreCard,
+  getProspectScoreBreakdown,
   AUTO_READY_PROSPECT_SCORE,
   shouldAutoAdvanceProspect,
 } from "@/lib/prospect-scoring";
@@ -21,6 +22,7 @@ import {
   normalizePhone,
   normalizeWhitespace,
 } from "@/lib/normalizers";
+import { classifyReply, CRM_PROMPT_VERSION } from "@/lib/crm-prompts";
 
 const PROSPECT_STATUSES = [
   "generated",
@@ -57,6 +59,23 @@ const prospectListSelect = {
   opportunity: true,
   recommendedSite: true,
   pitchAngle: true,
+  segmentIdeal: true,
+  painPoint: true,
+  evidence: true,
+  recommendedOffer: true,
+  nextAction: true,
+  owner: true,
+  nextFollowupAt: true,
+  fitScore: true,
+  urgencyScore: true,
+  contactabilityScore: true,
+  activityScore: true,
+  promptVersion: true,
+  responseCategory: true,
+  meetingAt: true,
+  proposalAt: true,
+  closedAt: true,
+  revenue: true,
   subject: true,
   message: true,
   contacted: true,
@@ -137,6 +156,19 @@ export type ProspectUpdateInput = {
   opportunity?: string;
   recommendedSite?: string;
   pitchAngle?: string;
+  segmentIdeal?: string;
+  painPoint?: string;
+  evidence?: Record<string, unknown> | null;
+  recommendedOffer?: string;
+  nextAction?: string;
+  owner?: string;
+  nextFollowupAt?: string | null;
+  promptVersion?: string;
+  responseCategory?: string;
+  meetingAt?: string | null;
+  proposalAt?: string | null;
+  closedAt?: string | null;
+  revenue?: number | null;
   subject?: string;
   message?: string;
   contacted?: boolean;
@@ -160,6 +192,7 @@ export type TransitionConfig = {
 
 function serializeProspect(record: ProspectListRecord) {
   const scoring = getProspectScoreCard(record);
+  const scoreBreakdown = getProspectScoreBreakdown(record);
 
   return {
     ...record,
@@ -171,6 +204,7 @@ function serializeProspect(record: ProspectListRecord) {
     updatedAt: record.updatedAt.toISOString(),
     score: scoring.score,
     priority: scoring.priority,
+    scoreBreakdown,
   };
 }
 
@@ -613,6 +647,19 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
     data.pitchAngle = normalizeWhitespace(input.pitchAngle || "");
   }
 
+  for (const field of ["segmentIdeal", "painPoint", "recommendedOffer", "nextAction", "owner", "promptVersion", "responseCategory"] as const) {
+    if (field in input) {
+      data[field] = normalizeWhitespace(input[field] || "");
+    }
+  }
+
+  if ("evidence" in input) data.evidence = input.evidence ? input.evidence as Prisma.InputJsonValue : Prisma.JsonNull;
+  if ("nextFollowupAt" in input) data.nextFollowupAt = input.nextFollowupAt ? new Date(input.nextFollowupAt) : null;
+  if ("meetingAt" in input) data.meetingAt = input.meetingAt ? new Date(input.meetingAt) : null;
+  if ("proposalAt" in input) data.proposalAt = input.proposalAt ? new Date(input.proposalAt) : null;
+  if ("closedAt" in input) data.closedAt = input.closedAt ? new Date(input.closedAt) : null;
+  if ("revenue" in input) data.revenue = input.revenue ?? null;
+
   if ("subject" in input) {
     data.subject = normalizeWhitespace(input.subject || "");
   }
@@ -726,6 +773,12 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
   if (!Object.keys(data).length) {
     throw new Error("No se enviaron campos editables.");
   }
+
+  const scoreBreakdown = getProspectScoreBreakdown({ ...current, ...data } as ProspectListRecord);
+  data.fitScore = scoreBreakdown.fit;
+  data.urgencyScore = scoreBreakdown.urgency;
+  data.contactabilityScore = scoreBreakdown.contactability;
+  data.activityScore = scoreBreakdown.activity;
 
   const duplicateCandidate = {
     name: String(data.name || current.name),
@@ -845,7 +898,7 @@ export async function rejectProspect(id: string) {
   });
 }
 
-export async function storeProspectDraft(id: string, draft: { subject: string; message: string }) {
+export async function storeProspectDraft(id: string, draft: { subject: string; message: string; promptVersion?: string }) {
   const prisma = getPrismaClient();
   const current = await prisma.prospect.findUnique({
     where: { id },
@@ -891,6 +944,8 @@ export async function storeProspectDraft(id: string, draft: { subject: string; m
       data: {
         subject,
         message,
+        promptVersion: draft.promptVersion || CRM_PROMPT_VERSION,
+        nextAction: "Revisar y aprobar el borrador antes de enviar",
         status: nextStatus,
         scheduledSendAt,
         lastCheckedAt: timestamp,
@@ -927,6 +982,7 @@ export async function generateProspectDraft(
   const item = await storeProspectDraft(id, {
     subject: draft.subject,
     message: draft.message,
+    promptVersion: CRM_PROMPT_VERSION,
   });
 
   return {
@@ -964,6 +1020,17 @@ export async function markProspectReplied(
     throw new Error("receivedAt no es una fecha válida.");
   }
 
+  const responseCategory = classifyReply(details.snippet || "");
+  const nextAction = responseCategory === "interesado"
+    ? "Proponer una llamada de 15 minutos"
+    : responseCategory === "no_ahora"
+      ? "Programar seguimiento en 30 días"
+      : responseCategory === "referido"
+        ? "Contactar al referido con contexto"
+        : responseCategory === "baja"
+          ? "No contactar nuevamente"
+          : "Revisar respuesta y decidir siguiente paso";
+
   const updated = await prisma.$transaction(async (tx) => {
     const prospect = await tx.prospect.update({
       where: { id },
@@ -975,6 +1042,8 @@ export async function markProspectReplied(
         lastContactedAt: current.lastContactedAt || receivedAt,
         scheduledSendAt: null,
         lastError: "",
+        responseCategory,
+        nextAction,
       },
       select: prospectListSelect,
     });
@@ -991,6 +1060,7 @@ export async function markProspectReplied(
           source: details.source || "manual",
           messageId: details.messageId || "",
           snippet: details.snippet || "",
+          responseCategory,
         } as Prisma.InputJsonObject,
       },
     });

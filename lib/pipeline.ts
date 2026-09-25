@@ -20,6 +20,7 @@ import {
 import {
   MINIMUM_SAVE_SCORE,
   MINIMUM_QUALIFIED_PROSPECT_SCORE,
+  getProspectScoreBreakdown,
   getProspectAutomationStatus,
   hasRatingOpportunity,
   scoreProspect,
@@ -210,6 +211,7 @@ async function enrichProspectEmail(prospect: ProspectCandidate) {
 
 function buildCreateProspectData(prospect: ProspectCandidate, runId: string) {
   const score = scoreProspect(prospect);
+  const scoreBreakdown = getProspectScoreBreakdown(prospect);
 
   return {
     name: prospect.name,
@@ -233,6 +235,10 @@ function buildCreateProspectData(prospect: ProspectCandidate, runId: string) {
     opportunity: prospect.opportunity,
     recommendedSite: prospect.recommendedSite,
     pitchAngle: prospect.pitchAngle,
+    fitScore: scoreBreakdown.fit,
+    urgencyScore: scoreBreakdown.urgency,
+    contactabilityScore: scoreBreakdown.contactability,
+    activityScore: scoreBreakdown.activity,
     subject: "",
     message: "",
     contacted: false,

@@ -186,12 +186,41 @@ export default async function ProspectDetailPage({ params }: PageContext) {
               </div>
             </div>
             <dl className="detail-dl">
+              <dt>Segmento ideal</dt>
+              <dd>{prospect.segmentIdeal || "—"}</dd>
+              <dt>Dolor principal</dt>
+              <dd>{prospect.painPoint || prospect.opportunity || "—"}</dd>
+              <dt>Oferta recomendada</dt>
+              <dd>{prospect.recommendedOffer || prospect.recommendedSite || "—"}</dd>
               <dt>Oportunidad</dt>
               <dd>{prospect.opportunity || draft.opportunity || "—"}</dd>
               <dt>Angulo de venta</dt>
               <dd>{prospect.pitchAngle || "—"}</dd>
               <dt>Tipo de sitio recomendado</dt>
               <dd>{prospect.recommendedSite || "—"}</dd>
+              <dt>Proxima accion</dt>
+              <dd>{prospect.nextAction || "Revisar y aprobar el borrador"}</dd>
+            </dl>
+          </div>
+
+          <div className="panel">
+            <div className="panel__header">
+              <div>
+                <h2>Por que contactar</h2>
+                <p>Score separado por señal comercial.</p>
+              </div>
+            </div>
+            <dl className="detail-dl">
+              <dt>Ajuste</dt>
+              <dd>{prospect.scoreBreakdown.fit}</dd>
+              <dt>Urgencia</dt>
+              <dd>{prospect.scoreBreakdown.urgency}</dd>
+              <dt>Contactabilidad</dt>
+              <dd>{prospect.scoreBreakdown.contactability}</dd>
+              <dt>Actividad</dt>
+              <dd>{prospect.scoreBreakdown.activity}</dd>
+              <dt>Version de prompt</dt>
+              <dd>{prospect.promptVersion || "—"}</dd>
             </dl>
           </div>
 

@@ -1,6 +1,6 @@
 import { getPrismaClient } from "@/lib/db";
 import { getNextProspectingCrawlAt } from "@/lib/automation";
-import { getProspectScoreCard } from "@/lib/prospect-scoring";
+import { getProspectScoreBreakdown, getProspectScoreCard } from "@/lib/prospect-scoring";
 import type { ProspectStatus } from "@/generated/prisma";
 import type {
   DashboardActivityItem,
@@ -23,6 +23,19 @@ function serializeProspect(prospect: {
   opportunity: string;
   recommendedSite: string;
   pitchAngle: string;
+  segmentIdeal: string;
+  painPoint: string;
+  evidence: unknown;
+  recommendedOffer: string;
+  nextAction: string;
+  owner: string;
+  nextFollowupAt: Date | null;
+  promptVersion: string;
+  responseCategory: string;
+  meetingAt: Date | null;
+  proposalAt: Date | null;
+  closedAt: Date | null;
+  revenue: number | null;
   subject: string;
   message: string;
   contacted: boolean;
@@ -41,20 +54,29 @@ function serializeProspect(prospect: {
   updatedAt: Date;
 }): DashboardProspect {
   const scoring = getProspectScoreCard(prospect);
+  const scoreBreakdown = getProspectScoreBreakdown(prospect);
 
   return {
     ...prospect,
+    evidence: prospect.evidence && typeof prospect.evidence === "object" && !Array.isArray(prospect.evidence)
+      ? prospect.evidence as Record<string, unknown>
+      : null,
     scheduledSendAt: prospect.scheduledSendAt
       ? prospect.scheduledSendAt.toISOString()
       : null,
     lastContactedAt: prospect.lastContactedAt
       ? prospect.lastContactedAt.toISOString()
       : null,
+    nextFollowupAt: prospect.nextFollowupAt ? prospect.nextFollowupAt.toISOString() : null,
+    meetingAt: prospect.meetingAt ? prospect.meetingAt.toISOString() : null,
+    proposalAt: prospect.proposalAt ? prospect.proposalAt.toISOString() : null,
+    closedAt: prospect.closedAt ? prospect.closedAt.toISOString() : null,
     createdAt: prospect.createdAt.toISOString(),
     lastCheckedAt: prospect.lastCheckedAt.toISOString(),
     updatedAt: prospect.updatedAt.toISOString(),
     score: scoring.score,
     priority: scoring.priority,
+    scoreBreakdown,
   };
 }
 
