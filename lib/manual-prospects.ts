@@ -11,6 +11,7 @@ import {
 import { buildOpportunity } from "@/lib/opportunity";
 import { getProspectAutomationStatus, scoreProspect } from "@/lib/prospect-scoring";
 import { getWhatsAppPhoneFromUrl } from "@/lib/contact-links";
+import { inferProspectLanguage } from "@/lib/prospect-language";
 
 export type ManualProspectInput = {
   name?: string;
@@ -28,6 +29,7 @@ export type PreparedManualProspect = {
   name: string;
   contactName: string;
   city: string;
+  languageCode: string;
   email: string;
   phone: string;
   type: string;
@@ -96,6 +98,7 @@ export function prepareManualProspect(input: ManualProspectInput = {}): Prepared
     name,
     contactName,
     city,
+    languageCode: inferProspectLanguage(city),
     email,
     phone,
     type,
@@ -143,6 +146,7 @@ function buildProspectCreateData(prepared: PreparedManualProspect, status: Prosp
     normalizedName: normalizeName(prepared.name),
     contactName: prepared.contactName,
     city: prepared.city,
+    languageCode: prepared.languageCode,
     email: prepared.email,
     normalizedEmail: normalizeEmail(prepared.email),
     phone: prepared.phone,

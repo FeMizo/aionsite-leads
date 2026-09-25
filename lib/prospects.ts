@@ -45,6 +45,7 @@ const prospectListSelect = {
   name: true,
   contactName: true,
   city: true,
+  languageCode: true,
   email: true,
   phone: true,
   type: true,

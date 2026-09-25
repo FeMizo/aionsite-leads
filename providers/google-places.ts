@@ -144,6 +144,7 @@ function mapGooglePlaceToProspect(
     hasCompleteHours: hourSignals !== null && hourSignals.weekdayText.length > 0,
     openingHours: hourSignals,
     businessTypes: place.types || [],
+    languageCode: search.languageCode || "es",
     reviewAnalysis: analyzeReviews((place.reviews || []).map((review): ReviewInput => ({
       rating: review.rating,
       text: review.text?.text,

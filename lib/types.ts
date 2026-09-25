@@ -15,6 +15,7 @@ export type ProspectCandidate = {
   name: string;
   contactName: string;
   city: string;
+  languageCode?: string;
   email: string;
   phone: string;
   type: string;
@@ -99,6 +100,7 @@ export type DashboardProspect = {
   name: string;
   contactName: string;
   city: string;
+  languageCode: string;
   email: string;
   phone: string;
   type: string;

@@ -1,4 +1,4 @@
-import { buildEmail } from "@/lib/email-template";
+import { buildEmail, getProspectLanguage } from "@/lib/email-template";
 import {
   LEAD_TYPE_BAD_REVIEWS,
   LEAD_TYPE_NO_WEBSITE,
@@ -26,6 +26,7 @@ type OutreachProspect = {
   name: string;
   contactName: string;
   city: string;
+  languageCode?: string;
   email: string;
   type: string;
   website: string;
@@ -95,6 +96,7 @@ function buildFirstContactScript(prospect: OutreachProspect, variant: OutreachSc
   const email = buildEmail(
     {
       ...prospect,
+      languageCode: prospect.languageCode || "es",
       opportunity: context.opportunity,
       recommendedSite: context.recommendedSite,
       pitchAngle: context.pitchAngle,
@@ -195,10 +197,39 @@ AionSite`),
   };
 }
 
+function buildLocalizedFollowupDraft(prospect: OutreachProspect, type: OutreachMessageType) {
+  const language = getProspectLanguage({ languageCode: prospect.languageCode || "es", city: prospect.city });
+  const name = getGreeting(prospect.name, prospect.contactName);
+  const content = {
+    en: {
+      one: { subject: `${prospect.name}: following up`, body: `Hello ${name},\n\nJust checking whether you had a chance to see my previous message. I can send a short proposal with the first improvement I would review.\n\nBest,\nAionSite` },
+      two: { subject: `${prospect.name}: one more quick idea`, body: `Hello ${name},\n\nYour local presence already gives people a way to find you. A clearer next step could make enquiries easier. Would you like me to send a brief proposal?\n\nBest,\nAionSite` },
+      three: { subject: `${prospect.name}: final note`, body: `Hello ${name},\n\nI’ll leave you with one final idea: make the main service and contact option easier to find. If it becomes useful, I’d be happy to share the details.\n\nBest,\nAionSite` },
+    },
+    pt: {
+      one: { subject: `${prospect.name}: breve acompanhamento`, body: `Olá ${name},\n\nQueria confirmar se teve oportunidade de ver a minha mensagem anterior. Posso enviar uma proposta breve com a primeira melhoria que avaliaria.\n\nCumprimentos,\nAionSite` },
+      two: { subject: `${prospect.name}: mais uma ideia breve`, body: `Olá ${name},\n\nA presença local já ajuda as pessoas a encontrar o negócio. Um próximo passo mais claro pode facilitar os contactos. Quer que eu envie uma proposta breve?\n\nCumprimentos,\nAionSite` },
+      three: { subject: `${prospect.name}: última nota`, body: `Olá ${name},\n\nDeixo uma última ideia: tornar o serviço principal e a forma de contacto mais fáceis de encontrar. Se for útil, posso partilhar os detalhes.\n\nCumprimentos,\nAionSite` },
+    },
+    it: {
+      one: { subject: `${prospect.name}: breve seguito`, body: `Ciao ${name},\n\nVolevo sapere se hai avuto modo di leggere il mio messaggio precedente. Posso inviare una breve proposta con il primo miglioramento che valuterei.\n\nUn saluto,\nAionSite` },
+      two: { subject: `${prospect.name}: un'altra idea breve`, body: `Ciao ${name},\n\nLa presenza locale aiuta già le persone a trovarti. Un passaggio più chiaro potrebbe facilitare i contatti. Vuoi che invii una breve proposta?\n\nUn saluto,\nAionSite` },
+      three: { subject: `${prospect.name}: ultima nota`, body: `Ciao ${name},\n\nLascio un'ultima idea: rendere più facile trovare il servizio principale e il contatto. Se sarà utile, sarò felice di condividere i dettagli.\n\nUn saluto,\nAionSite` },
+    },
+  } as const;
+  const group = content[language === "es" ? "en" : language];
+  const key = type === "followup_2" ? "two" : type === "followup_3" || type === "closing" ? "three" : "one";
+  return { subject: group[key].subject, message: group[key].body, html: null, analysis: `Follow-up automático en idioma ${language}.`, opportunity: prospect.opportunity };
+}
+
 export function buildProspectOutreachDraft(
   prospect: OutreachProspect,
   type: OutreachMessageType = "first_contact"
 ) {
+  if (getProspectLanguage({ languageCode: prospect.languageCode || "es", city: prospect.city }) !== "es") {
+    const localizedType = type === "first_contact" ? "first_contact" : type;
+    if (localizedType !== "first_contact") return { ...buildLocalizedFollowupDraft(prospect, localizedType), type: localizedType === "closing" ? "followup_3" as const : localizedType, scriptVariant: null };
+  }
   if (type === "followup" || type === "followup_1") {
     return {
       ...buildFollowup1Draft(prospect),

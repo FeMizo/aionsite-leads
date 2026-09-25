@@ -100,6 +100,7 @@ function mapBraveResultToProspect(result: BraveWebResult, search: SearchSpec): P
     hasCompleteHours: false,
     openingHours: null,
     businessTypes: [],
+    languageCode: search.languageCode || "es",
   };
 }
 

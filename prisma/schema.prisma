@@ -27,6 +27,7 @@ model Prospect {
   normalizedName   String
   contactName      String         @default("")
   city             String
+  languageCode     String         @default("es")
   email            String         @default("")
   normalizedEmail  String         @default("")
   phone            String         @default("")

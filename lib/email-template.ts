@@ -1,4 +1,5 @@
 import type { Prospect } from "@/generated/prisma";
+import { normalizeProspectLanguage, type ProspectLanguage } from "@/lib/prospect-language";
 
 const BRAND_NAME = "AionSite";
 const BRAND_EMAIL = "contacto@aionsite.com.mx";
@@ -21,6 +22,7 @@ export type ProspectEmailModel = Pick<
   | "name"
   | "contactName"
   | "city"
+  | "languageCode"
   | "email"
   | "type"
   | "website"
@@ -32,6 +34,10 @@ export type ProspectEmailModel = Pick<
   userRatingCount?: number | null;
   primaryType?: string | null;
 };
+
+export function getProspectLanguage(prospect: Pick<ProspectEmailModel, "languageCode" | "city">): ProspectLanguage {
+  return normalizeProspectLanguage(prospect.languageCode);
+}
 
 function escapeHtml(value: string) {
   return value
@@ -290,7 +296,47 @@ function buildVariantD(prospect: ProspectEmailModel) {
   });
 }
 
+function buildLocalizedEmail(prospect: ProspectEmailModel, variant: EmailVariant) {
+  const language = getProspectLanguage(prospect);
+  const greeting = prospect.contactName
+    ? language === "pt" ? `Olá ${prospect.contactName},` : language === "it" ? `Ciao ${prospect.contactName},` : `Hello ${prospect.contactName},`
+    : language === "pt" ? `Olá, equipa de ${prospect.name},` : language === "it" ? `Buongiorno, team di ${prospect.name},` : `Hello ${prospect.name} team,`;
+  const copy = {
+    en: {
+      subjects: [`${prospect.name}: a quick growth idea`, `${prospect.name}: one digital improvement`, `${prospect.name}: local search opportunity`, `${prospect.name}: more direct enquiries`],
+      paragraphs: [
+        "I’m Felipe, a web developer at AionSite. I help local businesses present their services clearly and make it easier for people to get in touch.",
+        `I noticed an opportunity in ${prospect.name}'s online presence that may be worth reviewing for customers in ${prospect.city}.`,
+        "I can share a short proposal with two or three practical improvements, starting with the most relevant one.",
+      ],
+      cta: "Would you like me to send it?", button: "Yes, send it",
+    },
+    pt: {
+      subjects: [`${prospect.name}: uma ideia rápida de crescimento`, `${prospect.name}: uma melhoria digital`, `${prospect.name}: oportunidade nas buscas locais`, `${prospect.name}: mais contactos diretos`],
+      paragraphs: [
+        "Sou Felipe, desenvolvedor web na AionSite. Ajudo negócios locais a apresentar melhor os seus serviços e a facilitar o contacto.",
+        `Encontrei uma oportunidade na presença digital de ${prospect.name} que pode valer a pena rever para clientes em ${prospect.city}.`,
+        "Posso enviar uma proposta breve com duas ou três melhorias práticas, começando pela mais relevante.",
+      ],
+      cta: "Quer que eu envie?", button: "Sim, enviar",
+    },
+    it: {
+      subjects: [`${prospect.name}: un'idea rapida per crescere`, `${prospect.name}: un miglioramento digitale`, `${prospect.name}: opportunità nelle ricerche locali`, `${prospect.name}: più contatti diretti`],
+      paragraphs: [
+        "Sono Felipe, sviluppatore web di AionSite. Aiuto le attività locali a presentare meglio i propri servizi e a facilitare i contatti.",
+        `Ho notato un'opportunità nella presenza digitale di ${prospect.name} che potrebbe essere utile rivedere per i clienti di ${prospect.city}.`,
+        "Posso condividere una proposta breve con due o tre miglioramenti pratici, iniziando da quello più rilevante.",
+      ],
+      cta: "Vuoi che te la invii?", button: "Sì, inviala",
+    },
+  } as const;
+  const localized = copy[language === "es" ? "en" : language];
+  const subject = localized.subjects[{ a: 0, b: 1, c: 2, d: 3 }[variant]];
+  return buildMessage({ subject, greeting, paragraphs: [...localized.paragraphs], ctaText: localized.cta, ctaButtonLabel: localized.button });
+}
+
 export function buildEmail(prospect: ProspectEmailModel, variant: EmailVariant = "a") {
+  if (getProspectLanguage(prospect) !== "es") return buildLocalizedEmail(prospect, variant);
   if (variant === "b") {
     return buildVariantB(prospect);
   }
