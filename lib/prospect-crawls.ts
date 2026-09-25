@@ -1,12 +1,15 @@
 import { getPrismaClient } from "@/lib/db";
 import type { CrawlEmailReport } from "@/lib/email-template";
 import { crawlWebsiteInCrawlSite, getCrawlSummaryPdf } from "@/providers/crawl-site";
+import { getCrawlUrlBlockReason } from "@/lib/crawl-url-policy";
 
 export async function startProspectCrawl(prospectId: string, retry = false) {
   const prisma = getPrismaClient();
   const prospect = await prisma.prospect.findUnique({ where: { id: prospectId } });
   if (!prospect) throw new Error("Prospecto no encontrado.");
   if (!prospect.website) throw new Error("El prospecto no tiene sitio web.");
+  const blockedReason = getCrawlUrlBlockReason(prospect.website);
+  if (blockedReason) throw new Error(blockedReason);
   const owner = await prisma.dashboardCredential.findUnique({ where: { id: 1 }, select: { username: true } });
   const url = prospect.website;
   const activeCrawl = await prisma.prospectCrawl.findFirst({

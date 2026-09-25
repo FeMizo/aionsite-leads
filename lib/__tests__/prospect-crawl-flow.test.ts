@@ -67,4 +67,12 @@ describe("prospect crawl history flow", () => {
     expect(result).toMatchObject({ status: "failed", crawlSiteRunId: "run-failed", error: "Crawl failed" });
     expect(mocks.fetchPdf).not.toHaveBeenCalled();
   });
+
+  it("rejects WhatsApp links before creating crawl history or calling Crawl-Site", async () => {
+    mocks.prospectFindUnique.mockResolvedValue({ id: "p1", website: "https://wa.me/529381573988" });
+
+    await expect(startProspectCrawl("p1")).rejects.toThrow("No se permite rastrear enlaces de contacto");
+    expect(mocks.crawlCreate).not.toHaveBeenCalled();
+    expect(mocks.startCrawl).not.toHaveBeenCalled();
+  });
 });

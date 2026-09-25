@@ -2,6 +2,7 @@ import type { Prisma, ProspectStatus } from "@/generated/prisma";
 import { getPrismaClient } from "@/lib/db";
 import { findDuplicate } from "@/lib/dedupe";
 import { createManualProspect } from "@/lib/manual-prospects";
+import { getWhatsAppPhoneFromUrl } from "@/lib/contact-links";
 import { inferLeadType, normalizeLeadType } from "@/lib/lead-types";
 import { buildOpportunity } from "@/lib/opportunity";
 import {
@@ -583,7 +584,13 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
   }
 
   if ("website" in input) {
-    data.website = normalizeWebsiteInput(input.website || "");
+    const website = normalizeWebsiteInput(input.website || "");
+    const whatsappPhone = getWhatsAppPhoneFromUrl(website);
+    data.website = whatsappPhone ? "" : website;
+    if (whatsappPhone && !("phone" in input)) {
+      data.phone = whatsappPhone;
+      data.normalizedPhone = whatsappPhone;
+    }
   }
 
   if ("rating" in input) {

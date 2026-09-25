@@ -1,4 +1,5 @@
 import { normalizeWebsite } from "@/lib/normalizers";
+import { isCrawlUrlAllowed } from "@/lib/crawl-url-policy";
 
 export type CrawlSiteSummary = { total?: number; withIssues?: number; stats?: Record<string, number> };
 export type CrawlSiteResult = { runId: string; projectId: string; ownerUserId: string; status: "completed" | "pending"; summary?: CrawlSiteSummary };
@@ -97,7 +98,7 @@ export async function crawlWebsiteInCrawlSite(website: string, idempotencyKey?: 
   const config = getConfig();
   if (!config) return null;
   const host = normalizeWebsite(website);
-  if (!host || /(?:facebook|instagram|linkedin|twitter|tiktok|wa\.me|linktr\.ee)\.com?/i.test(host)) return null;
+  if (!host || !isCrawlUrlAllowed(website)) return null;
   const targetUrl = /^https?:\/\//i.test(website.trim()) ? website.trim() : `https://${host}`;
   const projectData = await requestJson(`${config.base}/api/integrations/project`, config.token, {
     method: "PUT",

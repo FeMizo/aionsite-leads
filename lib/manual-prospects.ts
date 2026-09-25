@@ -10,6 +10,7 @@ import {
 } from "@/lib/normalizers";
 import { buildOpportunity } from "@/lib/opportunity";
 import { getProspectAutomationStatus, scoreProspect } from "@/lib/prospect-scoring";
+import { getWhatsAppPhoneFromUrl } from "@/lib/contact-links";
 
 export type ManualProspectInput = {
   name?: string;
@@ -71,8 +72,10 @@ export function prepareManualProspect(input: ManualProspectInput = {}): Prepared
   const contactName = normalizeWhitespace(input.contactName || "");
   const city = normalizeWhitespace(input.city || "");
   const email = normalizeEmail(input.email || "");
-  const phone = normalizePhone(input.phone || "");
-  const website = normalizeWebsiteInput(input.website || "");
+  const inputWebsite = normalizeWebsiteInput(input.website || "");
+  const whatsappPhone = getWhatsAppPhoneFromUrl(inputWebsite);
+  const phone = normalizePhone(input.phone || whatsappPhone);
+  const website = whatsappPhone ? "" : inputWebsite;
   const rating = normalizeWhitespace(input.rating || "");
   const businessStatus = normalizeWhitespace(input.businessStatus || "");
   const type =
