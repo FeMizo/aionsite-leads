@@ -8,6 +8,7 @@ import {
 } from "@/lib/env";
 import { sendProspectEmails } from "@/lib/mailer";
 import { scanMailboxForBounces } from "@/lib/mail-bounces";
+import { scheduleDailyProspectCadence } from "@/lib/send-scheduler";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -36,12 +37,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const cadence = await scheduleDailyProspectCadence();
     const result = await sendProspectEmails({
       mode: "all",
     });
     const bounceScan = await scanMailboxForBounces();
 
-    return ok({ result, bounceScan });
+    return ok({ cadence, result, bounceScan });
   } catch (error) {
     return fail(
       "SCHEDULED_SEND_FAILED",

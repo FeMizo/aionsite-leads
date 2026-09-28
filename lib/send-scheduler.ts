@@ -13,6 +13,7 @@ import { getSendConfig, type SendConfig } from "@/lib/send-windows";
 export const MAX_PER_RUN = 10;
 export const MAX_PER_DAY = 30;
 export const MAX_PER_SCHEDULED_SLOT = 3;
+export const DAILY_SCHEDULE_TARGET = 3;
 
 // Exportados para compatibilidad con el script de recalculo (usa default)
 export const SEND_WINDOWS = getSendConfig("").windows;
@@ -255,6 +256,42 @@ async function countScheduledProspectsForSlot(
   });
 }
 
+function getTimeZoneDayBounds(referenceDate: Date, timeZone: string) {
+  const parts = getTimeZoneParts(referenceDate, timeZone);
+  const start = createTimeZoneDate({
+    year: parts.year,
+    month: parts.month,
+    day: parts.day,
+    hour: 0,
+    minute: 0,
+    second: 0,
+  }, timeZone);
+  const end = addTimeZoneDays(start, 1, timeZone, {
+    hour: 0,
+    minute: 0,
+    second: 0,
+  });
+
+  return { start, end };
+}
+
+async function countScheduledProspectsForDay(
+  scheduledSendAt: Date,
+  timeZone: string,
+  options: { excludeProspectId?: string } = {}
+) {
+  const prisma = getPrismaClient();
+  const { start, end } = getTimeZoneDayBounds(scheduledSendAt, timeZone);
+
+  return prisma.prospect.count({
+    where: {
+      status: { in: [...ACTIVE_SCHEDULED_STATUSES] },
+      scheduledSendAt: { gte: start, lt: end },
+      ...(options.excludeProspectId ? { id: { not: options.excludeProspectId } } : {}),
+    },
+  });
+}
+
 export async function getNextAvailableScheduledSendAt(
   prospect: Pick<SchedulableProspect, "type" | "city"> & { primaryType?: string | null },
   referenceDate = new Date(),
@@ -267,8 +304,9 @@ export async function getNextAvailableScheduledSendAt(
 
   for (let attempt = 0; attempt < 126; attempt += 1) {
     const scheduledCount = await countScheduledProspectsForSlot(candidate, options);
+    const scheduledDayCount = await countScheduledProspectsForDay(candidate, timeZone, options);
 
-    if (scheduledCount < MAX_PER_SCHEDULED_SLOT) {
+    if (scheduledCount < MAX_PER_SCHEDULED_SLOT && scheduledDayCount < DAILY_SCHEDULE_TARGET) {
       return candidate;
     }
 
@@ -276,6 +314,66 @@ export async function getNextAvailableScheduledSendAt(
   }
 
   throw new Error("No se pudo encontrar un horario disponible para el envío programado.");
+}
+
+export async function scheduleDailyProspectCadence(
+  referenceDate = new Date(),
+  target = DAILY_SCHEDULE_TARGET
+) {
+  const prisma = getPrismaClient();
+  const alreadySentToday = await countEmailsSentToday(referenceDate);
+  const { start, end } = getMexicoCityDayBounds(referenceDate);
+  const alreadyScheduledToday = await prisma.prospect.count({
+    where: {
+      status: { in: [...ACTIVE_SCHEDULED_STATUSES] },
+      scheduledSendAt: { gte: start, lt: end },
+    },
+  });
+  const remaining = Math.max(0, target - alreadySentToday - alreadyScheduledToday);
+
+  if (remaining === 0) {
+    return { scheduled: 0, target, alreadySentToday, alreadyScheduledToday };
+  }
+
+  const candidates = await prisma.prospect.findMany({
+    where: {
+      status: "ready",
+      contacted: false,
+      scheduledSendAt: null,
+      email: { not: "" },
+      subject: { not: "" },
+      message: { not: "" },
+    },
+    select: {
+      id: true,
+      type: true,
+      city: true,
+      primaryType: true,
+      createdAt: true,
+      scheduledSendAt: true,
+      website: true,
+      rating: true,
+      email: true,
+      phone: true,
+      mapsUrl: true,
+    },
+    orderBy: { createdAt: "asc" },
+    take: remaining,
+  });
+
+  const prioritized = sortProspectsForDelivery(candidates);
+  let scheduled = 0;
+
+  for (const prospect of prioritized) {
+    const nextSlot = await getNextAvailableScheduledSendAt(prospect, referenceDate, {
+      excludeProspectId: prospect.id,
+    });
+
+    await scheduleSend(prospect.id, nextSlot.toISOString());
+    scheduled += 1;
+  }
+
+  return { scheduled, target, alreadySentToday, alreadyScheduledToday };
 }
 
 export async function countEmailsSentToday(referenceDate = new Date()) {
