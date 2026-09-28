@@ -107,7 +107,9 @@ function buildWhatsAppUrl(record: DashboardProspect) {
     return "";
   }
 
-  const message = `Hola, soy Felipe, desarrollador web en AionSite. Estuve viendo ${record.name} y creo que hay una oportunidad para conseguir más clientes desde Google. ¿Te puedo mandar una propuesta?`;
+  const message =
+    record.message ||
+    `Hola, soy Felipe, desarrollador web en AionSite. Estuve viendo ${record.name} y creo que hay una oportunidad para conseguir más clientes desde Google. ¿Te puedo mandar una propuesta?`;
 
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
@@ -951,6 +953,16 @@ export function ProspectTable({
                   onClick={() => void openContactChannel(detailRecord, "email", buildMailtoUrl(detailRecord))}
                 >
                   {busyContactId === `${detailRecord.id}:email` ? "Enviando..." : "Enviar correo"}
+                </button>
+              ) : null}
+              {buildWhatsAppUrl(detailRecord) ? (
+                <button
+                  type="button"
+                  className="crm-button crm-button--whatsapp"
+                  disabled={busyContactId !== null}
+                  onClick={() => void openContactChannel(detailRecord, "whatsapp", buildWhatsAppUrl(detailRecord))}
+                >
+                  {busyContactId === `${detailRecord.id}:whatsapp` ? "Abriendo..." : "Abrir WhatsApp"}
                 </button>
               ) : null}
             </div>
