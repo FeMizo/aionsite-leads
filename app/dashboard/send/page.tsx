@@ -32,8 +32,13 @@ export default async function SendPage({
     return <DashboardUnavailable context={context as DashboardPageContext} />;
   }
 
-  const { items } = await getProspectsByStatuses({
+  const { items: readyItems, totalCount: readyTotalCount } = await getProspectsByStatuses({
     statuses: ["ready"],
+    unscheduledOnly: true,
+  });
+  const { items: scheduledItems, totalCount: scheduledTotalCount } = await getProspectsByStatuses({
+    statuses: ["ready"],
+    scheduledOnly: true,
   });
 
   return (
@@ -41,7 +46,7 @@ export default async function SendPage({
       <PageHeader
         eyebrow="Envios"
         title="Envío de correos"
-        description="Selecciona prospectos listos o programados. Si ya tienen fecha futura de envío, se muestran como programados con su horario exacto."
+        description="Los envíos listos y los programados se muestran en secciones separadas."
       />
 
       <DashboardMetricCards data={context.data} />
@@ -49,19 +54,27 @@ export default async function SendPage({
       <ManualProspectPanel />
 
       <ProspectTable
-        title="Enviar seleccionados"
-        description="Filtra entre envíos listos y programados. Selecciona registros para ejecutar el envío cuando corresponda."
-        records={items}
+        title="Listos para enviar"
+        description="Selecciona prospectos sin fecha programada para enviarlos ahora o programarlos."
+        records={readyItems}
         endpoint="/api/send"
         actions={[{ action: "sendSelected", label: "Enviar correos", variant: "primary" }]}
-        emptyLabel="No hay prospectos listos o programados para envío."
+        emptyLabel="No hay prospectos listos para enviar."
         page={page}
         pageSize={PAGE_SIZE}
-        totalCount={items.length}
-        statusFilterOptions={[
-          { value: "ready", label: "Listos para enviar" },
-          { value: "scheduled", label: "Programados" },
-        ]}
+        totalCount={readyTotalCount}
+      />
+
+      <ProspectTable
+        title="Programados"
+        description="Estos prospectos esperan automáticamente su fecha y hora de envío."
+        records={scheduledItems}
+        endpoint="/api/prospects"
+        actions={[]}
+        emptyLabel="No hay prospectos programados."
+        page={page}
+        pageSize={PAGE_SIZE}
+        totalCount={scheduledTotalCount}
       />
     </div>
   );
