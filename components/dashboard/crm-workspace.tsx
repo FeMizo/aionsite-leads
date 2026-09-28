@@ -4,13 +4,22 @@ import { useMemo, useState } from "react";
 import { ProspectTable } from "@/components/dashboard/prospect-table";
 import type { DashboardProspect } from "@/lib/types";
 
-type WorkspaceFilter = "all" | "generated" | "approved" | "ready" | "contacted" | "second_attempt" | "followup" | "replied" | "closed" | "rejected" | "uncontactable";
+type WorkspaceFilter = "all" | "generated" | "approved" | "ready" | "scheduled" | "contacted" | "second_attempt" | "followup" | "replied" | "closed" | "rejected" | "uncontactable";
 
-const filters: Array<{ key: WorkspaceFilter; label: string; statuses?: string[] }> = [
+type WorkspaceFilterConfig = {
+  key: WorkspaceFilter;
+  label: string;
+  statuses?: string[];
+  scheduledOnly?: boolean;
+  unscheduledOnly?: boolean;
+};
+
+const filters: WorkspaceFilterConfig[] = [
   { key: "all", label: "Todos" },
   { key: "generated", label: "Generados", statuses: ["generated", "analyzed"] },
   { key: "approved", label: "Aprobados", statuses: ["approved"] },
-  { key: "ready", label: "Listos para enviar", statuses: ["ready"] },
+  { key: "ready", label: "Listos para enviar", statuses: ["ready"], unscheduledOnly: true },
+  { key: "scheduled", label: "Programados", statuses: ["ready"], scheduledOnly: true },
   { key: "contacted", label: "Contactados", statuses: ["contacted"] },
   { key: "second_attempt", label: "Segundo intento", statuses: ["second_attempt"] },
   { key: "followup", label: "Seguimiento", statuses: ["followup"] },
@@ -20,9 +29,22 @@ const filters: Array<{ key: WorkspaceFilter; label: string; statuses?: string[] 
   { key: "uncontactable", label: "Sin contactar", statuses: ["uncontactable"] },
 ];
 
-function getFilterRecords(records: DashboardProspect[], filter: (typeof filters)[number]) {
-  if (!filter.statuses) return records;
-  return records.filter((record) => filter.statuses?.includes(record.status));
+function getFilterRecords(records: DashboardProspect[], filter: WorkspaceFilterConfig) {
+  const statusRecords = filter.statuses
+    ? records.filter((record) => filter.statuses?.includes(record.status))
+    : records;
+
+  if (filter.scheduledOnly) {
+    return statusRecords.filter(
+      (record) => Boolean(record.scheduledSendAt && new Date(record.scheduledSendAt).getTime() > Date.now())
+    );
+  }
+
+  if (filter.unscheduledOnly) {
+    return statusRecords.filter((record) => !record.scheduledSendAt);
+  }
+
+  return statusRecords;
 }
 
 export function CrmWorkspace({ records }: { records: DashboardProspect[] }) {
