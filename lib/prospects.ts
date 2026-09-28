@@ -856,7 +856,19 @@ export async function approveProspect(id: string) {
     throw new Error("El prospecto no se puede aprobar desde su estado actual.");
   }
 
-  const nextStatus = resolveStatusAfterApproval(current);
+  const shouldSchedule =
+    shouldBeReady(current) && Boolean(normalizeWhitespace(current.email || ""));
+  const scheduledSendAt = shouldSchedule && !current.scheduledSendAt
+    ? await getNextAvailableScheduledSendAt(
+        {
+          type: current.type,
+          city: current.city,
+        },
+        new Date(),
+        { excludeProspectId: current.id }
+      )
+    : current.scheduledSendAt;
+  const nextStatus = scheduledSendAt ? "ready" : resolveStatusAfterApproval(current);
   const timestamp = new Date();
 
   await prisma.$transaction(async (tx) => {
@@ -864,6 +876,7 @@ export async function approveProspect(id: string) {
       where: { id },
       data: {
         status: nextStatus,
+        scheduledSendAt,
         lastCheckedAt: timestamp,
         lastError: "",
       },
@@ -877,7 +890,10 @@ export async function approveProspect(id: string) {
         metadata: {
           fromStatus: current.status,
           toStatus: nextStatus,
-          note: "Record approval reviewed through API",
+          note: scheduledSendAt
+            ? "Record approved and scheduled for automatic sending"
+            : "Record approval reviewed through API",
+          scheduledSendAt: scheduledSendAt?.toISOString() || null,
         } as Prisma.InputJsonObject,
       },
     });
@@ -923,7 +939,9 @@ export async function storeProspectDraft(id: string, draft: { subject: string; m
     message,
   };
   const scoreCard = getProspectScoreCard(nextSnapshot);
-  const shouldAutoSchedule = scoreCard.score >= AUTO_READY_PROSPECT_SCORE;
+  const shouldAutoSchedule =
+    scoreCard.score >= AUTO_READY_PROSPECT_SCORE ||
+    (current.status === "approved" && Boolean(normalizeWhitespace(current.email || "")));
   const scheduledSendAt = shouldAutoSchedule && !current.scheduledSendAt
     ? await getNextAvailableScheduledSendAt(
         {
