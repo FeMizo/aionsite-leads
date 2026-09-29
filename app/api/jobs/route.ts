@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { ok, fail } from "@/lib/api";
-import { getJobDashboardData, updateJobStatus } from "@/lib/jobs";
+import { getJobDashboardData, updateJobStatuses } from "@/lib/jobs";
 import { jobStatuses } from "@/lib/job-status";
 import { DATABASE_ENV_KEYS, formatMissingEnvError } from "@/lib/env";
 
@@ -26,15 +26,19 @@ export async function POST(request: NextRequest) {
     return fail("INVALID_ACTION", "La acción de jobs no es válida.", 400);
   }
 
-  const id = typeof payload.id === "string" ? payload.id : "";
+  const ids = Array.isArray(payload.ids)
+    ? payload.ids.filter((value): value is string => typeof value === "string" && value.length > 0)
+    : typeof payload.id === "string"
+      ? [payload.id]
+      : [];
   const status = typeof payload.status === "string" ? payload.status : "";
-  if (!id || !(jobStatuses as readonly string[]).includes(status)) {
+  if (!ids.length || !(jobStatuses as readonly string[]).includes(status)) {
     return fail("INVALID_JOB_STATUS", "El job o estado no es válido.", 400);
   }
 
   try {
-    const job = await updateJobStatus(id, status as (typeof jobStatuses)[number]);
-    return ok({ item: job });
+    const result = await updateJobStatuses([...new Set(ids)], status as (typeof jobStatuses)[number]);
+    return ok({ updated: result.count });
   } catch (error) {
     return fail("JOB_STATUS_UPDATE_FAILED", error instanceof Error ? error.message : "No se pudo actualizar el estado.", 400);
   }

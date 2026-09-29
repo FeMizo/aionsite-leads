@@ -4,9 +4,6 @@ import {
   DashboardUnavailable,
   getDashboardPageContext,
 } from "@/components/dashboard/dashboard-sections";
-import { CrmWorkspace } from "@/components/dashboard/crm-workspace";
-import { ManualProspectPanel } from "@/components/dashboard/manual-prospect-panel";
-import { getAllDashboardProspects } from "@/lib/dashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -22,12 +19,5 @@ export default async function DashboardPage() {
     return <DashboardUnavailable context={context} />;
   }
 
-  const records = await getAllDashboardProspects();
-
-  return (
-    <DashboardOverview data={context.data} setup={context.setup}>
-      <ManualProspectPanel />
-      <CrmWorkspace records={records} />
-    </DashboardOverview>
-  );
+  return <DashboardOverview data={context.data} setup={context.setup} />;
 }

@@ -76,6 +76,14 @@ export async function updateJobStatus(id: string, status: JobStatus) {
   });
 }
 
+export async function updateJobStatuses(ids: string[], status: JobStatus) {
+  const prisma = getPrismaClient();
+  return prisma.job.updateMany({
+    where: { id: { in: ids } },
+    data: { status, lastTouchedAt: new Date() },
+  });
+}
+
 export function getJobStatusLabel(status: JobStatus) {
   return jobStatusLabels[status];
 }

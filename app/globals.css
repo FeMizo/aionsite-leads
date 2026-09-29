@@ -1717,6 +1717,11 @@ code {
   flex: 1 1 15rem;
 }
 
+.jobs-bulk-actions {
+  justify-content: flex-start;
+  margin-top: 1rem;
+}
+
 .form-input,
 .status-select {
   min-height: 2.5rem;
@@ -1808,12 +1813,28 @@ code {
 }
 
 .jobs-board__card {
+  width: 100%;
   padding: 0.75rem;
   border: 1px solid var(--border);
   border-radius: 0.75rem;
   background: #fff;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
   box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
   cursor: grab;
+}
+
+.jobs-board__card span,
+.jobs-board__card small {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--muted);
+}
+
+.jobs-board__card.is-selected {
+  border-color: var(--accent);
+  background: var(--row-selected);
 }
 
 .jobs-board__card:active {

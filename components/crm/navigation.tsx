@@ -7,7 +7,8 @@ const groups = [
   {
     label: "Espacio de trabajo",
     items: [
-      { href: "/dashboard", label: "CRM" },
+      { href: "/dashboard", label: "Inicio" },
+      { href: "/dashboard/crm", label: "Prospectos" },
       { href: "/dashboard/jobs", label: "Jobs" },
     ],
   },

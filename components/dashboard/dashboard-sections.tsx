@@ -1,4 +1,3 @@
-import { DashboardActions } from "@/components/dashboard/dashboard-actions";
 import { PageHeader } from "@/components/crm/page-header";
 import { Banner } from "@/components/ui/banner";
 import { Card } from "@/components/ui/card";
@@ -41,7 +40,7 @@ const sectionCards = [
     metricKey: "generated",
   },
   {
-    href: "/dashboard/prospects",
+    href: "/dashboard/crm",
     label: "Prospectos",
     description: "Prospectos aprobados pendientes de preparar mensaje.",
     metricKey: "prospects",
@@ -265,7 +264,7 @@ export function DashboardOperationsSummary({ data }: { data: DashboardData }) {
             <p className="page-header__eyebrow">Prospectos</p>
             <h2>Operación comercial</h2>
           </div>
-          <a href="/dashboard">Abrir CRM</a>
+          <a href="/dashboard/crm">Abrir Prospectos</a>
         </div>
         <div className="operations-summary__grid">
           <span>Correos hoy <strong>{prospects.sentToday}</strong></span>
@@ -324,21 +323,15 @@ export function DashboardOverview({
   return (
     <div className="page-stack">
       <PageHeader
-        eyebrow="Dashboard"
-        title="Prospecting pipeline en Vercel + Postgres"
-        description="Gestiona todo el pipeline desde una sola vista. Filtra por etapa, ejecuta acciones y actualiza estados sin cambiar de pantalla."
+        eyebrow="Inicio"
+        title="Resumen operativo"
+        description="Consulta el estado reciente de Prospectos y Jobs desde un solo lugar, sin ejecutar acciones desde esta pantalla."
       />
 
       <DashboardMetricCards data={data} />
       <DashboardOperationsSummary data={data} />
       <DashboardActivitySummary data={data} />
       <DashboardSetupPanel setup={setup} />
-      <DashboardActions
-        generatedCount={data.metrics.generated}
-        crawlInProgress={data.crawlInProgress}
-        activeRunCreatedAt={data.activeRun?.createdAt || null}
-      />
-
       {children}
 
     </div>
