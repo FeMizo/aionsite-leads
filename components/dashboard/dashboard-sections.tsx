@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/crm/page-header";
+import { AppIcon } from "@/components/crm/app-icon";
 import { Banner } from "@/components/ui/banner";
 import { Card } from "@/components/ui/card";
 import { Section } from "@/components/ui/section";
@@ -235,6 +236,23 @@ export function DashboardActivitySummary({ data }: { data: DashboardData }) {
   );
 }
 
+export function DashboardQuickLinks({ data }: { data: DashboardData }) {
+  return (
+    <section className="dashboard-quick-links" aria-label="Accesos principales">
+      <a className="dashboard-quick-link" href="/dashboard/crm">
+        <span className="dashboard-quick-link__icon"><AppIcon name="users" /></span>
+        <span className="dashboard-quick-link__content"><span className="eyebrow">Prospectos</span><strong>Gestionar prospectos</strong><span>Por aprobar: {data.prospectOperations.pendingApproval} · Listos: {data.prospectOperations.readyToSend}</span></span>
+        <span className="dashboard-quick-link__arrow" aria-hidden="true">→</span>
+      </a>
+      <a className="dashboard-quick-link" href="/dashboard/jobs">
+        <span className="dashboard-quick-link__icon"><AppIcon name="briefcase" /></span>
+        <span className="dashboard-quick-link__content"><span className="eyebrow">Jobs</span><strong>Gestionar empleos</strong><span>Por aplicar: {data.jobOperations.paraAplicar} · Nuevos hoy: {data.jobOperations.newToday}</span></span>
+        <span className="dashboard-quick-link__arrow" aria-hidden="true">→</span>
+      </a>
+    </section>
+  );
+}
+
 export function DashboardOperationsSummary({ data }: { data: DashboardData }) {
   const jobs = data.jobOperations;
   const prospects = data.prospectOperations;
@@ -328,6 +346,7 @@ export function DashboardOverview({
         description="Consulta el estado reciente de Prospectos y Jobs desde un solo lugar, sin ejecutar acciones desde esta pantalla."
       />
 
+      <DashboardQuickLinks data={data} />
       <DashboardMetricCards data={data} />
       <DashboardOperationsSummary data={data} />
       <DashboardActivitySummary data={data} />
