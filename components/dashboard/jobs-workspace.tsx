@@ -13,7 +13,7 @@ import type { JobStatus } from "@/generated/prisma";
 const PAGE_SIZE = 5;
 const jobFilters = ["all", ...jobStatuses] as const;
 
-type JobFilter = (typeof jobFilters)[number];
+export type JobFilter = (typeof jobFilters)[number];
 type JobSortKey = "title" | "salary" | "zone" | "stack" | "status" | "updatedAt";
 
 type JobColumn = {
@@ -55,11 +55,11 @@ function getAutofill(job: DashboardJob) {
   ].join("\n\n");
 }
 
-export function JobsWorkspace({ data }: { data: JobDashboardData }) {
+export function JobsWorkspace({ data, initialStatus = "all" }: { data: JobDashboardData; initialStatus?: JobFilter }) {
   const router = useRouter();
   const [jobs, setJobs] = useState(data.jobs);
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<JobFilter>("all");
+  const [status, setStatus] = useState<JobFilter>(initialStatus);
   const [view, setView] = useState<"list" | "board">("list");
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState(data.jobs[0]?.id || "");
@@ -98,6 +98,12 @@ export function JobsWorkspace({ data }: { data: JobDashboardData }) {
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
+
+  useEffect(() => {
+    setStatus(initialStatus);
+    setPage(1);
+    setSelectedIds([]);
+  }, [initialStatus]);
 
   useEffect(() => {
     const visibleIds = new Set(filtered.map((job) => job.id));

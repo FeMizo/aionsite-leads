@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import "./globals.css";
 import { Navigation } from "@/components/crm/navigation";
 
@@ -32,7 +32,9 @@ export default function RootLayout({
                 Dashboard operativo para prospecting, búsquedas programadas y envíos SMTP.
               </p>
             </div>
-            <Navigation />
+            <Suspense fallback={null}>
+              <Navigation />
+            </Suspense>
           </aside>
           <main className="app-main">
             <div className="app-topbar">

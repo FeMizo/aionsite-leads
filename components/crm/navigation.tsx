@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AppIcon, type AppIconName } from "@/components/crm/app-icon";
 
@@ -34,12 +34,24 @@ const prospectLinks: NavLink[] = [
 
 const jobLinks: NavLink[] = [
   { href: "/dashboard/jobs", label: "Todos los jobs", icon: "briefcase" },
+  { href: "/dashboard/jobs?status=pendiente", label: "Pendientes", icon: "search" },
+  { href: "/dashboard/jobs?status=para_aplicar", label: "Por aplicar", icon: "chart" },
+  { href: "/dashboard/jobs?status=aplicado", label: "Aplicados", icon: "users" },
+  { href: "/dashboard/jobs?status=skipeado", label: "Skipeados", icon: "search" },
+  { href: "/dashboard/jobs?status=no_entra_en_planes", label: "No entra en planes", icon: "chart" },
+  { href: "/dashboard/jobs?status=no_disponible", label: "No disponibles", icon: "search" },
+  { href: "/dashboard/jobs?status=follow_up", label: "Follow-up", icon: "users" },
+  { href: "/dashboard/jobs?status=en_espera", label: "En espera", icon: "chart" },
+  { href: "/dashboard/jobs?status=rechazado", label: "Rechazados", icon: "search" },
+  { href: "/dashboard/jobs?status=bloqueado", label: "Bloqueados", icon: "chart" },
+  { href: "/dashboard/jobs?status=guardado_para_despues", label: "Guardados", icon: "briefcase" },
 ];
 
 export function Navigation() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const prospectActive = prospectLinks.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
-  const jobsActive = jobLinks.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
+  const jobsActive = pathname === "/dashboard/jobs" || pathname.startsWith("/dashboard/jobs/");
   const [prospectsOpen, setProspectsOpen] = useState(prospectActive);
   const [jobsOpen, setJobsOpen] = useState(jobsActive);
 
@@ -49,11 +61,25 @@ export function Navigation() {
   }, [jobsActive, prospectActive]);
 
   function isActive(href: string) {
-    if (href === "/dashboard") {
-      return pathname === href;
+    const target = new URL(href, "http://localhost");
+    const pathMatches = target.pathname === "/dashboard"
+      ? pathname === target.pathname
+      : pathname === target.pathname || pathname.startsWith(`${target.pathname}/`);
+
+    if (!pathMatches) {
+      return false;
     }
 
-    return pathname === href || pathname.startsWith(`${href}/`);
+    const targetStatus = target.searchParams.get("status");
+    if (targetStatus) {
+      return searchParams.get("status") === targetStatus;
+    }
+
+    if (target.pathname === "/dashboard/jobs" && searchParams.has("status")) {
+      return false;
+    }
+
+    return true;
   }
 
   return (
