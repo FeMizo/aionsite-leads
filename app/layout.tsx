@@ -12,8 +12,8 @@ export const metadata: Metadata = {
   description:
     "Dashboard operativo de prospecting para AionSite — búsquedas automatizadas, gestión de prospectos y envíos SMTP desde Vercel.",
   icons: {
-    icon: "/icon.svg",
-    shortcut: "/icon.svg",
+    icon: "/icon.png?v=2",
+    shortcut: "/icon.png?v=2",
     apple: "/icon.png",
   },
 };
