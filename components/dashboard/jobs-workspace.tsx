@@ -8,6 +8,7 @@ import { jobStatuses, jobStatusLabels } from "@/lib/job-status";
 import type { DashboardJob, JobDashboardData } from "@/lib/job-types";
 
 const PAGE_SIZE = 5;
+const jobFilters = ["all", ...jobStatuses] as const;
 
 function salaryLabel(job: DashboardJob) {
   if (job.salaryUsdMin === null && job.salaryUsdMax === null) return job.salaryLabel;
@@ -109,11 +110,29 @@ export function JobsWorkspace({ data }: { data: JobDashboardData }) {
         </div>
         <div className="jobs-toolbar">
           <input className="form-input" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Buscar empresa, puesto o stack" />
-          <select className="form-input" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}>
-            <option value="all">Todos los estados</option>
-            {jobStatuses.map((item) => <option key={item} value={item}>{jobStatusLabels[item]}</option>)}
-          </select>
           <button className="button button--secondary" type="button" onClick={resetFilters}>Limpiar</button>
+        </div>
+        <div className="crm-workspace__filters jobs-workspace__filters" role="tablist" aria-label="Filtrar jobs por etapa">
+          {jobFilters.map((filter) => {
+            const count = filter === "all" ? jobs.length : jobs.filter((job) => job.status === filter).length;
+            const active = status === filter;
+            return (
+              <button
+                key={filter}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                className={active ? "crm-workspace__filter is-active" : "crm-workspace__filter"}
+                onClick={() => {
+                  setStatus(filter);
+                  setPage(1);
+                }}
+              >
+                <span>{filter === "all" ? "Todos" : jobStatusLabels[filter]}</span>
+                <strong>{count}</strong>
+              </button>
+            );
+          })}
         </div>
         {message ? <p className="form-feedback">{message}</p> : null}
       </section>
