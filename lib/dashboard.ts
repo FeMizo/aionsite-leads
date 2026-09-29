@@ -180,6 +180,9 @@ export async function getAllDashboardProspects(): Promise<DashboardProspect[]> {
 export async function getDashboardData(): Promise<DashboardData> {
   const prisma = getPrismaClient();
   const nextCrawlAt = getNextProspectingCrawlAt();
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const stalledBefore = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const [
     generated,
     prospects,
@@ -195,6 +198,17 @@ export async function getDashboardData(): Promise<DashboardData> {
     activeRun,
     lastRun,
     lastSend,
+    sentTodayCount,
+    readyToSendCount,
+    whatsappOnlyCount,
+    stalledProspectsCount,
+    jobsCount,
+    jobsTodayCount,
+    jobsParaAplicarCount,
+    jobsFollowUpCount,
+    jobsBlockedCount,
+    jobsStalledCount,
+    jobSettings,
   ] = await Promise.all([
     prisma.prospect.findMany({
       where: { status: { in: ["generated", "analyzed"] } },
@@ -247,6 +261,33 @@ export async function getDashboardData(): Promise<DashboardData> {
         },
       },
     }),
+    prisma.contactEvent.count({
+      where: { eventType: "send_success", createdAt: { gte: todayStart } },
+    }),
+    prisma.prospect.count({
+      where: { status: "ready", scheduledSendAt: null },
+    }),
+    prisma.prospect.count({
+      where: { phone: { not: "" }, email: "" },
+    }),
+    prisma.prospect.count({
+      where: {
+        status: { in: ["generated", "analyzed", "approved", "ready"] },
+        updatedAt: { lt: stalledBefore },
+      },
+    }),
+    prisma.job.count(),
+    prisma.job.count({ where: { addedAt: { gte: todayStart } } }),
+    prisma.job.count({ where: { status: "para_aplicar" } }),
+    prisma.job.count({ where: { status: "follow_up" } }),
+    prisma.job.count({ where: { status: { in: ["bloqueado", "no_disponible"] } } }),
+    prisma.job.count({
+      where: {
+        status: { in: ["para_aplicar", "follow_up"] },
+        updatedAt: { lt: stalledBefore },
+      },
+    }),
+    prisma.jobSettings.findUnique({ where: { id: 1 } }),
   ]);
 
   return {
@@ -257,6 +298,23 @@ export async function getDashboardData(): Promise<DashboardData> {
       contacted: contactedCount,
       rejected: rejectedCount,
       runs: runsCount,
+      jobs: jobsCount,
+    },
+    prospectOperations: {
+      sentToday: sentTodayCount,
+      pendingApproval: prospectsCount,
+      readyToSend: readyToSendCount,
+      whatsappOnly: whatsappOnlyCount,
+      stalled: stalledProspectsCount,
+    },
+    jobOperations: {
+      total: jobsCount,
+      newToday: jobsTodayCount,
+      paraAplicar: jobsParaAplicarCount,
+      followUp: jobsFollowUpCount,
+      blocked: jobsBlockedCount,
+      stalled: jobsStalledCount,
+      lastSearchAt: jobSettings?.lastJobsSearchAt.toISOString() || null,
     },
     crawlInProgress: Boolean(activeRun),
     activeRun: activeRun ? serializeRun(activeRun) : null,

@@ -64,6 +64,12 @@ const sectionCards = [
     description: "Metricas y estado del pipeline automatizado.",
     metricKey: "runs",
   },
+  {
+    href: "/dashboard/jobs",
+    label: "Jobs",
+    description: "Vacantes remotas separadas del pipeline comercial.",
+    metricKey: "jobs",
+  },
 ] as const;
 
 export async function getDashboardPageContext(): Promise<DashboardPageContext> {
@@ -230,6 +236,49 @@ export function DashboardActivitySummary({ data }: { data: DashboardData }) {
   );
 }
 
+export function DashboardOperationsSummary({ data }: { data: DashboardData }) {
+  const jobs = data.jobOperations;
+  const prospects = data.prospectOperations;
+
+  return (
+    <section className="operations-summary">
+      <article className="panel operations-summary__panel">
+        <div className="panel__header">
+          <div>
+            <p className="page-header__eyebrow">Jobs</p>
+            <h2>Seguimiento de empleos</h2>
+          </div>
+          <a href="/dashboard/jobs">Abrir Jobs</a>
+        </div>
+        <div className="operations-summary__grid">
+          <span>Nuevos hoy <strong>{jobs.newToday}</strong></span>
+          <span>Por aplicar <strong>{jobs.paraAplicar}</strong></span>
+          <span>Follow-up <strong>{jobs.followUp}</strong></span>
+          <span>Trabados <strong>{jobs.stalled}</strong></span>
+          <span>Bloqueados <strong>{jobs.blocked}</strong></span>
+          <span>Última búsqueda <strong>{formatActivityDate(jobs.lastSearchAt || undefined)}</strong></span>
+        </div>
+      </article>
+      <article className="panel operations-summary__panel">
+        <div className="panel__header">
+          <div>
+            <p className="page-header__eyebrow">Prospectos</p>
+            <h2>Operación comercial</h2>
+          </div>
+          <a href="/dashboard">Abrir CRM</a>
+        </div>
+        <div className="operations-summary__grid">
+          <span>Correos hoy <strong>{prospects.sentToday}</strong></span>
+          <span>Por aprobar <strong>{prospects.pendingApproval}</strong></span>
+          <span>Listos para enviar <strong>{prospects.readyToSend}</strong></span>
+          <span>Solo WhatsApp <strong>{prospects.whatsappOnly}</strong></span>
+          <span>Trabados <strong>{prospects.stalled}</strong></span>
+        </div>
+      </article>
+    </section>
+  );
+}
+
 export function DashboardSetupPanel({ setup }: { setup: DashboardSetupState }) {
   if (setup.googlePlacesConfigured && setup.smtpConfigured) {
     return null;
@@ -281,6 +330,7 @@ export function DashboardOverview({
       />
 
       <DashboardMetricCards data={data} />
+      <DashboardOperationsSummary data={data} />
       <DashboardActivitySummary data={data} />
       <DashboardSetupPanel setup={setup} />
       <DashboardActions

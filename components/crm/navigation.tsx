@@ -6,7 +6,10 @@ import { usePathname } from "next/navigation";
 const groups = [
   {
     label: "Espacio de trabajo",
-    items: [{ href: "/dashboard", label: "CRM" }],
+    items: [
+      { href: "/dashboard", label: "CRM" },
+      { href: "/dashboard/jobs", label: "Jobs" },
+    ],
   },
   {
     label: "Operación",

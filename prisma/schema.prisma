@@ -21,6 +21,57 @@ enum ProspectStatus {
   uncontactable
 }
 
+enum JobStatus {
+  pendiente
+  para_aplicar
+  aplicado
+  skipeado
+  no_entra_en_planes
+  no_disponible
+  follow_up
+  en_espera
+  rechazado
+  bloqueado
+  guardado_para_despues
+}
+
+model JobSettings {
+  id               Int      @id @default(1)
+  profile          Json
+  searchCriteria   Json
+  lastJobsSearchAt DateTime
+  updatedAt        DateTime @updatedAt
+}
+
+model Job {
+  id             String   @id
+  dbId           String   @unique
+  company        String
+  title          String
+  salaryLabel    String
+  salaryCurrency String
+  salaryUsdMin   Float?
+  salaryUsdMax   Float?
+  fitReason      String
+  checkedAt      DateTime
+  addedAt        DateTime
+  zone           String
+  region         String
+  source         String
+  link           String   @unique
+  stack          Json
+  status         JobStatus @default(pendiente)
+  cover          String
+  notes          String
+  lastTouchedAt  DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status, addedAt])
+  @@index([source, addedAt])
+  @@index([company, title])
+}
+
 model Prospect {
   id               String         @id @default(cuid())
   name             String

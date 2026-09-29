@@ -178,6 +178,23 @@ export type DashboardData = {
     contacted: number;
     rejected: number;
     runs: number;
+    jobs: number;
+  };
+  prospectOperations: {
+    sentToday: number;
+    pendingApproval: number;
+    readyToSend: number;
+    whatsappOnly: number;
+    stalled: number;
+  };
+  jobOperations: {
+    total: number;
+    newToday: number;
+    paraAplicar: number;
+    followUp: number;
+    blocked: number;
+    stalled: number;
+    lastSearchAt: string | null;
   };
   crawlInProgress: boolean;
   activeRun: DashboardRun | null;

@@ -15,6 +15,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "migrate:jobs": "tsx scripts/migrate-jobs.ts",
     "db:studio": "prisma studio",
     "migrate:legacy": "tsx scripts/migrate-legacy.ts",
     "send:reschedule": "tsx scripts/recalculate-scheduled-sends.ts",
