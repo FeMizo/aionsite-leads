@@ -23,6 +23,7 @@ import {
   normalizeWhitespace,
 } from "@/lib/normalizers";
 import { classifyReply, CRM_PROMPT_VERSION } from "@/lib/crm-prompts";
+import { normalizeCrawlUrl } from "@/lib/crawl-url-policy";
 
 const PROSPECT_STATUSES = [
   "generated",
@@ -619,7 +620,7 @@ export async function updateProspect(id: string, input: ProspectUpdateInput) {
   }
 
   if ("website" in input) {
-    const website = normalizeWebsiteInput(input.website || "");
+    const website = normalizeCrawlUrl(normalizeWebsiteInput(input.website || "")) || "";
     const whatsappPhone = getWhatsAppPhoneFromUrl(website);
     data.website = whatsappPhone ? "" : website;
     if (whatsappPhone && !("phone" in input)) {

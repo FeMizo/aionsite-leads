@@ -1,5 +1,5 @@
 import { normalizeWebsite } from "@/lib/normalizers";
-import { isCrawlUrlAllowed } from "@/lib/crawl-url-policy";
+import { isCrawlUrlAllowed, normalizeCrawlUrl } from "@/lib/crawl-url-policy";
 
 export type CrawlSiteSummary = { total?: number; withIssues?: number; stats?: Record<string, number> };
 export type CrawlSiteResult = { runId: string; projectId: string; ownerUserId: string; status: "completed" | "pending"; summary?: CrawlSiteSummary };
@@ -97,9 +97,10 @@ async function readCrawlCompletion(response: Response): Promise<{ runId: string;
 export async function crawlWebsiteInCrawlSite(website: string, idempotencyKey?: string): Promise<CrawlSiteResult | null> {
   const config = getConfig();
   if (!config) return null;
-  const host = normalizeWebsite(website);
-  if (!host || !isCrawlUrlAllowed(website)) return null;
-  const targetUrl = /^https?:\/\//i.test(website.trim()) ? website.trim() : `https://${host}`;
+  const normalizedUrl = normalizeCrawlUrl(website);
+  const host = normalizeWebsite(normalizedUrl || website);
+  if (!normalizedUrl || !host || !isCrawlUrlAllowed(normalizedUrl)) return null;
+  const targetUrl = normalizedUrl;
   const projectData = await requestJson(`${config.base}/api/integrations/project`, config.token, {
     method: "PUT",
     body: JSON.stringify({ targetUrl, name: host }),

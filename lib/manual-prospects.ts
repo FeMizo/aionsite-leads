@@ -12,6 +12,7 @@ import { buildOpportunity } from "@/lib/opportunity";
 import { getProspectAutomationStatus, scoreProspect } from "@/lib/prospect-scoring";
 import { getWhatsAppPhoneFromUrl } from "@/lib/contact-links";
 import { inferProspectLanguage } from "@/lib/prospect-language";
+import { normalizeCrawlUrl } from "@/lib/crawl-url-policy";
 
 export type ManualProspectInput = {
   name?: string;
@@ -74,7 +75,7 @@ export function prepareManualProspect(input: ManualProspectInput = {}): Prepared
   const contactName = normalizeWhitespace(input.contactName || "");
   const city = normalizeWhitespace(input.city || "");
   const email = normalizeEmail(input.email || "");
-  const inputWebsite = normalizeWebsiteInput(input.website || "");
+  const inputWebsite = normalizeCrawlUrl(normalizeWebsiteInput(input.website || "")) || "";
   const whatsappPhone = getWhatsAppPhoneFromUrl(inputWebsite);
   const phone = normalizePhone(input.phone || whatsappPhone);
   const website = whatsappPhone ? "" : inputWebsite;

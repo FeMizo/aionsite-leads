@@ -1,17 +1,21 @@
 import { getPrismaClient } from "@/lib/db";
 import type { CrawlEmailReport } from "@/lib/email-template";
 import { crawlWebsiteInCrawlSite, getCrawlSummaryPdf } from "@/providers/crawl-site";
-import { getCrawlUrlBlockReason } from "@/lib/crawl-url-policy";
+import { getCrawlUrlBlockReason, normalizeCrawlUrl, resolveCrawlUrl } from "@/lib/crawl-url-policy";
 
 export async function startProspectCrawl(prospectId: string, retry = false) {
   const prisma = getPrismaClient();
   const prospect = await prisma.prospect.findUnique({ where: { id: prospectId } });
   if (!prospect) throw new Error("Prospecto no encontrado.");
   if (!prospect.website) throw new Error("El prospecto no tiene sitio web.");
-  const blockedReason = getCrawlUrlBlockReason(prospect.website);
+  const url = await resolveCrawlUrl(prospect.website);
+  if (!url) throw new Error("No se pudo resolver un dominio real para este sitio.");
+  const blockedReason = getCrawlUrlBlockReason(url);
   if (blockedReason) throw new Error(blockedReason);
+  if (url !== normalizeCrawlUrl(prospect.website)) {
+    await prisma.prospect.update({ where: { id: prospectId }, data: { website: url } });
+  }
   const owner = await prisma.dashboardCredential.findUnique({ where: { id: 1 }, select: { username: true } });
-  const url = prospect.website;
   const activeCrawl = await prisma.prospectCrawl.findFirst({
     where: { prospectId, siteUrl: url, status: { in: ["pending", "running"] } },
     orderBy: { createdAt: "desc" },
