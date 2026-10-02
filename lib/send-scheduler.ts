@@ -10,10 +10,14 @@ import { getProspectTimeZone } from "@/lib/prospect-timezone";
 import { getProspectScoreCard, type ProspectPriority } from "@/lib/prospect-scoring";
 import { getSendConfig, type SendConfig } from "@/lib/send-windows";
 
-export const MAX_PER_RUN = 10;
+export const MAX_PER_RUN = 5;
 export const MAX_PER_DAY = 30;
 export const MAX_PER_SCHEDULED_SLOT = 3;
-export const DAILY_SCHEDULE_TARGET = 3;
+export const DAILY_SCHEDULE_TARGET = 5;
+
+export function getRandomDailySendTarget() {
+  return 2 + Math.floor(Math.random() * 4);
+}
 
 // Exportados para compatibilidad con el script de recalculo (usa default)
 export const SEND_WINDOWS = getSendConfig("").windows;

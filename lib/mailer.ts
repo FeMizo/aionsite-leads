@@ -164,11 +164,12 @@ function mergeSendSummaries(left: SendSummary, right: SendSummary): SendSummary 
   };
 }
 
-async function createSendBudget() {
+async function createSendBudget(runLimit = MAX_PER_RUN) {
   const sentToday = await countEmailsSentToday();
+  const normalizedRunLimit = Math.max(0, Math.min(MAX_PER_RUN, Math.floor(runLimit)));
 
   return {
-    remainingRun: MAX_PER_RUN,
+    remainingRun: normalizedRunLimit,
     remainingDay: Math.max(MAX_PER_DAY - sentToday, 0),
   } satisfies SendBudget;
 }
@@ -837,9 +838,10 @@ export async function sendDueFollowupEmails(
 export async function sendProspectEmails(options: {
   prospectIds?: string[];
   mode?: "all" | "initial" | "followups";
+  runLimit?: number;
 } = {}) {
   const mode = options.mode || "all";
-  const budget = await createSendBudget();
+  const budget = await createSendBudget(options.runLimit);
 
   if (mode === "initial") {
     return sendInitialProspectEmails(options, budget);
