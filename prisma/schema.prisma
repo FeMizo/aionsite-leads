@@ -154,6 +154,7 @@ model ContactEvent {
   createdAt  DateTime @default(now())
 
   @@index([prospectId, createdAt])
+  @@index([eventType, createdAt])
 }
 
 model Run {

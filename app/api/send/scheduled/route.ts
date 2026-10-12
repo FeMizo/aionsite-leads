@@ -8,7 +8,11 @@ import {
 } from "@/lib/env";
 import { sendProspectEmails } from "@/lib/mailer";
 import { scanMailboxForBounces } from "@/lib/mail-bounces";
-import { getRandomDailySendTarget, scheduleDailyProspectCadence } from "@/lib/send-scheduler";
+import {
+  countEmailsSentToday,
+  getRandomDailySendTarget,
+  scheduleDailyProspectCadence,
+} from "@/lib/send-scheduler";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -37,11 +41,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const now = new Date();
     const target = getRandomDailySendTarget();
-    const cadence = await scheduleDailyProspectCadence(new Date(), target);
+    const sentToday = await countEmailsSentToday(now);
+    const cadence = await scheduleDailyProspectCadence(now, target, sentToday);
     const result = await sendProspectEmails({
       mode: "all",
       runLimit: target,
+      sentToday,
     });
     const bounceScan = await scanMailboxForBounces();
 

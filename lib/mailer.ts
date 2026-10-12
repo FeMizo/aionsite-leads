@@ -69,6 +69,77 @@ type SendBudget = {
   remainingDay: number;
 };
 
+type MailerProspect = Pick<
+  Prospect,
+  | "id"
+  | "name"
+  | "contactName"
+  | "city"
+  | "languageCode"
+  | "email"
+  | "phone"
+  | "type"
+  | "website"
+  | "rating"
+  | "userRatingCount"
+  | "websiteFetchFailed"
+  | "websiteLoadTimeMs"
+  | "hasWhatsappCta"
+  | "hasContactCta"
+  | "isMobileFriendly"
+  | "mapsUrl"
+  | "opportunity"
+  | "recommendedSite"
+  | "pitchAngle"
+  | "subject"
+  | "message"
+  | "status"
+  | "contacted"
+  | "scheduledSendAt"
+  | "lastContactedAt"
+  | "followupCount"
+  | "followupStage"
+  | "createdAt"
+  | "businessStatus"
+  | "primaryType"
+  | "crawlSiteRunId"
+>;
+
+const MAILER_PROSPECT_SELECT = {
+  id: true,
+  name: true,
+  contactName: true,
+  city: true,
+  languageCode: true,
+  email: true,
+  phone: true,
+  type: true,
+  website: true,
+  rating: true,
+  userRatingCount: true,
+  websiteFetchFailed: true,
+  websiteLoadTimeMs: true,
+  hasWhatsappCta: true,
+  hasContactCta: true,
+  isMobileFriendly: true,
+  mapsUrl: true,
+  opportunity: true,
+  recommendedSite: true,
+  pitchAngle: true,
+  subject: true,
+  message: true,
+  status: true,
+  contacted: true,
+  scheduledSendAt: true,
+  lastContactedAt: true,
+  followupCount: true,
+  followupStage: true,
+  createdAt: true,
+  businessStatus: true,
+  primaryType: true,
+  crawlSiteRunId: true,
+} satisfies Prisma.ProspectSelect;
+
 const FOLLOWUP_SEQUENCE: FollowupPlan[] = [
   {
     stage: 1,
@@ -164,13 +235,13 @@ function mergeSendSummaries(left: SendSummary, right: SendSummary): SendSummary 
   };
 }
 
-async function createSendBudget(runLimit = MAX_PER_RUN) {
-  const sentToday = await countEmailsSentToday();
+async function createSendBudget(runLimit = MAX_PER_RUN, sentToday?: number) {
+  const totalSentToday = sentToday ?? (await countEmailsSentToday());
   const normalizedRunLimit = Math.max(0, Math.min(MAX_PER_RUN, Math.floor(runLimit)));
 
   return {
     remainingRun: normalizedRunLimit,
-    remainingDay: Math.max(MAX_PER_DAY - sentToday, 0),
+    remainingDay: Math.max(MAX_PER_DAY - totalSentToday, 0),
   } satisfies SendBudget;
 }
 
@@ -247,7 +318,7 @@ async function getProspectCrawlAttachment(prospectId: string, crawlSiteRunId?: s
   };
 }
 
-function findPreviouslyContacted(record: Prospect, records: Prospect[]) {
+function findPreviouslyContacted(record: MailerProspect, records: MailerProspect[]) {
   const historicalRecords = records.filter(
     (item) =>
       item.id !== record.id &&
@@ -259,7 +330,7 @@ function findPreviouslyContacted(record: Prospect, records: Prospect[]) {
   return findDuplicate(record, historicalRecords);
 }
 
-function getDueFollowupPlan(record: Prospect) {
+function getDueFollowupPlan(record: MailerProspect) {
   if (!["contacted", "followup"].includes(record.status) || !record.contacted) {
     return null;
   }
@@ -291,10 +362,6 @@ async function updateProspectWithEvent(params: {
   const timestamp = params.sentAt || new Date();
 
   await prisma.$transaction(async (tx) => {
-    const current = await tx.prospect.findUniqueOrThrow({
-      where: { id: params.prospectId },
-    });
-
     await tx.prospect.update({
       where: { id: params.prospectId },
       data: {
@@ -302,7 +369,9 @@ async function updateProspectWithEvent(params: {
         status: params.status,
         lastCheckedAt: timestamp,
         lastError: params.lastError || "",
-        lastMessageId: params.lastMessageId || current.lastMessageId,
+        ...(params.lastMessageId !== undefined
+          ? { lastMessageId: params.lastMessageId }
+          : {}),
       },
     });
 
@@ -317,10 +386,11 @@ async function updateProspectWithEvent(params: {
   });
 }
 
-async function loadRecords() {
+async function loadRecords(): Promise<MailerProspect[]> {
   const prisma = getPrismaClient();
 
   return prisma.prospect.findMany({
+    select: MAILER_PROSPECT_SELECT,
     orderBy: {
       createdAt: "asc",
     },
@@ -338,7 +408,7 @@ function filterByIds<T extends { id: string }>(records: T[], ids: string[]) {
 }
 
 async function autoScheduleProspectForLater(
-  record: Prospect,
+  record: MailerProspect,
   reason: "outside_business_hours" | "rate_limited",
   referenceDate = new Date()
 ) {
@@ -399,9 +469,10 @@ export async function listDueFollowups(options: { prospectIds?: string[] } = {})
 
 export async function sendInitialProspectEmails(
   options: { prospectIds?: string[] } = {},
-  budget?: SendBudget
+  budget?: SendBudget,
+  loadedRecords?: MailerProspect[]
 ) {
-  const records = await loadRecords();
+  const records = loadedRecords || (await loadRecords());
   const ids = Array.isArray(options.prospectIds) ? options.prospectIds : [];
   const now = new Date();
   const readyRecords = filterByIds(records, ids).filter((record) => record.status === "ready");
@@ -617,9 +688,10 @@ export async function sendInitialProspectEmails(
 
 export async function sendDueFollowupEmails(
   options: { prospectIds?: string[] } = {},
-  budget?: SendBudget
+  budget?: SendBudget,
+  loadedRecords?: MailerProspect[]
 ) {
-  const records = await loadRecords();
+  const records = loadedRecords || (await loadRecords());
   const ids = Array.isArray(options.prospectIds) ? options.prospectIds : [];
   const now = new Date();
   const dueRecords = filterByIds(records, ids).filter((record) => Boolean(getDueFollowupPlan(record)));
@@ -839,9 +911,10 @@ export async function sendProspectEmails(options: {
   prospectIds?: string[];
   mode?: "all" | "initial" | "followups";
   runLimit?: number;
+  sentToday?: number;
 } = {}) {
   const mode = options.mode || "all";
-  const budget = await createSendBudget(options.runLimit);
+  const budget = await createSendBudget(options.runLimit, options.sentToday);
 
   if (mode === "initial") {
     return sendInitialProspectEmails(options, budget);
@@ -851,8 +924,9 @@ export async function sendProspectEmails(options: {
     return sendDueFollowupEmails(options, budget);
   }
 
-  const initial = await sendInitialProspectEmails(options, budget);
-  const followups = await sendDueFollowupEmails(options, budget);
+  const records = await loadRecords();
+  const initial = await sendInitialProspectEmails(options, budget, records);
+  const followups = await sendDueFollowupEmails(options, budget, records);
 
   return mergeSendSummaries(initial, followups);
 }

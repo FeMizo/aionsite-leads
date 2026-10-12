@@ -322,10 +322,11 @@ export async function getNextAvailableScheduledSendAt(
 
 export async function scheduleDailyProspectCadence(
   referenceDate = new Date(),
-  target = DAILY_SCHEDULE_TARGET
+  target = DAILY_SCHEDULE_TARGET,
+  sentToday?: number
 ) {
   const prisma = getPrismaClient();
-  const alreadySentToday = await countEmailsSentToday(referenceDate);
+  const alreadySentToday = sentToday ?? (await countEmailsSentToday(referenceDate));
   const { start, end } = getMexicoCityDayBounds(referenceDate);
   const alreadyScheduledToday = await prisma.prospect.count({
     where: {
