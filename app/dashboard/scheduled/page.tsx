@@ -10,10 +10,10 @@ export const metadata: Metadata = { title: "Programados", description: "Prospect
 export default async function ScheduledPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page || "1", 10) || 1);
-  const context = await getDashboardPageContext();
+  const context = await getDashboardPageContext({ includeCollections: false });
   if (context.kind !== "ready") return <DashboardUnavailable context={context as DashboardPageContext} />;
 
-  const { items, totalCount } = await getProspectsByStatuses({ statuses: ["ready"], scheduledOnly: true, orderBy: "createdAt" });
+  const { items, totalCount } = await getProspectsByStatuses({ statuses: ["ready"], scheduledOnly: true, orderBy: "createdAt", page, pageSize: 25 });
 
   return (
     <div className="page-stack">

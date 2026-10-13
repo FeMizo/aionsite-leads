@@ -26,7 +26,7 @@ export default async function SendPage({
 }) {
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page || "1", 10) || 1);
-  const context = await getDashboardPageContext();
+  const context = await getDashboardPageContext({ includeCollections: false });
 
   if (context.kind !== "ready") {
     return <DashboardUnavailable context={context as DashboardPageContext} />;
@@ -35,10 +35,14 @@ export default async function SendPage({
   const { items: readyItems, totalCount: readyTotalCount } = await getProspectsByStatuses({
     statuses: ["ready"],
     unscheduledOnly: true,
+    page,
+    pageSize: PAGE_SIZE,
   });
   const { items: scheduledItems, totalCount: scheduledTotalCount } = await getProspectsByStatuses({
     statuses: ["ready"],
     scheduledOnly: true,
+    page,
+    pageSize: PAGE_SIZE,
   });
 
   return (

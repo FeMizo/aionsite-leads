@@ -240,6 +240,7 @@ export function ProspectTable({
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const hasPagination = page !== undefined && pageSize !== undefined && totalCount !== undefined;
+  const serverPaginated = hasPagination && totalCount !== undefined && totalCount > records.length;
   const showScheduledColumn =
     endpoint === "/api/send" || records.some((record) => Boolean(record.scheduledSendAt));
   const showLastContactedColumn = records.some((record) => Boolean(record.lastContactedAt));
@@ -398,11 +399,13 @@ export function ProspectTable({
     );
   }, [columns, query, records, sortState, statusFilter]);
 
-  const totalVisibleCount = filteredRecords.length;
+  const totalVisibleCount = serverPaginated ? totalCount || 0 : filteredRecords.length;
   const totalPages = hasPagination ? Math.max(1, Math.ceil(totalVisibleCount / pageSize)) : 1;
   const currentPage = page ?? 1;
   const safeCurrentPage = hasPagination ? Math.min(currentPage, totalPages) : currentPage;
-  const paginatedRecords = hasPagination
+  const paginatedRecords = serverPaginated
+    ? filteredRecords
+    : hasPagination
     ? filteredRecords.slice((safeCurrentPage - 1) * pageSize, safeCurrentPage * pageSize)
     : filteredRecords;
 

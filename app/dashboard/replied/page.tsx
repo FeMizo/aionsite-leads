@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "Prospectos que respondieron al contacto.",
 };
 
+const PAGE_SIZE = 25;
+
 export default async function RepliedPage({
   searchParams,
 }: {
@@ -24,7 +26,7 @@ export default async function RepliedPage({
 }) {
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page || "1", 10) || 1);
-  const context = await getDashboardPageContext();
+  const context = await getDashboardPageContext({ includeCollections: false });
 
   if (context.kind !== "ready") {
     return <DashboardUnavailable context={context as DashboardPageContext} />;
@@ -33,6 +35,8 @@ export default async function RepliedPage({
   const { items, totalCount } = await getProspectsByStatuses({
     statuses: ["replied"],
     orderBy: "lastCheckedAt",
+    page,
+    pageSize: PAGE_SIZE,
   });
 
   return (

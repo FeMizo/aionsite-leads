@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CrmPage() {
-  const context = await getDashboardPageContext();
+  const context = await getDashboardPageContext({ includeCollections: false });
 
   if (context.kind !== "ready") {
     return <DashboardUnavailable context={context as DashboardPageContext} />;

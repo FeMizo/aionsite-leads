@@ -72,7 +72,7 @@ const sectionCards = [
   },
 ] as const;
 
-export async function getDashboardPageContext(): Promise<DashboardPageContext> {
+export async function getDashboardPageContext(options: { includeCollections?: boolean } = {}): Promise<DashboardPageContext> {
   const setup = getAppSetupState();
 
   if (!setup.databaseConfigured) {
@@ -83,7 +83,7 @@ export async function getDashboardPageContext(): Promise<DashboardPageContext> {
   }
 
   try {
-    const data = await getDashboardData();
+    const data = await getDashboardData(options);
 
     return {
       kind: "ready",

@@ -26,7 +26,7 @@ export default async function ContactedPage({
 }) {
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page || "1", 10) || 1);
-  const context = await getDashboardPageContext();
+  const context = await getDashboardPageContext({ includeCollections: false });
 
   if (context.kind !== "ready") {
     return <DashboardUnavailable context={context as DashboardPageContext} />;
@@ -35,6 +35,8 @@ export default async function ContactedPage({
   const { items, totalCount } = await getProspectsByStatuses({
     statuses: ["contacted"],
     orderBy: "lastContactedAt",
+    page,
+    pageSize: PAGE_SIZE,
   });
 
   return (

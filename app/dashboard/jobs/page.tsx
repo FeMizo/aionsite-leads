@@ -4,7 +4,7 @@ import { jobStatuses } from "@/lib/job-status";
 import type { JobStatus } from "@/generated/prisma";
 import { getJobDashboardData } from "@/lib/jobs";
 import { DashboardUnavailable } from "@/components/dashboard/dashboard-sections";
-import { getDashboardPageContext } from "@/components/dashboard/dashboard-sections";
+import { getAppSetupState } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -22,12 +22,12 @@ export default async function JobsPage({
   const initialStatus = jobStatuses.includes(params.status as JobStatus)
     ? params.status as JobStatus
     : "all";
-  const context = await getDashboardPageContext();
-  if (context.kind !== "ready") return <DashboardUnavailable context={context} />;
+  const setup = getAppSetupState();
+  if (!setup.databaseConfigured) return <DashboardUnavailable context={{ kind: "setup", setup }} />;
 
   try {
     return <JobsWorkspace data={await getJobDashboardData()} initialStatus={initialStatus} />;
   } catch (error) {
-    return <DashboardUnavailable context={{ kind: "error", setup: context.setup, message: error instanceof Error ? error.message : "No se pudieron cargar los jobs." }} />;
+    return <DashboardUnavailable context={{ kind: "error", setup, message: error instanceof Error ? error.message : "No se pudieron cargar los jobs." }} />;
   }
 }

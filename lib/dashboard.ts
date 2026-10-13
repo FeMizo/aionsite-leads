@@ -1,7 +1,7 @@
 import { getPrismaClient } from "@/lib/db";
 import { getNextProspectingCrawlAt } from "@/lib/automation";
 import { getProspectScoreBreakdown, getProspectScoreCard } from "@/lib/prospect-scoring";
-import type { ProspectStatus } from "@/generated/prisma";
+import type { Prisma, ProspectStatus } from "@/generated/prisma";
 import type {
   DashboardActivityItem,
   DashboardData,
@@ -9,72 +9,137 @@ import type {
   DashboardRun,
 } from "@/lib/types";
 
-function serializeProspect(prospect: {
-  id: string;
-  name: string;
-  contactName: string;
-  city: string;
-  languageCode: string;
-  email: string;
-  phone: string;
-  type: string;
-  website: string;
-  rating: string;
-  mapsUrl: string;
-  opportunity: string;
-  recommendedSite: string;
-  pitchAngle: string;
-  segmentIdeal: string;
-  painPoint: string;
-  evidence: unknown;
-  recommendedOffer: string;
-  nextAction: string;
-  owner: string;
-  nextFollowupAt: Date | null;
-  promptVersion: string;
-  responseCategory: string;
-  meetingAt: Date | null;
-  proposalAt: Date | null;
-  closedAt: Date | null;
-  revenue: number | null;
-  subject: string;
-  message: string;
-  contacted: boolean;
-  hotLead: boolean;
-  scheduledSendAt: Date | null;
-  lastContactedAt: Date | null;
-  followupCount: number;
-  followupStage: number;
-  status: string;
-  source: string;
-  createdAt: Date;
-  lastCheckedAt: Date;
-  businessStatus: string;
-  lastError: string;
-  lastMessageId: string;
-  updatedAt: Date;
-}): DashboardProspect {
+type DashboardProspectRecord = Pick<
+  Prisma.ProspectGetPayload<{}>,
+  | "id"
+  | "name"
+  | "contactName"
+  | "city"
+  | "languageCode"
+  | "email"
+  | "phone"
+  | "type"
+  | "website"
+  | "rating"
+  | "mapsUrl"
+  | "opportunity"
+  | "recommendedSite"
+  | "pitchAngle"
+  | "userRatingCount"
+  | "websiteFetchFailed"
+  | "websiteLoadTimeMs"
+  | "hasWhatsappCta"
+  | "hasContactCta"
+  | "isMobileFriendly"
+  | "subject"
+  | "message"
+  | "contacted"
+  | "hotLead"
+  | "scheduledSendAt"
+  | "lastContactedAt"
+  | "followupCount"
+  | "followupStage"
+  | "status"
+  | "source"
+  | "createdAt"
+  | "lastCheckedAt"
+  | "businessStatus"
+  | "primaryType"
+  | "updatedAt"
+>;
+
+const DASHBOARD_PROSPECT_SELECT = {
+  id: true,
+  name: true,
+  contactName: true,
+  city: true,
+  languageCode: true,
+  email: true,
+  phone: true,
+  type: true,
+  website: true,
+  rating: true,
+  mapsUrl: true,
+  opportunity: true,
+  recommendedSite: true,
+  pitchAngle: true,
+  userRatingCount: true,
+  websiteFetchFailed: true,
+  websiteLoadTimeMs: true,
+  hasWhatsappCta: true,
+  hasContactCta: true,
+  isMobileFriendly: true,
+  subject: true,
+  message: true,
+  contacted: true,
+  hotLead: true,
+  scheduledSendAt: true,
+  lastContactedAt: true,
+  followupCount: true,
+  followupStage: true,
+  status: true,
+  source: true,
+  createdAt: true,
+  lastCheckedAt: true,
+  businessStatus: true,
+  primaryType: true,
+  updatedAt: true,
+} satisfies Prisma.ProspectSelect;
+
+function serializeProspect(prospect: DashboardProspectRecord): DashboardProspect {
   const scoring = getProspectScoreCard(prospect);
   const scoreBreakdown = getProspectScoreBreakdown(prospect);
 
   return {
-    ...prospect,
-    evidence: prospect.evidence && typeof prospect.evidence === "object" && !Array.isArray(prospect.evidence)
-      ? prospect.evidence as Record<string, unknown>
-      : null,
+    id: prospect.id,
+    name: prospect.name,
+    contactName: prospect.contactName,
+    city: prospect.city,
+    languageCode: prospect.languageCode,
+    email: prospect.email,
+    phone: prospect.phone,
+    type: prospect.type,
+    website: prospect.website,
+    rating: prospect.rating,
+    mapsUrl: prospect.mapsUrl,
+    opportunity: prospect.opportunity,
+    recommendedSite: prospect.recommendedSite,
+    pitchAngle: prospect.pitchAngle,
+    segmentIdeal: "",
+    painPoint: "",
+    evidence: null,
+    recommendedOffer: "",
+    nextAction: "",
+    owner: "",
+    nextFollowupAt: null,
+    promptVersion: "",
+    responseCategory: "",
+    meetingAt: null,
+    proposalAt: null,
+    closedAt: null,
+    revenue: null,
+    subject: prospect.subject,
+    message: prospect.message,
+    contacted: prospect.contacted,
+    hotLead: prospect.hotLead,
+    followupCount: prospect.followupCount,
+    followupStage: prospect.followupStage,
+    status: prospect.status,
+    source: prospect.source,
+    businessStatus: prospect.businessStatus,
+    primaryType: prospect.primaryType,
+    userRatingCount: prospect.userRatingCount,
+    lastError: "",
+    lastMessageId: "",
+    updatedAt: prospect.updatedAt.toISOString(),
     scheduledSendAt: prospect.scheduledSendAt
       ? prospect.scheduledSendAt.toISOString()
       : null,
     lastContactedAt: prospect.lastContactedAt
       ? prospect.lastContactedAt.toISOString()
       : null,
-    nextFollowupAt: prospect.nextFollowupAt ? prospect.nextFollowupAt.toISOString() : null,
-    meetingAt: prospect.meetingAt ? prospect.meetingAt.toISOString() : null,
-    proposalAt: prospect.proposalAt ? prospect.proposalAt.toISOString() : null,
-    closedAt: prospect.closedAt ? prospect.closedAt.toISOString() : null,
     createdAt: prospect.createdAt.toISOString(),
     lastCheckedAt: prospect.lastCheckedAt.toISOString(),
-    updatedAt: prospect.updatedAt.toISOString(),
     score: scoring.score,
     priority: scoring.priority,
     scoreBreakdown,
@@ -134,6 +199,7 @@ export async function getPaginatedProspects(options: {
   const [items, totalCount] = await Promise.all([
     prisma.prospect.findMany({
       where: { status: { in: statusFilter } },
+      select: DASHBOARD_PROSPECT_SELECT,
       orderBy: { [orderBy]: "desc" },
       skip,
       take: pageSize,
@@ -149,9 +215,18 @@ export async function getProspectsByStatuses(options: {
   orderBy?: "createdAt" | "lastCheckedAt" | "lastContactedAt";
   scheduledOnly?: boolean;
   unscheduledOnly?: boolean;
+  page?: number;
+  pageSize?: number;
 }): Promise<{ items: DashboardProspect[]; totalCount: number }> {
   const prisma = getPrismaClient();
-  const { statuses, orderBy = "createdAt", scheduledOnly = false, unscheduledOnly = false } = options;
+  const {
+    statuses,
+    orderBy = "createdAt",
+    scheduledOnly = false,
+    unscheduledOnly = false,
+    page,
+    pageSize,
+  } = options;
   const statusFilter = statuses as ProspectStatus[];
   const where = {
     status: { in: statusFilter },
@@ -162,7 +237,14 @@ export async function getProspectsByStatuses(options: {
   const [items, totalCount] = await Promise.all([
     prisma.prospect.findMany({
       where,
+      select: DASHBOARD_PROSPECT_SELECT,
       orderBy: { [orderBy]: "desc" },
+      ...(page && pageSize
+        ? {
+            skip: Math.max(0, (page - 1) * pageSize),
+            take: pageSize,
+          }
+        : {}),
     }),
     prisma.prospect.count({ where }),
   ]);
@@ -177,8 +259,11 @@ export async function getAllDashboardProspects(): Promise<DashboardProspect[]> {
   return result.items;
 }
 
-export async function getDashboardData(): Promise<DashboardData> {
+export async function getDashboardData(options: { includeCollections?: boolean } = {}): Promise<DashboardData> {
   const prisma = getPrismaClient();
+  const includeCollections = options.includeCollections !== false;
+  const emptyProspects = Promise.resolve([] as never[]);
+  const emptyRuns = Promise.resolve([] as never[]);
   const nextCrawlAt = getNextProspectingCrawlAt();
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -189,11 +274,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     ready,
     contacted,
     runs,
-    generatedCount,
-    prospectsCount,
-    readyCount,
-    contactedCount,
-    rejectedCount,
+    prospectStatusGroups,
     runsCount,
     activeRun,
     lastRun,
@@ -202,45 +283,39 @@ export async function getDashboardData(): Promise<DashboardData> {
     readyToSendCount,
     whatsappOnlyCount,
     stalledProspectsCount,
-    jobsCount,
+    jobStatusGroups,
     jobsTodayCount,
-    jobsParaAplicarCount,
-    jobsFollowUpCount,
-    jobsBlockedCount,
     jobsStalledCount,
     jobSettings,
   ] = await Promise.all([
-    prisma.prospect.findMany({
+    includeCollections ? prisma.prospect.findMany({
       where: { status: { in: ["generated", "analyzed"] } },
       orderBy: { createdAt: "desc" },
       take: 12,
-    }),
-    prisma.prospect.findMany({
+    }) : emptyProspects,
+    includeCollections ? prisma.prospect.findMany({
       where: { status: "approved" },
       orderBy: { createdAt: "desc" },
       take: 20,
-    }),
-    prisma.prospect.findMany({
+    }) : emptyProspects,
+    includeCollections ? prisma.prospect.findMany({
       where: { status: "ready" },
       orderBy: { createdAt: "desc" },
       take: 20,
-    }),
-    prisma.prospect.findMany({
+    }) : emptyProspects,
+    includeCollections ? prisma.prospect.findMany({
       where: { status: { in: ["contacted", "second_attempt", "replied", "closed"] } },
       orderBy: { lastCheckedAt: "desc" },
       take: 20,
-    }),
-    prisma.run.findMany({
+    }) : emptyProspects,
+    includeCollections ? prisma.run.findMany({
       orderBy: { createdAt: "desc" },
       take: 20,
+    }) : emptyRuns,
+    prisma.prospect.groupBy({
+      by: ["status"],
+      _count: { _all: true },
     }),
-    prisma.prospect.count({ where: { status: { in: ["generated", "analyzed"] } } }),
-    prisma.prospect.count({ where: { status: "approved" } }),
-    prisma.prospect.count({ where: { status: "ready" } }),
-    prisma.prospect.count({
-      where: { status: { in: ["contacted", "second_attempt", "replied", "closed"] } },
-    }),
-    prisma.prospect.count({ where: { status: "rejected" } }),
     prisma.run.count(),
     prisma.run.findFirst({
       where: { status: "running" },
@@ -276,11 +351,11 @@ export async function getDashboardData(): Promise<DashboardData> {
         updatedAt: { lt: stalledBefore },
       },
     }),
-    prisma.job.count(),
+    prisma.job.groupBy({
+      by: ["status"],
+      _count: { _all: true },
+    }),
     prisma.job.count({ where: { addedAt: { gte: todayStart } } }),
-    prisma.job.count({ where: { status: "para_aplicar" } }),
-    prisma.job.count({ where: { status: "follow_up" } }),
-    prisma.job.count({ where: { status: { in: ["bloqueado", "no_disponible"] } } }),
     prisma.job.count({
       where: {
         status: { in: ["para_aplicar", "follow_up"] },
@@ -289,6 +364,26 @@ export async function getDashboardData(): Promise<DashboardData> {
     }),
     prisma.jobSettings.findUnique({ where: { id: 1 } }),
   ]);
+
+  const prospectCounts = Object.fromEntries(
+    prospectStatusGroups.map((item) => [item.status, item._count._all])
+  );
+  const generatedCount = (prospectCounts.generated || 0) + (prospectCounts.analyzed || 0);
+  const prospectsCount = prospectCounts.approved || 0;
+  const readyCount = prospectCounts.ready || 0;
+  const contactedCount =
+    (prospectCounts.contacted || 0) +
+    (prospectCounts.second_attempt || 0) +
+    (prospectCounts.replied || 0) +
+    (prospectCounts.closed || 0);
+  const rejectedCount = prospectCounts.rejected || 0;
+  const jobCounts = Object.fromEntries(
+    jobStatusGroups.map((item) => [item.status, item._count._all])
+  );
+  const jobsCount = Object.values(jobCounts).reduce((total, count) => total + count, 0);
+  const jobsParaAplicarCount = jobCounts.para_aplicar || 0;
+  const jobsFollowUpCount = jobCounts.follow_up || 0;
+  const jobsBlockedCount = (jobCounts.bloqueado || 0) + (jobCounts.no_disponible || 0);
 
   return {
     metrics: {
