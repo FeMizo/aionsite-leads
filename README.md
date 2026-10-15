@@ -308,3 +308,17 @@ npm run db:seed
 - El repo ya incluye `prisma/migrations`, por lo que `prisma migrate deploy` es reproducible.
 - Si faltan variables, las APIs responden `503` con detalle claro en JSON.
 - Se agrego el estado `rejected` para rechazar leads sin borrar su historial.
+
+## Recuperacion cuando Neon agota la cuota
+
+El proyecto puede leer temporalmente Jobs desde el JSON local de AionSite cuando Postgres no responde. Esta ruta de emergencia solo aplica fuera de Vercel y no sustituye Postgres para Prospectos, Gmail ni envios SMTP.
+
+Para crear un respaldo antes de cualquier cambio:
+
+```bash
+npm run backup:data
+```
+
+El comando guarda Jobs locales y, si la base responde, exporta tambien Jobs, Prospectos, eventos, ejecuciones y configuracion. Los respaldos se escriben fuera del repositorio en `AIONSITE_BACKUP_DIR` o en `../aionsite-leads-backups`.
+
+Para habilitar cambios de estado locales durante una contingencia, configura `AIONSITE_JOBS_PATH` y `AIONSITE_JOBS_WRITE_ENABLED=true`. El cambio crea otro respaldo automatico y usa escritura temporal atomica. No habilites esta escritura en Vercel: su sistema de archivos no es persistente.

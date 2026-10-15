@@ -27,6 +27,11 @@ function isAuthorizedCronRequest(request: NextRequest) {
   return request.headers.get("authorization") === `Bearer ${secret}`;
 }
 
+function isDatabaseQuotaError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return /53000|P2039|quota|exceeded the quota/i.test(message);
+}
+
 export async function GET(request: NextRequest) {
   if (!isAuthorizedCronRequest(request)) {
     return fail("CRON_UNAUTHORIZED", "Unauthorized cron request.", 401);
@@ -55,9 +60,11 @@ export async function GET(request: NextRequest) {
     return ok({ target, cadence, result, bounceScan });
   } catch (error) {
     return fail(
-      "SCHEDULED_SEND_FAILED",
-      error instanceof Error ? error.message : "No se pudo ejecutar el envío programado.",
-      500
+      isDatabaseQuotaError(error) ? "DATABASE_QUOTA_BLOCKED" : "SCHEDULED_SEND_FAILED",
+      isDatabaseQuotaError(error)
+        ? "El envío se detuvo porque Neon agotó la cuota de Postgres. No se enviaron correos."
+        : error instanceof Error ? error.message : "No se pudo ejecutar el envío programado.",
+      503
     );
   }
 }
