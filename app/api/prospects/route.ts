@@ -93,6 +93,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = requireBearer(request);
+
+  if (authError) {
+    return authError;
+  }
+
   const configError = formatMissingEnvError("la base de datos", DATABASE_ENV_KEYS);
 
   if (configError) {
@@ -103,12 +109,6 @@ export async function POST(request: NextRequest) {
 
   if (payload.action) {
     return handleLegacyDashboardAction(payload);
-  }
-
-  const authError = requireBearer(request);
-
-  if (authError) {
-    return authError;
   }
 
   try {

@@ -8,11 +8,7 @@ import {
 } from "@/lib/env";
 import { sendProspectEmails } from "@/lib/mailer";
 import { scanMailboxForBounces } from "@/lib/mail-bounces";
-import {
-  countEmailsSentToday,
-  getRandomDailySendTarget,
-  scheduleDailyProspectCadence,
-} from "@/lib/send-scheduler";
+import { countEmailsSentToday, getRandomDailySendTarget } from "@/lib/send-scheduler";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -49,7 +45,6 @@ export async function GET(request: NextRequest) {
     const now = new Date();
     const target = getRandomDailySendTarget();
     const sentToday = await countEmailsSentToday(now);
-    const cadence = await scheduleDailyProspectCadence(now, target, sentToday);
     const result = await sendProspectEmails({
       mode: "all",
       runLimit: target,
@@ -57,7 +52,7 @@ export async function GET(request: NextRequest) {
     });
     const bounceScan = await scanMailboxForBounces();
 
-    return ok({ target, cadence, result, bounceScan });
+    return ok({ target, sentToday, result, bounceScan });
   } catch (error) {
     return fail(
       isDatabaseQuotaError(error) ? "DATABASE_QUOTA_BLOCKED" : "SCHEDULED_SEND_FAILED",

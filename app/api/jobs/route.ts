@@ -4,6 +4,7 @@ import { getJobDashboardData, updateJobStatuses } from "@/lib/jobs";
 import { jobStatuses } from "@/lib/job-status";
 import { DATABASE_ENV_KEYS, formatMissingEnvError } from "@/lib/env";
 import { getLocalJobDashboardData, isLocalJobsFallbackAvailable } from "@/lib/local-jobs";
+import { requireBearer } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -33,6 +34,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = requireBearer(request);
+  if (authError) return authError;
+
   const configError = formatMissingEnvError("la base de datos", DATABASE_ENV_KEYS);
   if (configError && !isLocalJobsFallbackAvailable()) return fail("DATABASE_CONFIG_MISSING", configError, 503);
 
