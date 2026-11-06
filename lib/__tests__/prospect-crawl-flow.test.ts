@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   prospectFindUnique: vi.fn(),
@@ -25,6 +25,7 @@ import { startProspectCrawl } from "@/lib/prospect-crawls";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ url: "https://example.com" }));
   mocks.prospectFindUnique.mockResolvedValue({ id: "p1", website: "https://example.com" });
   mocks.credentialFindUnique.mockResolvedValue({ username: "leads-owner" });
   mocks.crawlFindFirst.mockResolvedValue(null);
@@ -33,6 +34,8 @@ beforeEach(() => {
   mocks.prospectUpdate.mockResolvedValue({});
   mocks.fetchPdf.mockResolvedValue({ filename: "summary.pdf", content: Buffer.from("%PDF-1.4") });
 });
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("prospect crawl history flow", () => {
   it("stores the credential owner, completed run, summary and private PDF", async () => {
@@ -72,6 +75,7 @@ describe("prospect crawl history flow", () => {
     mocks.prospectFindUnique.mockResolvedValue({ id: "p1", website: "https://wa.me/529381573988" });
 
     await expect(startProspectCrawl("p1")).rejects.toThrow("No se permite rastrear enlaces de contacto");
+    expect(fetch).not.toHaveBeenCalled();
     expect(mocks.crawlCreate).not.toHaveBeenCalled();
     expect(mocks.startCrawl).not.toHaveBeenCalled();
   });

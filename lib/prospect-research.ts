@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma";
 import { getPrismaClient } from "@/lib/db";
+import { normalizeCrawlUrl, getCrawlUrlBlockReason } from "@/lib/crawl-url-policy";
 import { normalizeEmail, normalizeName, normalizePhone, normalizeWebsite } from "@/lib/normalizers";
 import { findEmailFromWebsite } from "@/providers/email-finder";
 import { researchBraveSocialProfile, researchGooglePlace, type ResearchSourceResult } from "@/providers/prospect-research";
@@ -15,11 +16,12 @@ const FIELD_LABELS: Record<string, string> = {
 
 function encodeValue(value: unknown) { return JSON.stringify(value === undefined ? null : value); }
 function sameValue(field: string, current: unknown, proposed: unknown) {
+  if (current == null || proposed == null) return current == null && proposed == null;
   if (field === "phone") return normalizePhone(String(current || "")) === normalizePhone(String(proposed || ""));
   if (field === "email") return normalizeEmail(String(current || "")) === normalizeEmail(String(proposed || ""));
-  if (field === "website") return normalizeWebsite(String(current || "")) === normalizeWebsite(String(proposed || ""));
+  if (field === "website") return normalizeWebsite(normalizeCrawlUrl(String(current)) || String(current)) === normalizeWebsite(normalizeCrawlUrl(String(proposed)) || String(proposed));
   if (field === "name") return normalizeName(String(current || "")) === normalizeName(String(proposed || ""));
-  if (typeof current === "number" || typeof proposed === "number") return Number(current) === Number(proposed);
+  if (typeof current === "number" || typeof proposed === "number") return current !== "" && proposed !== "" && Number(current) === Number(proposed);
   return String(current ?? "") === String(proposed ?? "");
 }
 
@@ -107,7 +109,15 @@ export async function runProspectResearch(prospectId: string) {
     hasContactCta: prospect.hasContactCta, isMobileFriendly: prospect.isMobileFriendly,
   };
   const findings = [...suggestions.values()]
-    .filter((item) => FIELD_LABELS[item.field] && isHttpUrl(item.sourceUrl) && !sameValue(item.field, currentValues[item.field], item.value))
+    .filter((item) => {
+      if (!FIELD_LABELS[item.field] || !isHttpUrl(item.sourceUrl)) return false;
+      try {
+        fieldUpdate(item.field, item.value);
+        return !sameValue(item.field, currentValues[item.field], item.value);
+      } catch {
+        return false;
+      }
+    })
     .map((item) => ({
       researchId: research.id, field: item.field, currentValue: encodeValue(currentValues[item.field]),
       proposedValue: encodeValue(item.value), sourceName: item.sourceName, sourceUrl: item.sourceUrl,
@@ -134,18 +144,36 @@ const APPLICABLE_FIELDS = new Set([
 
 function fieldUpdate(field: string, value: unknown): Prisma.ProspectUpdateInput {
   if (!APPLICABLE_FIELDS.has(field)) throw new Error("Campo de investigación no permitido.");
+  const numericFields = ["rating", "websiteLoadTimeMs", "userRatingCount"];
+  const booleanFields = ["websiteFetchFailed", "hasWhatsappCta", "hasContactCta", "isMobileFriendly"];
+  if (numericFields.includes(field) && (typeof value !== "number" || !Number.isFinite(value))) throw new Error("Valor numérico inválido.");
+  if (!numericFields.includes(field) && !booleanFields.includes(field) && (typeof value !== "string" || !value.trim())) throw new Error("Valor de texto inválido.");
+  if (field === "website") {
+    if (!isHttpUrl(String(value))) throw new Error("Sitio web inválido.");
+    const url = new URL(String(value));
+    const website = normalizeCrawlUrl(String(value));
+    const reason = getCrawlUrlBlockReason(String(value));
+    if (!website || reason || url.username || url.password) throw new Error(reason || "Sitio web inválido.");
+    return { website };
+  }
+  if (field === "mapsUrl" && !isHttpUrl(String(value))) throw new Error("URL de Maps inválida.");
+  if (field === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value))) throw new Error("Correo inválido.");
+  if (field === "phone" && !normalizePhone(String(value))) throw new Error("Teléfono inválido.");
   if (field === "phone") return { phone: String(value), normalizedPhone: normalizePhone(String(value)) };
   if (field === "email") return { email: String(value), normalizedEmail: normalizeEmail(String(value)) };
   if (field === "name") return { name: String(value), normalizedName: normalizeName(String(value)) };
-  if (field === "rating") return { rating: String(value) };
+  if (field === "rating") {
+    if (Number(value) < 1 || Number(value) > 5) throw new Error("Calificación inválida.");
+    return { rating: String(value) };
+  }
   if (field === "websiteLoadTimeMs") {
     const milliseconds = Number(value);
-    if (!Number.isInteger(milliseconds) || milliseconds < 0) throw new Error("Tiempo de respuesta inválido.");
+    if (!Number.isSafeInteger(milliseconds) || milliseconds < 0) throw new Error("Tiempo de respuesta inválido.");
     return { websiteLoadTimeMs: milliseconds };
   }
   if (field === "userRatingCount") {
     const count = Number(value);
-    if (!Number.isInteger(count) || count < 0) throw new Error("Cantidad de reseñas inválida.");
+    if (!Number.isSafeInteger(count) || count < 0) throw new Error("Cantidad de reseñas inválida.");
     return { userRatingCount: count };
   }
   if (["websiteFetchFailed", "hasWhatsappCta", "hasContactCta", "isMobileFriendly"].includes(field)) {
@@ -161,11 +189,18 @@ function fieldCurrentValue(prospect: Record<string, unknown>, field: string) {
 }
 
 export async function decideResearchFinding(findingId: string, decision: "approve" | "dismiss", decidedBy: string) {
+  if (decision !== "approve" && decision !== "dismiss") throw new Error("Decisión inválida.");
+  if (!decidedBy.trim()) throw new Error("La decisión requiere un responsable.");
   const prisma = getPrismaClient();
   return prisma.$transaction(async (tx) => {
     const finding = await tx.prospectResearchFinding.findUnique({ where: { id: findingId }, include: { research: true } });
     if (!finding) throw new Error("Propuesta no encontrada.");
     if (finding.status !== "pending") throw new Error("Esta propuesta ya tiene una decisión.");
+    const claimed = await tx.prospectResearchFinding.updateMany({
+      where: { id: finding.id, status: "pending" },
+      data: { decision, decidedBy, decidedAt: new Date(), status: decision === "approve" ? "approved" : "dismissed" },
+    });
+    if (claimed.count !== 1) throw new Error("Esta propuesta ya tiene una decisión.");
     const prospect = await tx.prospect.findUnique({ where: { id: finding.research.prospectId } });
     if (!prospect) throw new Error("Prospecto no encontrado.");
 
@@ -180,8 +215,9 @@ export async function decideResearchFinding(findingId: string, decision: "approv
     }
 
     const value = decodeResearchValue(finding.proposedValue);
+    if (decision === "approve" && !isHttpUrl(finding.sourceUrl)) throw new Error("La propuesta requiere una fuente HTTP válida.");
     if (decision === "approve") await tx.prospect.update({
-      where: { id: prospect.id }, data: { ...fieldUpdate(finding.field, value), lastCheckedAt: new Date() },
+      where: { id: prospect.id, updatedAt: prospect.updatedAt }, data: { ...fieldUpdate(finding.field, value), lastCheckedAt: new Date() },
     });
     const now = new Date();
     await tx.prospectResearchFinding.update({ where: { id: finding.id }, data: {

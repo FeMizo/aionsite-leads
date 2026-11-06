@@ -8,6 +8,8 @@ export async function startProspectCrawl(prospectId: string, retry = false) {
   const prospect = await prisma.prospect.findUnique({ where: { id: prospectId } });
   if (!prospect) throw new Error("Prospecto no encontrado.");
   if (!prospect.website) throw new Error("El prospecto no tiene sitio web.");
+  const initialBlockReason = getCrawlUrlBlockReason(prospect.website);
+  if (initialBlockReason) throw new Error(initialBlockReason);
   const url = await resolveCrawlUrl(prospect.website);
   if (!url) throw new Error("No se pudo resolver un dominio real para este sitio.");
   const blockedReason = getCrawlUrlBlockReason(url);

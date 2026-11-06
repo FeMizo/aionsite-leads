@@ -22,6 +22,9 @@ export async function PATCH(request: NextRequest, { params }: Context) {
     if (result.stale) return NextResponse.json({ error: "El dato cambió desde la investigación. Se registró como desactualizado; vuelve a investigar." }, { status: 409 });
     return NextResponse.json({ ok: true });
   } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "P2025") {
+      return NextResponse.json({ error: "El prospecto cambió durante la revisión. Actualiza la página y revisa la propuesta nuevamente." }, { status: 409 });
+    }
     const message = error instanceof Error ? error.message : "No se pudo guardar la decisión.";
     return NextResponse.json({ error: message }, { status: message.includes("ya tiene una decisión") ? 409 : 400 });
   }
