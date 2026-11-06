@@ -25,6 +25,9 @@ type DashboardProspectRecord = Pick<
   | "opportunity"
   | "recommendedSite"
   | "pitchAngle"
+  | "nextAction"
+  | "owner"
+  | "nextFollowupAt"
   | "userRatingCount"
   | "websiteFetchFailed"
   | "websiteLoadTimeMs"
@@ -63,6 +66,9 @@ const DASHBOARD_PROSPECT_SELECT = {
   opportunity: true,
   recommendedSite: true,
   pitchAngle: true,
+  nextAction: true,
+  owner: true,
+  nextFollowupAt: true,
   userRatingCount: true,
   websiteFetchFailed: true,
   websiteLoadTimeMs: true,
@@ -109,9 +115,9 @@ function serializeProspect(prospect: DashboardProspectRecord): DashboardProspect
     painPoint: "",
     evidence: null,
     recommendedOffer: "",
-    nextAction: "",
-    owner: "",
-    nextFollowupAt: null,
+    nextAction: prospect.nextAction,
+    owner: prospect.owner,
+    nextFollowupAt: prospect.nextFollowupAt ? prospect.nextFollowupAt.toISOString() : null,
     promptVersion: "",
     responseCategory: "",
     meetingAt: null,
@@ -233,6 +239,7 @@ export async function getProspectsByStatuses(options: {
     ...(scheduledOnly ? { scheduledSendAt: { gt: new Date() } } : {}),
     ...(unscheduledOnly ? { scheduledSendAt: null } : {}),
   };
+  const paginated = Boolean(page && pageSize);
 
   const [items, totalCount] = await Promise.all([
     prisma.prospect.findMany({
@@ -246,10 +253,10 @@ export async function getProspectsByStatuses(options: {
           }
         : {}),
     }),
-    prisma.prospect.count({ where }),
+    paginated ? prisma.prospect.count({ where }) : Promise.resolve(null),
   ]);
 
-  return { items: items.map(serializeProspect), totalCount };
+  return { items: items.map(serializeProspect), totalCount: totalCount ?? items.length };
 }
 
 export async function getAllDashboardProspects(): Promise<DashboardProspect[]> {

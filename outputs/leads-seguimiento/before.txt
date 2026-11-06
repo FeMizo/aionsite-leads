@@ -1,0 +1,16 @@
+
+> aionsite-leads@1.10.45 test
+> vitest run lib/__tests__/dashboard-query-count.test.ts -t measures query
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 C:/Users/mizo_/Documents/Trabajo/Personal/aionsite-leads
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 5 skipped (6)
+   Start at  13:00:54
+   Duration  336ms (transform 62ms, setup 0ms, import 91ms, tests 8ms, environment 0ms)
+

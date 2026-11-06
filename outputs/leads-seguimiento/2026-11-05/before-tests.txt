@@ -1,0 +1,47 @@
+
+> aionsite-leads@1.10.45 test
+> vitest run lib/__tests__/dashboard-query-count.test.ts
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 C:/Users/mizo_/Documents/Trabajo/Personal/aionsite-leads
+
+ ❯ lib/__tests__/dashboard-query-count.test.ts (8 tests | 1 failed) 14ms
+     × preserves saved next steps, owner and followup date in CRM results 7ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/__tests__/dashboard-query-count.test.ts > dashboard contact query count (isolated test data) > preserves saved next steps, owner and followup date in CRM results
+AssertionError: expected { id: 'a', name: 'Prueba a', …(46) } to match object { …(3) }
+(45 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "nextAction": "Revisar propuesta",
+-   "nextFollowupAt": "2026-11-10T15:00:00.000Z",
+-   "owner": "Responsable de prueba",
++   "nextAction": "",
++   "nextFollowupAt": null,
++   "owner": "",
+  }
+
+ ❯ lib/__tests__/dashboard-query-count.test.ts:31:24
+     29|   it("preserves saved next steps, owner and followup date in CRM resul…
+     30|     const records = await getAllDashboardProspects();
+     31|     expect(records[0]).toMatchObject({ nextAction: "Revisar propuesta",
+       |                        ^
+     32|       owner: "Responsable de prueba", nextFollowupAt: "2026-11-10T15:0…
+     33|     expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContainin…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+   Start at  13:04:19
+   Duration  522ms (transform 48ms, setup 0ms, import 80ms, tests 14ms, environment 0ms)
+

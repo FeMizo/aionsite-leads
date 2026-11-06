@@ -1,0 +1,16 @@
+
+> aionsite-leads@1.10.45 test
+> vitest run
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 C:/Users/mizo_/Documents/Trabajo/Personal/aionsite-leads
+
+
+ Test Files  20 passed (20)
+      Tests  86 passed (86)
+   Start at  13:01:37
+   Duration  737ms (transform 2.89s, setup 0ms, import 4.25s, tests 475ms, environment 2ms)
+

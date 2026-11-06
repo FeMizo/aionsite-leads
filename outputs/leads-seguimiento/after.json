@@ -1,0 +1,6 @@
+{
+  "environment": "mock-only, no database",
+  "loads": 100,
+  "queries": 100,
+  "elapsedMs": 7.576
+}

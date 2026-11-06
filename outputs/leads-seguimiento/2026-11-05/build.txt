@@ -1,0 +1,79 @@
+
+> aionsite-leads@1.10.45 build
+> prisma generate && next build
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from prisma\schema.prisma.
+
+✔ Generated Prisma Client (v7.10.0) to .\generated\prisma in 119ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+
+▲ Next.js 16.3.5 (Turbopack)
+- Environments: .env.local
+✓ Running next.config took 17ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 1846ms
+  Running TypeScript ...
+  Finished TypeScript in 2.6s ...
+  Collecting page data using 31 workers ...
+  Generating static pages using 31 workers (0/16) ...
+  Generating static pages using 31 workers (4/16) 
+  Generating static pages using 31 workers (8/16) 
+  Generating static pages using 31 workers (12/16) 
+✓ Generating static pages using 31 workers (16/16) in 580ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/analytics
+├ ƒ /api/auth/login
+├ ƒ /api/auth/setup
+├ ƒ /api/cron
+├ ƒ /api/exports/prospects
+├ ƒ /api/jobs
+├ ƒ /api/prompts
+├ ƒ /api/prospects
+├ ƒ /api/prospects/[id]
+├ ƒ /api/prospects/[id]/approve
+├ ƒ /api/prospects/[id]/crawl
+├ ƒ /api/prospects/[id]/message
+├ ƒ /api/prospects/[id]/reject
+├ ƒ /api/prospects/[id]/reply
+├ ƒ /api/prospects/[id]/research
+├ ƒ /api/prospects/[id]/research/[findingId]
+├ ƒ /api/prospects/[id]/send
+├ ƒ /api/runs
+├ ƒ /api/runs/execute
+├ ƒ /api/send
+├ ƒ /api/send/scheduled
+├ ƒ /api/tracking/click
+├ ƒ /api/tracking/open
+├ ƒ /dashboard
+├ ƒ /dashboard/analytics
+├ ƒ /dashboard/contacted
+├ ƒ /dashboard/crm
+├ ƒ /dashboard/followup
+├ ƒ /dashboard/generated
+├ ƒ /dashboard/jobs
+├ ƒ /dashboard/prospects
+├ ƒ /dashboard/prospects/[id]
+├ ƒ /dashboard/replied
+├ ƒ /dashboard/runs
+├ ƒ /dashboard/scheduled
+├ ƒ /dashboard/send
+├ ƒ /dashboard/uncontactable
+├ ○ /icon.png
+├ ƒ /login
+└ ƒ /setup
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

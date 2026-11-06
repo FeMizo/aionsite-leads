@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getActionSuccessMessage } from "@/lib/send-result-message";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Table } from "@/components/ui/table";
@@ -140,76 +141,6 @@ async function postAction(
 
 async function markContacted(recordId: string) {
   await postAction("/api/prospects", "markContacted", [recordId]);
-}
-
-function getActionSuccessMessage(
-  endpoint: "/api/prospects" | "/api/send",
-  payload: unknown
-) {
-  if (endpoint !== "/api/send" || !payload || typeof payload !== "object") {
-    return "Accion completada.";
-  }
-
-  const result =
-    "result" in payload && payload.result && typeof payload.result === "object"
-      ? (payload.result as Record<string, unknown>)
-      : null;
-
-  if (!result) {
-    return "Accion completada.";
-  }
-
-  const sent = Number(result.sent || 0) + Number(result.followupsSent || 0);
-  const scheduled = Number(result.scheduled || 0);
-  const scheduledCreated = Number(result.scheduledCreated || 0);
-  const scheduledItems = Array.isArray(result.scheduledItems)
-    ? result.scheduledItems
-        .map((item) =>
-          item && typeof item === "object" && "scheduledSendAt" in item
-            ? {
-                scheduledSendAt: String(
-                  (item as { scheduledSendAt?: unknown }).scheduledSendAt || ""
-                ),
-                city:
-                  "city" in item && typeof item.city === "string" ? item.city : "",
-              }
-            : null
-        )
-        .filter((value): value is { scheduledSendAt: string; city: string } => Boolean(value))
-    : [];
-  const blocked = Number(result.blocked || 0);
-  const failed = Number(result.failed || 0);
-  const firstScheduledLabel = scheduledItems[0]
-    ? formatDashboardDateTime(scheduledItems[0].scheduledSendAt, {
-        city: scheduledItems[0].city,
-      })
-    : null;
-
-  if (sent > 0) {
-    return scheduledCreated > 0
-      ? firstScheduledLabel
-        ? `Se enviaron ${sent} correos. ${scheduledCreated} se programaron; el siguiente sale ${firstScheduledLabel}.`
-        : `Se enviaron ${sent} correos. ${scheduledCreated} se programaron para más tarde.`
-      : `Se enviaron ${sent} correos.`;
-  }
-
-  if (scheduledCreated > 0) {
-    return firstScheduledLabel
-      ? `Se programaron ${scheduledCreated} correos. El siguiente envío será ${firstScheduledLabel}.`
-      : `Se programaron ${scheduledCreated} correos para el siguiente horario válido. Revisa la columna de envío para ver fecha y hora.`;
-  }
-
-  if (scheduled > 0) {
-    return firstScheduledLabel
-      ? `Los seleccionados ya estaban programados. El siguiente envío será ${firstScheduledLabel}.`
-      : `Los seleccionados ya están programados para otra fecha u hora. No se enviarán hasta que llegue ese momento.`;
-  }
-
-  if (blocked > 0 || failed > 0) {
-    return "No se enviaron correos. Revisa prioridad alta, correo válido, borrador y horario recomendado.";
-  }
-
-  return "No habia correos listos para enviar ahora.";
 }
 
 export function ProspectTable({
